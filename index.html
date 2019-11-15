@@ -2,9 +2,37 @@
 <html lang="en-US">
 <head>
   <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
   <script src="p2p.js"></script>
 </head>
 <body>
 
+<svg width="960" height="600"></svg>
+
+<script>
+var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+
+var color = d3.scaleOrdinal(d3.schemeCategory20);
+var nodes = [{group: 'A', x: 100, y: 100}, {group: 'B', x: 140, y: 200}, {group: 'C', x: 300, y: 150}];
+
+var node = svg.append("g")
+        .attr("class", "nodes")
+        .selectAll("circle")
+        .data(nodes)
+        .enter().append("circle")
+        .attr("r", 30)
+        .attr("cx", (d) => d.x)
+        .attr("cy", (d) => d.y)
+        .attr("fill", function(d) { return color(d.group); })
+        .call(d3.drag().on("drag", dragged));
+
+function dragged(d) {
+  let circle = d3.select(this);
+  circle.attr("cx", d.x = d3.event.x);
+  circle.attr("cy", d.y = d3.event.y);
+}
+</script>
 </body>
 </html>
