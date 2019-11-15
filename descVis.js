@@ -43,3 +43,14 @@ if ( urlVars["id"] != undefined){
     conn.send('Hello!');
   });
 }
+
+
+function descVis(){
+  let peer = new Peer();
+  let id = peer.id;
+  let client = Math.floor(Math.random() * 1000);  
+  let eventsQueue = [];
+  let eventsExecuted = [];
+
+  
+}
