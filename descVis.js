@@ -12,7 +12,8 @@ function descVis() {
       originID = value;
     });
 
-    console.log(originID)
+    console.log("originID", originID);
+    console.log("myID", id);
 
     connectToPeer(id);
 
@@ -22,37 +23,58 @@ function descVis() {
       console.log(window.location.href);
       connectToPeer(originID);
     }
-
-    //connectToPeer(id);
+    
 
     peer.on('connection', function (conn) {
-      console.log("new connection")
       peers.push(conn.peer);
       connections.push(conn);
+      console.log("new connection", peers, connections.length);
       conn.on('open', function () {
-        conn.on('data', function (data) {
-          console.log('Received', data);
-        });
-        conn.send("Hello");
-        conn.send(peers);
+        recieveMessage(conn);
+        if (originID == undefined) {
+          sendNewConnection(conn);
+        }
       });
     });
-
-
-
-
-
   });
 
   function connectToPeer(id) {
-    var conn = peer.connect(id, [metadata={'peers':id}]);
+    var conn = peer.connect(id);
     conn.on('open', function () {
-      conn.on('data', function (data) {
-        console.log('Received', data);
-      });
-      conn.send('Hi!');
+      connections.push(conn);
+      peers.push(id);
+      console.log("new connection", peers, connections.length);
+      recieveMessage(conn);
     });
     return conn;
+  }
+
+  function recieveMessage(conn) {
+    conn.on('data', function (data) {
+      if (data.type == "new_connection") {
+        recieveNewConnection(data);
+      }
+    });
+  }
+
+  function sendNewConnection(conn, id) {
+    console.log("sending new connection message")
+    newConnectionMessage = {
+      'type': 'new_connection',
+      'sender': id,
+      'peers': peers
+    }
+    conn.send(newConnectionMessage);
+  }
+
+  function recieveNewConnection(data) {
+    console.log("new connection message", data);
+    for (let i = 0; i < data.peers.length; i++) {
+      if (peers.indexOf(data.peers[i]) < 0) {
+        console.log("connecting to new peer", data.peers[i])
+        connectToPeer(data.peers[i]);
+      }
+    }
   }
 
 }
