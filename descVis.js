@@ -1,56 +1,58 @@
-function getUrlVars() {
-  var vars = {};
-  var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
-    vars[key] = value;
-  });
-  return vars;
-}
-
-
-var peer = new Peer();
-var ID = '';
-peer.on('open', function (id) {
-  console.log('My peer ID is: ' + id);
-  console.log(window.location.href + '?id=' + id);
-});
-
-
-peer.on('connection', function(conn) { 
-conn.on('open', function() {
-  // Receive messages
-  conn.on('data', function(data) {
-    console.log('Received', data);
-  });
-
-  // Send messages
-  conn.send('Hello!');
-});
-
-});
-
-var urlVars = getUrlVars();
-console.log(urlVars["id"])
-if ( urlVars["id"] != undefined){
-  console.log('connecting')
-  var conn = peer.connect(urlVars["id"]);
-  conn.on('open', function () {
-    // Receive messages
-    conn.on('data', function (data) {
-      console.log('Received', data);
-    });
-
-    // Send messages
-    conn.send('Hello!');
-  });
-}
-
-
-function descVis(){
+function descVis() {
   let peer = new Peer();
-  let id = peer.id;
-  let client = Math.floor(Math.random() * 1000);  
+  let connections = [];
+  let peers = [];
   let eventsQueue = [];
   let eventsExecuted = [];
+  peer.on('open', function () {
+    let id = peer.id;
+    let clientName = Math.floor(Math.random() * 1000);
+    let originID
+    let parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+      originID = value;
+    });
 
-  
+    console.log(originID)
+
+    connectToPeer(id);
+
+    if (originID == undefined) {
+      console.log(window.location + '?id=' + id);
+    } else {
+      console.log(window.location.href);
+      connectToPeer(originID);
+    }
+
+    //connectToPeer(id);
+
+    peer.on('connection', function (conn) {
+      console.log("new connection")
+      peers.push(conn.peer);
+      connections.push(conn);
+      conn.on('open', function () {
+        conn.on('data', function (data) {
+          console.log('Received', data);
+        });
+        conn.send("Hello");
+        conn.send(peers);
+      });
+    });
+
+
+
+
+
+  });
+
+  function connectToPeer(id) {
+    var conn = peer.connect(id, [metadata={'peers':id}]);
+    conn.on('open', function () {
+      conn.on('data', function (data) {
+        console.log('Received', data);
+      });
+      conn.send('Hi!');
+    });
+    return conn;
+  }
+
 }
