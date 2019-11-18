@@ -7,9 +7,14 @@ interface Connection {
 }
 
 interface Message {
-    peers: string[],
-    type: string,
+    peers?: string[],
+    type: "new_connection" | "event",
     sender: string,
+    data?: any,
+}
+interface InitMessage extends Message{
+    type: "new_connection",
+    peers: string[]
 }
 
 class DescConnection {
@@ -21,7 +26,7 @@ class DescConnection {
     private eventsExecuted = [];
     private id = '';
 
-    constructor() {
+    constructor(private onEventReceived: (e: SerializedEvent) => void) {
         this.peer = new Peer();
         this.peer.on('open', this.onOpen.bind(this));
     }
@@ -29,9 +34,8 @@ class DescConnection {
     onOpen() {
         this.id = this.peer.id;
         let clientName = Math.floor(Math.random() * 1000);
-//
+
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
-        console.log(parts);
         this.originID = parts ? parts[1] : '';
 
         console.log("originID", this.originID);
@@ -73,11 +77,25 @@ class DescConnection {
     }
 
     recieveMessage(conn: Connection) {
-        conn.on('data', (data) => {
-            if (data.type == "new_connection") {
-                this.recieveNewConnection(data);
+        conn.on('data', (data: Message) => {
+            if (data.type === "new_connection") {
+                this.recieveNewConnection(data as InitMessage);
+            } else if(data.type === 'event') {
+                this.onEventReceived(data.data);
             }
         });
+    }
+
+    broadcastEvent(e: SerializedEvent) {
+        for(const conn of this.connections) {
+            const msg: Message = {
+                'type': 'event',
+                'sender': this.id,
+                data: e,
+            };
+
+            conn.send(msg);
+        }
     }
 
     sendNewConnection(conn: Connection) {
@@ -90,7 +108,7 @@ class DescConnection {
         conn.send(newConnectionMessage);
     }
 
-    recieveNewConnection(data: Message) {
+    recieveNewConnection(data: InitMessage) {
         console.log("new connection message", data);
         for (let i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {

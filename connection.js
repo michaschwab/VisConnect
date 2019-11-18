@@ -1,6 +1,7 @@
 "use strict";
 var DescConnection = /** @class */ (function () {
-    function DescConnection() {
+    function DescConnection(onEventReceived) {
+        this.onEventReceived = onEventReceived;
         this.originID = '';
         this.connections = [];
         this.peers = [];
@@ -13,9 +14,7 @@ var DescConnection = /** @class */ (function () {
     DescConnection.prototype.onOpen = function () {
         this.id = this.peer.id;
         var clientName = Math.floor(Math.random() * 1000);
-        //
         var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
-        console.log(parts);
         this.originID = parts ? parts[1] : '';
         console.log("originID", this.originID);
         console.log("myID", this.id);
@@ -55,10 +54,24 @@ var DescConnection = /** @class */ (function () {
     DescConnection.prototype.recieveMessage = function (conn) {
         var _this = this;
         conn.on('data', function (data) {
-            if (data.type == "new_connection") {
+            if (data.type === "new_connection") {
                 _this.recieveNewConnection(data);
             }
+            else if (data.type === 'event') {
+                _this.onEventReceived(data.data);
+            }
         });
+    };
+    DescConnection.prototype.broadcastEvent = function (e) {
+        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
+            var conn = _a[_i];
+            var msg = {
+                'type': 'event',
+                'sender': this.id,
+                data: e,
+            };
+            conn.send(msg);
+        }
     };
     DescConnection.prototype.sendNewConnection = function (conn) {
         console.log("sending new connection message");
