@@ -2,13 +2,23 @@ class DescVis {
     private connection: DescConnection = new DescConnection(this.receiveEvent.bind(this));
 
     constructor(private svg: SVGElement) {
-        this.svg.addEventListener('mousemove', this.captureEvent.bind(this));
-        this.svg.addEventListener('mouseup', this.captureEvent.bind(this));
-        this.svg.addEventListener('mousedown', this.captureEvent.bind(this));
-        this.svg.addEventListener('click', this.captureEvent.bind(this));
+        this.addListenersToElement(this.svg);
     }
 
-    captureEvent(e: MouseEvent) {
+    addListenersToElement(element: SVGElement) {
+        const boundCapture = this.captureEvent.bind(this);
+
+        element.addEventListener('mousemove', boundCapture);
+        element.addEventListener('mouseup', boundCapture);
+        element.addEventListener('mousedown', boundCapture);
+        element.addEventListener('click', boundCapture);
+        element.addEventListener('touchstart', boundCapture);
+        element.addEventListener('touchend', boundCapture);
+        element.addEventListener('selectstart', boundCapture);
+        element.addEventListener('dragstart', boundCapture);
+    }
+
+    captureEvent(e: MouseEvent|TouchEvent|DragEvent|Event) {
         if((e as any)['desc-received']) {
             // Don't broadcast events that have been received from other clients.
             return;
@@ -20,7 +30,17 @@ class DescVis {
     receiveEvent(eventObject: SerializedEvent) {
         const targetSelector = eventObject.target;
         let target: Element = this.svg;
-        const e = new MouseEvent(eventObject.type, eventObject as any);
+        let e: Event;
+        if(eventObject.type.substr(0, 5) === 'touch') {
+            e = new TouchEvent(eventObject.type, eventObject as any);
+        } else if(eventObject.type.substr(0, 5) === 'mouse') {
+            e = new MouseEvent(eventObject.type, eventObject as any);
+        } else if(eventObject.type.substr(0, 4) === 'drag') {
+            e = new DragEvent(eventObject.type, eventObject as any);
+        } else {
+            e = new Event(eventObject.type, eventObject as any);
+        }
+
         if(targetSelector) {
             let newTarget: Element|null = document.querySelector(targetSelector as string);
             if(!newTarget) {
@@ -31,14 +51,17 @@ class DescVis {
         }
         Object.defineProperty(e, 'target', {
             writable: true,
-            value: target
+            value: target,
+        });
+        Object.defineProperty(e, 'view', {
+            writable: true,
+            value: window,
         });
         (e as any)['desc-received'] = true;
         target.dispatchEvent(e);
-        console.log(e);
     }
 
-    getSerializedEvent(e: MouseEvent) {
+    getSerializedEvent(e: MouseEvent|TouchEvent|Event) {
         let obj: SerializedEvent = {type: ''};
         for(const key in e) {
             const val = (e as any)[key];
@@ -49,7 +72,6 @@ class DescVis {
         const target = this.getElementSelector(e.target as Element);
         if(target) {
             obj.target = target;
-            //console.log(target);
         }
         return obj;
     }
@@ -70,10 +92,6 @@ class DescVis {
         const type = element.tagName;
 
         return this.getElementSelector(parent as Element) + ` > ${type}:nth-child(${index+1})`;
-    }
-
-    combineElementSelectors(parentSelector: string, elementType: string, childIndex: number) {
-        return parentSelector + ' > ' + elementType + ':nth-child(' + childIndex + ')';
     }
 }
 

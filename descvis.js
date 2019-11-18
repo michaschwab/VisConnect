@@ -3,10 +3,18 @@ class DescVis {
     constructor(svg) {
         this.svg = svg;
         this.connection = new DescConnection(this.receiveEvent.bind(this));
-        this.svg.addEventListener('mousemove', this.captureEvent.bind(this));
-        this.svg.addEventListener('mouseup', this.captureEvent.bind(this));
-        this.svg.addEventListener('mousedown', this.captureEvent.bind(this));
-        this.svg.addEventListener('click', this.captureEvent.bind(this));
+        this.addListenersToElement(this.svg);
+    }
+    addListenersToElement(element) {
+        const boundCapture = this.captureEvent.bind(this);
+        element.addEventListener('mousemove', boundCapture);
+        element.addEventListener('mouseup', boundCapture);
+        element.addEventListener('mousedown', boundCapture);
+        element.addEventListener('click', boundCapture);
+        element.addEventListener('touchstart', boundCapture);
+        element.addEventListener('touchend', boundCapture);
+        element.addEventListener('selectstart', boundCapture);
+        element.addEventListener('dragstart', boundCapture);
     }
     captureEvent(e) {
         if (e['desc-received']) {
@@ -19,7 +27,19 @@ class DescVis {
     receiveEvent(eventObject) {
         const targetSelector = eventObject.target;
         let target = this.svg;
-        const e = new MouseEvent(eventObject.type, eventObject);
+        let e;
+        if (eventObject.type.substr(0, 5) === 'touch') {
+            e = new TouchEvent(eventObject.type, eventObject);
+        }
+        else if (eventObject.type.substr(0, 5) === 'mouse') {
+            e = new MouseEvent(eventObject.type, eventObject);
+        }
+        else if (eventObject.type.substr(0, 4) === 'drag') {
+            e = new DragEvent(eventObject.type, eventObject);
+        }
+        else {
+            e = new Event(eventObject.type, eventObject);
+        }
         if (targetSelector) {
             let newTarget = document.querySelector(targetSelector);
             if (!newTarget) {
@@ -30,11 +50,14 @@ class DescVis {
         }
         Object.defineProperty(e, 'target', {
             writable: true,
-            value: target
+            value: target,
+        });
+        Object.defineProperty(e, 'view', {
+            writable: true,
+            value: window,
         });
         e['desc-received'] = true;
         target.dispatchEvent(e);
-        console.log(e);
     }
     getSerializedEvent(e) {
         let obj = { type: '' };
@@ -47,7 +70,6 @@ class DescVis {
         const target = this.getElementSelector(e.target);
         if (target) {
             obj.target = target;
-            //console.log(target);
         }
         return obj;
     }
@@ -65,8 +87,5 @@ class DescVis {
         const index = Array.from(parent.children).indexOf(element);
         const type = element.tagName;
         return this.getElementSelector(parent) + ` > ${type}:nth-child(${index + 1})`;
-    }
-    combineElementSelectors(parentSelector, elementType, childIndex) {
-        return parentSelector + ' > ' + elementType + ':nth-child(' + childIndex + ')';
     }
 }

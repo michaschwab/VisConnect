@@ -2,9 +2,8 @@
 <html lang="en-US">
 <head>
   <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
-  <script src="https://d3js.org/d3.v4.min.js"></script>
-  <script src="connection.js"></script>
-  <script src="descvis.js"></script>
+  <script src="d3.v4.js"></script>
+
 </head>
 <body>
 
@@ -30,6 +29,7 @@ var node = svg.append("g")
         .attr("cx", (d) => d.x)
         .attr("cy", (d) => d.y)
         .attr("fill", function(d) { return color(d.group); })
+        //.on('click', function(d) { d3.select(this).attr('fill', 'red');})
         .call(d3.drag().on("drag", dragged));
 
 function dragged(d) {
@@ -38,5 +38,8 @@ function dragged(d) {
   circle.attr("cy", d.y = d3.event.y);
 }
 </script>
+<script src="connection.js"></script>
+<script src="descvis.js"></script>
+
 </body>
 </html>

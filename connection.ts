@@ -27,16 +27,15 @@ class DescConnection {
     private id = '';
 
     constructor(private onEventReceived: (e: SerializedEvent) => void) {
-        this.peer = new Peer();
+        let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
+        this.originID = parts ? parts[1] : '';
+
+        this.peer = this.originID ? new Peer() : new Peer('test');
         this.peer.on('open', this.onOpen.bind(this));
     }
 
     onOpen() {
         this.id = this.peer.id;
-        let clientName = Math.floor(Math.random() * 1000);
-
-        let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
-        this.originID = parts ? parts[1] : '';
 
         console.log("originID", this.originID);
         console.log("myID", this.id);
