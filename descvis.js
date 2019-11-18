@@ -3,10 +3,17 @@ class DescVis {
     constructor(svg) {
         this.svg = svg;
         this.connection = new DescConnection(this.receiveEvent.bind(this));
-        this.addListenersToElement(this.svg);
+        this.addListenersToElementAndChildren(this.svg);
+        Event.prototype.stopImmediatePropagation = () => { };
+    }
+    addListenersToElementAndChildren(element) {
+        this.addListenersToElement(element);
+        for (const child of element.children) {
+            this.addListenersToElementAndChildren(child);
+        }
     }
     addListenersToElement(element) {
-        const boundCapture = this.captureEvent.bind(this);
+        const boundCapture = this.captureEvent(element).bind(this);
         element.addEventListener('mousemove', boundCapture);
         element.addEventListener('mouseup', boundCapture);
         element.addEventListener('mousedown', boundCapture);
@@ -16,13 +23,19 @@ class DescVis {
         element.addEventListener('selectstart', boundCapture);
         element.addEventListener('dragstart', boundCapture);
     }
-    captureEvent(e) {
-        if (e['desc-received']) {
-            // Don't broadcast events that have been received from other clients.
-            return;
-        }
-        const eventObj = this.getSerializedEvent(e);
-        this.connection.broadcastEvent(eventObj);
+    captureEvent(element) {
+        return (e) => {
+            if (e.target !== element) {
+                // Only capture for the correct target.
+                return;
+            }
+            if (e['desc-received']) {
+                // Don't broadcast events that have been received from other clients.
+                return;
+            }
+            const eventObj = this.getSerializedEvent(e);
+            this.connection.broadcastEvent(eventObj);
+        };
     }
     receiveEvent(eventObject) {
         const targetSelector = eventObject.target;

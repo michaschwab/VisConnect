@@ -3,16 +3,12 @@
 <head>
   <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
   <script src="d3.v4.js"></script>
-
 </head>
 <body>
 
 <svg width="960" height="600"></svg>
 
 <script>
-  
-var descVis = new DescVis(document.getElementsByTagName('svg')[0]);
-  
 var svg = d3.select("svg"),
         width = +svg.attr("width"),
         height = +svg.attr("height");
@@ -40,6 +36,6 @@ function dragged(d) {
 </script>
 <script src="connection.js"></script>
 <script src="descvis.js"></script>
-
+<script>var descVis = new DescVis(document.getElementsByTagName('svg')[0]);</script>
 </body>
 </html>

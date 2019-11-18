@@ -2,11 +2,20 @@ class DescVis {
     private connection: DescConnection = new DescConnection(this.receiveEvent.bind(this));
 
     constructor(private svg: SVGElement) {
-        this.addListenersToElement(this.svg);
+        this.addListenersToElementAndChildren(this.svg);
+
+        Event.prototype.stopImmediatePropagation = () => {};
     }
 
-    addListenersToElement(element: SVGElement) {
-        const boundCapture = this.captureEvent.bind(this);
+    addListenersToElementAndChildren(element: Element) {
+        this.addListenersToElement(element);
+        for(const child of element.children) {
+            this.addListenersToElementAndChildren(child);
+        }
+    }
+
+    addListenersToElement(element: Element) {
+        const boundCapture = this.captureEvent(element).bind(this);
 
         element.addEventListener('mousemove', boundCapture);
         element.addEventListener('mouseup', boundCapture);
@@ -18,13 +27,19 @@ class DescVis {
         element.addEventListener('dragstart', boundCapture);
     }
 
-    captureEvent(e: MouseEvent|TouchEvent|DragEvent|Event) {
-        if((e as any)['desc-received']) {
-            // Don't broadcast events that have been received from other clients.
-            return;
-        }
-        const eventObj = this.getSerializedEvent(e);
-        this.connection.broadcastEvent(eventObj);
+    captureEvent(element: Element) {
+        return (e: MouseEvent|TouchEvent|DragEvent|Event) => {
+            if(e.target !== element) {
+                // Only capture for the correct target.
+                return;
+            }
+            if((e as any)['desc-received']) {
+                // Don't broadcast events that have been received from other clients.
+                return;
+            }
+            const eventObj = this.getSerializedEvent(e);
+            this.connection.broadcastEvent(eventObj);
+        };
     }
 
     receiveEvent(eventObject: SerializedEvent) {
