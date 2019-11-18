@@ -24,8 +24,11 @@ var node = svg.append("g")
         .attr("r", 30)
         .attr("cx", (d) => d.x)
         .attr("cy", (d) => d.y)
+        .attr('stroke-width', 3)
         .attr("fill", function(d) { return color(d.group); })
-        //.on('click', function(d) { d3.select(this).attr('fill', 'red');})
+        .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
+        .on('mouseout', function() { d3.select(this).attr('stroke', '')})
+        .on('click', function() { d3.select(this).style('fill', d3.select(this).style('fill') === 'red' ? '' : 'red');})
         .call(d3.drag().on("drag", dragged));
 
 function dragged(d) {

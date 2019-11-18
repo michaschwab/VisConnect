@@ -20,6 +20,8 @@ class DescVis {
         element.addEventListener('mousemove', boundCapture);
         element.addEventListener('mouseup', boundCapture);
         element.addEventListener('mousedown', boundCapture);
+        element.addEventListener('mouseenter', boundCapture);
+        element.addEventListener('mouseout', boundCapture);
         element.addEventListener('click', boundCapture);
         element.addEventListener('touchstart', boundCapture);
         element.addEventListener('touchend', boundCapture);
