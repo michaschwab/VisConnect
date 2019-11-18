@@ -9,6 +9,10 @@ class DescVis {
     }
 
     captureEvent(e: MouseEvent) {
+        if((e as any)['desc-received']) {
+            // Don't broadcast events that have been received from other clients.
+            return;
+        }
         const eventObj = this.getSerializedEvent(e);
         this.connection.broadcastEvent(eventObj);
     }
@@ -29,6 +33,7 @@ class DescVis {
             writable: true,
             value: target
         });
+        (e as any)['desc-received'] = true;
         target.dispatchEvent(e);
         console.log(e);
     }

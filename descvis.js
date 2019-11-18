@@ -9,6 +9,10 @@ class DescVis {
         this.svg.addEventListener('click', this.captureEvent.bind(this));
     }
     captureEvent(e) {
+        if (e['desc-received']) {
+            // Don't broadcast events that have been received from other clients.
+            return;
+        }
         const eventObj = this.getSerializedEvent(e);
         this.connection.broadcastEvent(eventObj);
     }
@@ -28,6 +32,7 @@ class DescVis {
             writable: true,
             value: target
         });
+        e['desc-received'] = true;
         target.dispatchEvent(e);
         console.log(e);
     }

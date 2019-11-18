@@ -1,6 +1,6 @@
 "use strict";
-var DescConnection = /** @class */ (function () {
-    function DescConnection(onEventReceived) {
+class DescConnection {
+    constructor(onEventReceived) {
         this.onEventReceived = onEventReceived;
         this.originID = '';
         this.connections = [];
@@ -11,10 +11,10 @@ var DescConnection = /** @class */ (function () {
         this.peer = new Peer();
         this.peer.on('open', this.onOpen.bind(this));
     }
-    DescConnection.prototype.onOpen = function () {
+    onOpen() {
         this.id = this.peer.id;
-        var clientName = Math.floor(Math.random() * 1000);
-        var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
+        let clientName = Math.floor(Math.random() * 1000);
+        let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
         console.log("originID", this.originID);
         console.log("myID", this.id);
@@ -27,69 +27,64 @@ var DescConnection = /** @class */ (function () {
             this.connectToPeer(this.originID);
         }
         this.peer.on('connection', this.onConnection.bind(this));
-    };
-    DescConnection.prototype.onConnection = function (connection) {
-        var _this = this;
+    }
+    onConnection(connection) {
         this.peers.push(connection.peer);
         this.connections.push(connection);
         console.log("new connection", this.peers, this.connections.length);
-        connection.on('open', function () {
-            _this.recieveMessage(connection);
-            if (!_this.originID) {
-                _this.sendNewConnection(connection);
+        connection.on('open', () => {
+            this.recieveMessage(connection);
+            if (!this.originID) {
+                this.sendNewConnection(connection);
             }
         });
-    };
-    DescConnection.prototype.connectToPeer = function (id) {
-        var _this = this;
-        var conn = this.peer.connect(id);
-        conn.on('open', function () {
-            _this.connections.push(conn);
-            _this.peers.push(id);
-            console.log("new connection", _this.peers, _this.connections.length);
-            _this.recieveMessage(conn);
+    }
+    connectToPeer(id) {
+        const conn = this.peer.connect(id);
+        conn.on('open', () => {
+            this.connections.push(conn);
+            this.peers.push(id);
+            console.log("new connection", this.peers, this.connections.length);
+            this.recieveMessage(conn);
         });
         return conn;
-    };
-    DescConnection.prototype.recieveMessage = function (conn) {
-        var _this = this;
-        conn.on('data', function (data) {
+    }
+    recieveMessage(conn) {
+        conn.on('data', (data) => {
             if (data.type === "new_connection") {
-                _this.recieveNewConnection(data);
+                this.recieveNewConnection(data);
             }
             else if (data.type === 'event') {
-                _this.onEventReceived(data.data);
+                this.onEventReceived(data.data);
             }
         });
-    };
-    DescConnection.prototype.broadcastEvent = function (e) {
-        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
-            var conn = _a[_i];
-            var msg = {
+    }
+    broadcastEvent(e) {
+        for (const conn of this.connections) {
+            const msg = {
                 'type': 'event',
                 'sender': this.id,
                 data: e,
             };
             conn.send(msg);
         }
-    };
-    DescConnection.prototype.sendNewConnection = function (conn) {
+    }
+    sendNewConnection(conn) {
         console.log("sending new connection message");
-        var newConnectionMessage = {
+        const newConnectionMessage = {
             'type': 'new_connection',
             'sender': this.id,
             'peers': this.peers,
         };
         conn.send(newConnectionMessage);
-    };
-    DescConnection.prototype.recieveNewConnection = function (data) {
+    }
+    recieveNewConnection(data) {
         console.log("new connection message", data);
-        for (var i = 0; i < data.peers.length; i++) {
+        for (let i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
                 console.log("connecting to new peer", data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
         }
-    };
-    return DescConnection;
-}());
+    }
+}
