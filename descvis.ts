@@ -1,47 +1,13 @@
 class DescVis {
     private connection: DescConnection = new DescConnection(this.receiveEvent.bind(this));
-
+    
     constructor(private svg: SVGElement) {
-        this.addListenersToElementAndChildren(this.svg);
-
-        Event.prototype.stopImmediatePropagation = () => {};
+        const listener: DescListener = new DescListener(this.svg, this.hearEvent.bind(this));
+            
     }
 
-    addListenersToElementAndChildren(element: Element) {
-        this.addListenersToElement(element);
-        for(const child of element.children) {
-            this.addListenersToElementAndChildren(child);
-        }
-    }
-
-    addListenersToElement(element: Element) {
-        const boundCapture = this.captureEvent(element).bind(this);
-
-        element.addEventListener('mousemove', boundCapture);
-        element.addEventListener('mouseup', boundCapture);
-        element.addEventListener('mousedown', boundCapture);
-        element.addEventListener('mouseenter', boundCapture);
-        element.addEventListener('mouseout', boundCapture);
-        element.addEventListener('click', boundCapture);
-        element.addEventListener('touchstart', boundCapture);
-        element.addEventListener('touchend', boundCapture);
-        element.addEventListener('selectstart', boundCapture);
-        element.addEventListener('dragstart', boundCapture);
-    }
-
-    captureEvent(element: Element) {
-        return (e: MouseEvent|TouchEvent|DragEvent|Event) => {
-            if(e.target !== element) {
-                // Only capture for the correct target.
-                return;
-            }
-            if((e as any)['desc-received']) {
-                // Don't broadcast events that have been received from other clients.
-                return;
-            }
-            const eventObj = this.getSerializedEvent(e);
-            this.connection.broadcastEvent(eventObj);
-        };
+    hearEvent(eventObj: SerializedEvent) {
+        this.connection.broadcastEvent(eventObj);
     }
 
     receiveEvent(eventObject: SerializedEvent) {
@@ -76,39 +42,6 @@ class DescVis {
         });
         (e as any)['desc-received'] = true;
         target.dispatchEvent(e);
-    }
-
-    getSerializedEvent(e: MouseEvent|TouchEvent|Event) {
-        let obj: SerializedEvent = {type: ''};
-        for(const key in e) {
-            const val = (e as any)[key];
-            if(typeof val !== 'object' && typeof val !== 'function') {
-                obj[key] = val;
-            }
-        }
-        const target = this.getElementSelector(e.target as Element);
-        if(target) {
-            obj.target = target;
-        }
-        return obj;
-    }
-
-    getElementSelector(element: Element|null): string|null {
-        if(!element) {
-            return null;
-        }
-        if(element === this.svg) {
-            return 'svg';
-        }
-        const parent = element.parentNode;
-        if(!parent) {
-            return null;
-        }
-
-        const index = Array.from(parent.children).indexOf(element);
-        const type = element.tagName;
-
-        return this.getElementSelector(parent as Element) + ` > ${type}:nth-child(${index+1})`;
     }
 }
 
