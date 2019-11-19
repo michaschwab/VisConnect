@@ -1,16 +1,43 @@
+interface event {
+    seqNum: number,
+    event: SerializedEvent,
+    sender: string
+}
+
 class DescVis {
     private connection: DescConnection = new DescConnection(this.receiveEvent.bind(this));
-    
+    private eventsQueue: event[] = [];
+    private sequenceNumber: number = 0;
+    private eventsLedger: event[] = [];
+
     constructor(private svg: SVGElement) {
         const listener: DescListener = new DescListener(this.svg, this.hearEvent.bind(this));
-            
     }
 
     hearEvent(eventObj: SerializedEvent) {
-        this.connection.broadcastEvent(eventObj);
+        const newEvent: event = {
+            'seqNum': this.sequenceNumber,
+            'event': eventObj,
+            'sender': this.connection.id
+        }
+        this.sequenceNumber++;
+        this.eventsLedger.push(newEvent);
+        this.connection.eventsLedger = this.eventsLedger;
+        console.log(this.sequenceNumber);
+        this.connection.broadcastEvent(newEvent);
     }
 
-    receiveEvent(eventObject: SerializedEvent) {
+    receiveEvent(remoteEvent: event) {
+        let eventObject: SerializedEvent = remoteEvent.event;
+
+        if (remoteEvent.seqNum >= this.sequenceNumber){
+            this.sequenceNumber = remoteEvent.seqNum + 1;
+        } 
+        
+        this.eventsLedger.push(remoteEvent);
+        this.connection.eventsLedger = this.eventsLedger;
+        console.log(this.sequenceNumber);
+
         const targetSelector = eventObject.target;
         let target: Element = this.svg;
         let e: Event;

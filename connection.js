@@ -6,7 +6,7 @@ class DescConnection {
         this.connections = [];
         this.peers = [];
         this.eventsQueue = [];
-        this.eventsExecuted = [];
+        this.eventsLedger = [];
         this.id = '';
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
@@ -74,6 +74,7 @@ class DescConnection {
             'type': 'new_connection',
             'sender': this.id,
             'peers': this.peers,
+            'eventsLedger': this.eventsLedger
         };
         conn.send(newConnectionMessage);
     }
@@ -84,6 +85,9 @@ class DescConnection {
                 console.log("connecting to new peer", data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
+        }
+        for (let i = 0; i < data.eventsLedger.length; i++) {
+            this.onEventReceived(data.eventsLedger[i]);
         }
     }
 }

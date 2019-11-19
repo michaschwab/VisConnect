@@ -3,12 +3,31 @@ class DescVis {
     constructor(svg) {
         this.svg = svg;
         this.connection = new DescConnection(this.receiveEvent.bind(this));
+        this.eventsQueue = [];
+        this.sequenceNumber = 0;
+        this.eventsLedger = [];
         const listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
     hearEvent(eventObj) {
-        this.connection.broadcastEvent(eventObj);
+        const newEvent = {
+            'seqNum': this.sequenceNumber,
+            'event': eventObj,
+            'sender': this.connection.id
+        };
+        this.sequenceNumber++;
+        this.eventsLedger.push(newEvent);
+        this.connection.eventsLedger = this.eventsLedger;
+        console.log(this.sequenceNumber);
+        this.connection.broadcastEvent(newEvent);
     }
-    receiveEvent(eventObject) {
+    receiveEvent(remoteEvent) {
+        let eventObject = remoteEvent.event;
+        if (remoteEvent.seqNum >= this.sequenceNumber) {
+            this.sequenceNumber = remoteEvent.seqNum + 1;
+        }
+        this.eventsLedger.push(remoteEvent);
+        this.connection.eventsLedger = this.eventsLedger;
+        console.log(this.sequenceNumber);
         const targetSelector = eventObject.target;
         let target = this.svg;
         let e;

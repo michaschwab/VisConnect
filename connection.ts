@@ -14,7 +14,8 @@ interface Message {
 }
 interface InitMessage extends Message{
     type: "new_connection",
-    peers: string[]
+    peers: string[], 
+    eventsLedger: event[]
 }
 
 class DescConnection {
@@ -23,10 +24,10 @@ class DescConnection {
     private connections: Connection[] = [];
     private peers: string[] = [];
     private eventsQueue = [];
-    private eventsExecuted = [];
-    private id = '';
+    public eventsLedger: event[] = [];
+    public id = '';
 
-    constructor(private onEventReceived: (e: SerializedEvent) => void) {
+    constructor(private onEventReceived: (e: event) => void) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
 
@@ -85,7 +86,7 @@ class DescConnection {
         });
     }
 
-    broadcastEvent(e: SerializedEvent) {
+    broadcastEvent(e: event) {
         for(const conn of this.connections) {
             const msg: Message = {
                 'type': 'event',
@@ -99,10 +100,11 @@ class DescConnection {
 
     sendNewConnection(conn: Connection) {
         console.log("sending new connection message");
-        const newConnectionMessage: Message = {
+        const newConnectionMessage: InitMessage = {
             'type': 'new_connection',
             'sender': this.id,
             'peers': this.peers,
+            'eventsLedger': this.eventsLedger
         };
         conn.send(newConnectionMessage);
     }
@@ -114,6 +116,10 @@ class DescConnection {
                 console.log("connecting to new peer", data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
+        }
+
+        for (let i = 0; i < data.eventsLedger.length; i++){
+            this.onEventReceived(data.eventsLedger[i]);
         }
     }
 }
