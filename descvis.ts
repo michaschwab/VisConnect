@@ -48,7 +48,7 @@ class DescVis {
 
         const prevTimeout = this.leaseeTimeouts.get(target);
         clearTimeout(prevTimeout);
-        const newTimeout = setTimeout(() => this.unlease(target), 2000);
+        const newTimeout = setTimeout(() => this.unlease(target), 1000);
         this.leaseeTimeouts.set(target, newTimeout);
 
         const newEvent: DescEvent = {

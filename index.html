@@ -38,7 +38,7 @@ var node = svg.append("g")
         .attr("fill", function(d) { return color(d.group); })
         .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
         .on('mouseout', function() { d3.select(this).attr('stroke', '')})
-        .on('click', function() { d3.select(this).style('fill', d3.select(this).style('fill') === 'red' ? '' : 'red');})
+        //.on('click', function() { d3.select(this).style('fill', d3.select(this).style('fill') === 'red' ? '' : 'red');})
         .on('mousedown', function() { this['dragging'] = true; })
         .on('mouseup', function() { this['dragging'] = false; })
         .on('mousemove', function(d) { if(this['dragging']) { dragged.call(this, d);}});
