@@ -1,5 +1,5 @@
 class DescListener {
-    constructor(private svg: SVGElement, private hearEvent: (e: SerializedEvent) => void) {
+    constructor(private svg: SVGElement, private hearEvent: (e: StrippedEvent) => void) {
         console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
 
@@ -40,14 +40,14 @@ class DescListener {
                 // Don't broadcast events that have been received from other clients.
                 return;
             }
-            const eventObj = this.getSerializedEvent(e);
+            const eventObj = this.getStrippedEvent(e);
             //this.connection.broadcastEvent(eventObj);
             this.hearEvent(eventObj);
         };
     }
 
-    getSerializedEvent(e: MouseEvent|TouchEvent|Event) {
-        let obj: SerializedEvent = {type: ''};
+    getStrippedEvent(e: MouseEvent|TouchEvent|Event) {
+        let obj: StrippedEvent = {type: ''};
         for(const key in e) {
             const val = (e as any)[key];
             if(typeof val !== 'object' && typeof val !== 'function') {

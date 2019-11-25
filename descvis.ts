@@ -1,6 +1,6 @@
 interface DescEvent {
     seqNum: number,
-    event: SerializedEvent,
+    event: StrippedEvent,
     sender: string
 }
 
@@ -14,7 +14,7 @@ class DescVis {
         const listener: DescListener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
 
-    hearEvent(eventObj: SerializedEvent) {
+    hearEvent(eventObj: StrippedEvent) {
         const newEvent: DescEvent = {
             'seqNum': this.sequenceNumber,
             'event': eventObj,
@@ -37,7 +37,7 @@ class DescVis {
     }
 
     receiveEvent(remoteEvent: DescEvent) {
-        let eventObject: SerializedEvent = remoteEvent.event;
+        let eventObject: StrippedEvent = remoteEvent.event;
 
         if (remoteEvent.seqNum >= this.sequenceNumber){
             this.sequenceNumber = remoteEvent.seqNum + 1;
@@ -81,7 +81,7 @@ class DescVis {
     }
 }
 
-interface SerializedEvent {
+interface StrippedEvent {
     type: string,
     [key: string]: string|number;
 }

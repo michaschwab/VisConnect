@@ -37,12 +37,12 @@ class DescListener {
                 // Don't broadcast events that have been received from other clients.
                 return;
             }
-            const eventObj = this.getSerializedEvent(e);
+            const eventObj = this.getStrippedEvent(e);
             //this.connection.broadcastEvent(eventObj);
             this.hearEvent(eventObj);
         };
     }
-    getSerializedEvent(e) {
+    getStrippedEvent(e) {
         let obj = { type: '' };
         for (const key in e) {
             const val = e[key];
