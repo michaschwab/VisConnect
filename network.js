@@ -12,9 +12,11 @@ class DescNetwork {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
         this.peer = this.originID ? new Peer() : new Peer('test');
-        this.peer.on('open', this.onOpen.bind(this));
         if (this.peer.id) {
             this.onOpen(); // In case it was done too fast.
+        }
+        else {
+            this.peer.on('open', this.onOpen.bind(this));
         }
     }
     setLeasee(targetSelector, leasee) {
