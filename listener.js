@@ -3,6 +3,7 @@ class DescListener {
     constructor(svg, hearEvent) {
         this.svg = svg;
         this.hearEvent = hearEvent;
+        this.dragElement = null;
         console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
         // Prevent d3 from blocking DescVis and other code to have access to events.
@@ -37,6 +38,26 @@ class DescListener {
             if (e['desc-received']) {
                 // Don't broadcast events that have been received from other clients.
                 return;
+            }
+            if (e.type === 'mousedown') {
+                this.dragElement = e.target;
+            }
+            if (e.type === 'mouseup') {
+                this.dragElement = null;
+            }
+            if (e.type === 'mousemove' && this.dragElement && e.target !== this.dragElement) {
+                console.log('changing event target');
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                e['stopImmediatePropagationBackup']();
+                e.preventDefault();
+                Object.defineProperty(e, 'target', {
+                    enumerable: false,
+                    writable: true,
+                    value: this.dragElement,
+                });
+                const eventCopy = new MouseEvent(e.type, e);
+                this.dragElement.dispatchEvent(eventCopy);
             }
             const eventObj = this.getStrippedEvent(e);
             //this.connection.broadcastEvent(eventObj);

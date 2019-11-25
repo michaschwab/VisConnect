@@ -41,6 +41,9 @@ class DescNetwork {
 
         this.peer = this.originID ? new Peer() : new Peer('test');
         this.peer.on('open', this.onOpen.bind(this));
+        if(this.peer.id) {
+            this.onOpen(); // In case it was done too fast.
+        }
     }
 
     setLeasee(targetSelector: string, leasee: string) {

@@ -39,7 +39,15 @@ var node = svg.append("g")
         .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
         .on('mouseout', function() { d3.select(this).attr('stroke', '')})
         .on('click', function() { d3.select(this).style('fill', d3.select(this).style('fill') === 'red' ? '' : 'red');})
-        .call(d3.drag().on("drag", dragged));
+        .on('mousedown', function() { this['dragging'] = true; })
+        .on('mouseup', function() { this['dragging'] = false; })
+        .on('mousemove', function(d) { if(this['dragging']) { dragged.call(this, d);}});
+        //.call(d3.drag().on("drag", dragged));
+/*
+svg.on('mousemove', function() {
+  console.log(d3.event.target);
+});*/
+
 
 function dragged(d) {
   let circle = d3.select(this);

@@ -4,8 +4,6 @@ interface DescEvent {
     sender: string
 }
 
-
-
 class DescVis {
     private network: DescNetwork = new DescNetwork(this.receiveEvent.bind(this),
         this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
@@ -13,6 +11,8 @@ class DescVis {
     private sequenceNumber: number = 0;
     private eventsLedger: DescEvent[] = [];
     private leasees = new Map<HTMLElement, string>();
+
+    private leaseeTimeouts = new Map<HTMLElement, number>();
 
     constructor(private svg: SVGElement) {
         const listener: DescListener = new DescListener(this.svg, this.hearEvent.bind(this));
@@ -31,12 +31,15 @@ class DescVis {
         const peerId = this.network.id;
 
         if(!this.leasees.has(target)) {
-            console.log('setting the leader of ', target, ' to ', peerId);
+            //console.log('setting the leader of ', target, ' to ', peerId);
             this.leasees.set(target, peerId);
-
             this.network.setLeasee(eventObj.target, peerId);
         }
-        console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
+        //console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
+
+        //const prevTimeout = this.leaseeTimeouts.get(target);
+        //clearTimeout(prevTimeout);
+
         if(this.leasees.get(target) === peerId) {
             const newEvent: DescEvent = {
                 'seqNum': this.sequenceNumber,

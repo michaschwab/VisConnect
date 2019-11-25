@@ -7,6 +7,7 @@ class DescVis {
         this.sequenceNumber = 0;
         this.eventsLedger = [];
         this.leasees = new Map();
+        this.leaseeTimeouts = new Map();
         const listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
     hearEvent(eventObj, event) {
@@ -21,11 +22,13 @@ class DescVis {
         const target = event.target;
         const peerId = this.network.id;
         if (!this.leasees.has(target)) {
-            console.log('setting the leader of ', target, ' to ', peerId);
+            //console.log('setting the leader of ', target, ' to ', peerId);
             this.leasees.set(target, peerId);
             this.network.setLeasee(eventObj.target, peerId);
         }
-        console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
+        //console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
+        //const prevTimeout = this.leaseeTimeouts.get(target);
+        //clearTimeout(prevTimeout);
         if (this.leasees.get(target) === peerId) {
             const newEvent = {
                 'seqNum': this.sequenceNumber,
