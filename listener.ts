@@ -48,7 +48,7 @@ class DescListener {
     }
 
     getStrippedEvent(e: MouseEvent|TouchEvent|Event) {
-        let obj: StrippedEvent = {type: ''};
+        let obj: StrippedEvent = {type: '', target: ''};
         for(const key in e) {
             const val = (e as any)[key];
             if(typeof val !== 'object' && typeof val !== 'function') {

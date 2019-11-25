@@ -9,6 +9,16 @@
 <svg width="960" height="600"></svg>
 
 <script>
+
+Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+Element.prototype.addEventListener = function(eventName, callback) {
+  console.log('doing a delayed execution on ', eventName);
+  var that = this;
+  setTimeout(function() {
+    Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
+  }, 100);
+};
+
 var svg = d3.select("svg"),
         width = +svg.attr("width"),
         height = +svg.attr("height");
@@ -36,8 +46,10 @@ function dragged(d) {
   circle.attr("cx", d.x = d3.event.x);
   circle.attr("cy", d.y = d3.event.y);
 }
+
+Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
 </script>
-<script src="connection.js"></script>
+<script src="network.js"></script>
 <script src="listener.js"></script>
 <script src="descvis.js"></script>
 <script>var descVis = new DescVis(document.getElementsByTagName('svg')[0]);</script>

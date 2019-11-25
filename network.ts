@@ -8,14 +8,21 @@ interface Connection {
 
 interface DescMessage {
     peers?: string[],
-    type: "new_connection" | "DescEvent",
+    type: "new_connection" | "DescEvent" | "NewLeasee",
     sender: string,
     data?: any,
 }
+
 interface InitMessage extends DescMessage{
     type: "new_connection",
     peers: string[], 
     eventsLedger: DescEvent[]
+}
+
+interface NewLeaseeMessage extends DescMessage {
+    type: "NewLeasee",
+    targetSelector: string,
+    leasee: string,
 }
 
 class DescNetwork {
@@ -27,12 +34,26 @@ class DescNetwork {
     public id = '';
 
     constructor(private onEventReceived: (e: DescEvent) => void,
-                private onNewConnection: (e: DescMessage) => InitMessage) {
+                private onNewConnection: (e: DescMessage) => InitMessage,
+                private onNewLeasee: (msg: NewLeaseeMessage) => void) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
 
         this.peer = this.originID ? new Peer() : new Peer('test');
         this.peer.on('open', this.onOpen.bind(this));
+    }
+
+    setLeasee(targetSelector: string, leasee: string) {
+        for(const conn of this.connections) {
+            const msg: NewLeaseeMessage = {
+                type: "NewLeasee",
+                targetSelector,
+                leasee,
+                sender: this.id,
+            };
+
+            conn.send(msg);
+        }
     }
 
     onOpen() {
@@ -82,6 +103,8 @@ class DescNetwork {
                 this.recieveNewConnection(data as InitMessage);
             } else if(data.type === 'DescEvent') {
                 this.onEventReceived(data.data);
+            } else if(data.type === 'NewLeasee') {
+                this.onNewLeasee(data as NewLeaseeMessage);
             }
         });
     }

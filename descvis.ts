@@ -4,8 +4,11 @@ interface DescEvent {
     sender: string
 }
 
+
+
 class DescVis {
-    private network: DescNetwork = new DescNetwork(this.receiveEvent.bind(this), this.onNewConnection.bind(this));
+    private network: DescNetwork = new DescNetwork(this.receiveEvent.bind(this),
+        this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
     private eventsQueue: DescEvent[] = [];
     private sequenceNumber: number = 0;
     private eventsLedger: DescEvent[] = [];
@@ -19,12 +22,21 @@ class DescVis {
         if(!event.target) {
             return new Error('event has no target');
         }
+        if(!this.network.id) {
+            console.log('network not ready');
+            (event as any)['stopImmediatePropagationBackup']();
+            return;
+        }
         const target = event.target as HTMLElement;
         const peerId = this.network.id;
 
         if(!this.leasees.has(target)) {
+            console.log('setting the leader of ', target, ' to ', peerId);
             this.leasees.set(target, peerId);
+
+            this.network.setLeasee(eventObj.target, peerId);
         }
+        console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
         if(this.leasees.get(target) === peerId) {
             const newEvent: DescEvent = {
                 'seqNum': this.sequenceNumber,
@@ -38,10 +50,23 @@ class DescVis {
             this.network.broadcastEvent(newEvent);
         } else {
             // prevent event
-            console.log('Can not edit this element because I am not the leader.');
+            console.log('Can not edit this element because I am not the leader.', target);
             (event as any)['stopImmediatePropagationBackup']();
             event.stopPropagation();
         }
+    }
+
+    onNewLeasee(msg: NewLeaseeMessage) {
+        // We are vulnerable to malicious actors here!
+
+        // First, find the html element.
+        const selector = msg.targetSelector;
+        const target = document.querySelector(selector);
+        if(!target) {
+            return new Error(`could not find target element of leasee ${selector}`);
+        }
+
+        this.leasees.set(target as HTMLElement, msg.leasee);
     }
 
     onNewConnection(originalMsg: DescMessage): InitMessage {
@@ -78,7 +103,7 @@ class DescVis {
         }
 
         if(targetSelector) {
-            let newTarget: Element|null = document.querySelector(targetSelector as string);
+            let newTarget: Element|null = document.querySelector(targetSelector);
             if(!newTarget) {
                 console.error('element not found', targetSelector);
                 return;
@@ -100,5 +125,6 @@ class DescVis {
 
 interface StrippedEvent {
     type: string,
+    target: string,
     [key: string]: string|number;
 }

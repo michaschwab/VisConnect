@@ -1,8 +1,9 @@
 "use strict";
 class DescNetwork {
-    constructor(onEventReceived, onNewConnection) {
+    constructor(onEventReceived, onNewConnection, onNewLeasee) {
         this.onEventReceived = onEventReceived;
         this.onNewConnection = onNewConnection;
+        this.onNewLeasee = onNewLeasee;
         this.originID = '';
         this.connections = [];
         this.peers = [];
@@ -12,6 +13,17 @@ class DescNetwork {
         this.originID = parts ? parts[1] : '';
         this.peer = this.originID ? new Peer() : new Peer('test');
         this.peer.on('open', this.onOpen.bind(this));
+    }
+    setLeasee(targetSelector, leasee) {
+        for (const conn of this.connections) {
+            const msg = {
+                type: "NewLeasee",
+                targetSelector,
+                leasee,
+                sender: this.id,
+            };
+            conn.send(msg);
+        }
     }
     onOpen() {
         this.id = this.peer.id;
@@ -55,6 +67,9 @@ class DescNetwork {
             }
             else if (data.type === 'DescEvent') {
                 this.onEventReceived(data.data);
+            }
+            else if (data.type === 'NewLeasee') {
+                this.onNewLeasee(data);
             }
         });
     }

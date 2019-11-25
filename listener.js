@@ -44,7 +44,7 @@ class DescListener {
         };
     }
     getStrippedEvent(e) {
-        let obj = { type: '' };
+        let obj = { type: '', target: '' };
         for (const key in e) {
             const val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
