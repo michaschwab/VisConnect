@@ -6,19 +6,36 @@ class DescVis {
         this.eventsQueue = [];
         this.sequenceNumber = 0;
         this.eventsLedger = [];
+        this.leasees = new Map();
         const listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
-    hearEvent(eventObj) {
-        const newEvent = {
-            'seqNum': this.sequenceNumber,
-            'event': eventObj,
-            'sender': this.network.id
-        };
-        this.sequenceNumber++;
-        this.eventsLedger.push(newEvent);
-        //this.network.eventsLedger = this.eventsLedger;
-        console.log(this.sequenceNumber);
-        this.network.broadcastEvent(newEvent);
+    hearEvent(eventObj, event) {
+        if (!event.target) {
+            return new Error('event has no target');
+        }
+        const target = event.target;
+        const peerId = this.network.id;
+        if (!this.leasees.has(target)) {
+            this.leasees.set(target, peerId);
+        }
+        if (this.leasees.get(target) === peerId) {
+            const newEvent = {
+                'seqNum': this.sequenceNumber,
+                'event': eventObj,
+                'sender': this.network.id
+            };
+            this.sequenceNumber++;
+            this.eventsLedger.push(newEvent);
+            //this.network.eventsLedger = this.eventsLedger;
+            console.log(this.sequenceNumber);
+            this.network.broadcastEvent(newEvent);
+        }
+        else {
+            // prevent event
+            console.log('Can not edit this element because I am not the leader.');
+            event['stopImmediatePropagationBackup']();
+            event.stopPropagation();
+        }
     }
     onNewConnection(originalMsg) {
         return {

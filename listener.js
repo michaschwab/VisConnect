@@ -6,6 +6,7 @@ class DescListener {
         console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
         // Prevent d3 from blocking DescVis and other code to have access to events.
+        Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
         Event.prototype.stopImmediatePropagation = () => { };
     }
     addListenersToElementAndChildren(element) {
@@ -39,7 +40,7 @@ class DescListener {
             }
             const eventObj = this.getStrippedEvent(e);
             //this.connection.broadcastEvent(eventObj);
-            this.hearEvent(eventObj);
+            this.hearEvent(eventObj, e);
         };
     }
     getStrippedEvent(e) {
