@@ -8,7 +8,7 @@ class DescVis {
         this.eventsLedger = [];
         this.leasees = new Map();
         this.leaseeTimeouts = new Map();
-        const listener = new DescListener(this.svg, this.hearEvent.bind(this));
+        this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
     hearEvent(eventObj, event) {
         if (!event.target) {
@@ -27,26 +27,35 @@ class DescVis {
             this.network.setLeasee(eventObj.target, peerId);
         }
         //console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
-        //const prevTimeout = this.leaseeTimeouts.get(target);
-        //clearTimeout(prevTimeout);
-        if (this.leasees.get(target) === peerId) {
-            const newEvent = {
-                'seqNum': this.sequenceNumber,
-                'event': eventObj,
-                'sender': this.network.id
-            };
-            this.sequenceNumber++;
-            this.eventsLedger.push(newEvent);
-            //this.network.eventsLedger = this.eventsLedger;
-            console.log(this.sequenceNumber);
-            this.network.broadcastEvent(newEvent);
-        }
-        else {
-            // prevent event
+        if (this.leasees.get(target) !== peerId) {
+            // Prevent event.
             console.log('Can not edit this element because I am not the leader.', target);
             event['stopImmediatePropagationBackup']();
             event.stopPropagation();
+            return;
         }
+        const prevTimeout = this.leaseeTimeouts.get(target);
+        clearTimeout(prevTimeout);
+        const newTimeout = setTimeout(() => this.unlease(target), 2000);
+        this.leaseeTimeouts.set(target, newTimeout);
+        const newEvent = {
+            'seqNum': this.sequenceNumber,
+            'event': eventObj,
+            'sender': this.network.id
+        };
+        this.sequenceNumber++;
+        this.eventsLedger.push(newEvent);
+        //console.log(this.sequenceNumber);
+        this.network.broadcastEvent(newEvent);
+    }
+    unlease(element) {
+        console.log('releasing ', element);
+        this.leasees.delete(element);
+        const selector = this.listener.getElementSelector(element);
+        if (!selector) {
+            return new Error('selector not found');
+        }
+        this.network.setLeasee(selector, '');
     }
     onNewLeasee(msg) {
         // We are vulnerable to malicious actors here!
@@ -56,7 +65,12 @@ class DescVis {
         if (!target) {
             return new Error(`could not find target element of leasee ${selector}`);
         }
-        this.leasees.set(target, msg.leasee);
+        if (msg.leasee === '') {
+            this.leasees.delete(target);
+        }
+        else {
+            this.leasees.set(target, msg.leasee);
+        }
     }
     onNewConnection(originalMsg) {
         return {

@@ -11,11 +11,12 @@ class DescVis {
     private sequenceNumber: number = 0;
     private eventsLedger: DescEvent[] = [];
     private leasees = new Map<HTMLElement, string>();
+    private listener: DescListener;
 
     private leaseeTimeouts = new Map<HTMLElement, number>();
 
     constructor(private svg: SVGElement) {
-        const listener: DescListener = new DescListener(this.svg, this.hearEvent.bind(this));
+        this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
 
     hearEvent(eventObj: StrippedEvent, event: Event) {
@@ -37,26 +38,38 @@ class DescVis {
         }
         //console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
 
-        //const prevTimeout = this.leaseeTimeouts.get(target);
-        //clearTimeout(prevTimeout);
-
-        if(this.leasees.get(target) === peerId) {
-            const newEvent: DescEvent = {
-                'seqNum': this.sequenceNumber,
-                'event': eventObj,
-                'sender': this.network.id
-            };
-            this.sequenceNumber++;
-            this.eventsLedger.push(newEvent);
-            //this.network.eventsLedger = this.eventsLedger;
-            console.log(this.sequenceNumber);
-            this.network.broadcastEvent(newEvent);
-        } else {
-            // prevent event
+        if(this.leasees.get(target) !== peerId) {
+            // Prevent event.
             console.log('Can not edit this element because I am not the leader.', target);
             (event as any)['stopImmediatePropagationBackup']();
             event.stopPropagation();
+            return;
         }
+
+        const prevTimeout = this.leaseeTimeouts.get(target);
+        clearTimeout(prevTimeout);
+        const newTimeout = setTimeout(() => this.unlease(target), 2000);
+        this.leaseeTimeouts.set(target, newTimeout);
+
+        const newEvent: DescEvent = {
+            'seqNum': this.sequenceNumber,
+            'event': eventObj,
+            'sender': this.network.id
+        };
+        this.sequenceNumber++;
+        this.eventsLedger.push(newEvent);
+        //console.log(this.sequenceNumber);
+        this.network.broadcastEvent(newEvent);
+    }
+
+    unlease(element: HTMLElement) {
+        console.log('releasing ', element);
+        this.leasees.delete(element);
+        const selector = this.listener.getElementSelector(element);
+        if(!selector) {
+            return new Error('selector not found');
+        }
+        this.network.setLeasee(selector, '');
     }
 
     onNewLeasee(msg: NewLeaseeMessage) {
@@ -69,7 +82,11 @@ class DescVis {
             return new Error(`could not find target element of leasee ${selector}`);
         }
 
-        this.leasees.set(target as HTMLElement, msg.leasee);
+        if(msg.leasee === '') {
+            this.leasees.delete(target as HTMLElement);
+        } else {
+            this.leasees.set(target as HTMLElement, msg.leasee);
+        }
     }
 
     onNewConnection(originalMsg: DescMessage): InitMessage {
