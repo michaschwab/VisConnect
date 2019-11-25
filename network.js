@@ -1,12 +1,12 @@
 "use strict";
-class DescConnection {
-    constructor(onEventReceived) {
+class DescNetwork {
+    constructor(onEventReceived, onNewConnection) {
         this.onEventReceived = onEventReceived;
+        this.onNewConnection = onNewConnection;
         this.originID = '';
         this.connections = [];
         this.peers = [];
         this.eventsQueue = [];
-        this.eventsLedger = [];
         this.id = '';
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
@@ -53,7 +53,7 @@ class DescConnection {
             if (data.type === "new_connection") {
                 this.recieveNewConnection(data);
             }
-            else if (data.type === 'event') {
+            else if (data.type === 'DescEvent') {
                 this.onEventReceived(data.data);
             }
         });
@@ -61,7 +61,7 @@ class DescConnection {
     broadcastEvent(e) {
         for (const conn of this.connections) {
             const msg = {
-                'type': 'event',
+                'type': 'DescEvent',
                 'sender': this.id,
                 data: e,
             };
@@ -74,9 +74,9 @@ class DescConnection {
             'type': 'new_connection',
             'sender': this.id,
             'peers': this.peers,
-            'eventsLedger': this.eventsLedger
         };
-        conn.send(newConnectionMessage);
+        const decoratedMessage = this.onNewConnection(newConnectionMessage);
+        conn.send(decoratedMessage);
     }
     recieveNewConnection(data) {
         console.log("new connection message", data);

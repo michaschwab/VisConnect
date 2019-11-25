@@ -5,6 +5,7 @@ class DescListener {
         this.hearEvent = hearEvent;
         console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
+        // Prevent d3 from blocking DescVis and other code to have access to events.
         Event.prototype.stopImmediatePropagation = () => { };
     }
     addListenersToElementAndChildren(element) {

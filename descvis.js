@@ -2,7 +2,7 @@
 class DescVis {
     constructor(svg) {
         this.svg = svg;
-        this.connection = new DescConnection(this.receiveEvent.bind(this));
+        this.network = new DescNetwork(this.receiveEvent.bind(this), this.onNewConnection.bind(this));
         this.eventsQueue = [];
         this.sequenceNumber = 0;
         this.eventsLedger = [];
@@ -12,13 +12,21 @@ class DescVis {
         const newEvent = {
             'seqNum': this.sequenceNumber,
             'event': eventObj,
-            'sender': this.connection.id
+            'sender': this.network.id
         };
         this.sequenceNumber++;
         this.eventsLedger.push(newEvent);
-        this.connection.eventsLedger = this.eventsLedger;
+        //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
-        this.connection.broadcastEvent(newEvent);
+        this.network.broadcastEvent(newEvent);
+    }
+    onNewConnection(originalMsg) {
+        return {
+            'type': 'new_connection',
+            'sender': originalMsg.sender,
+            'peers': originalMsg.peers,
+            'eventsLedger': this.eventsLedger,
+        };
     }
     receiveEvent(remoteEvent) {
         let eventObject = remoteEvent.event;
@@ -26,7 +34,7 @@ class DescVis {
             this.sequenceNumber = remoteEvent.seqNum + 1;
         }
         this.eventsLedger.push(remoteEvent);
-        this.connection.eventsLedger = this.eventsLedger;
+        //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
         const targetSelector = eventObject.target;
         let target = this.svg;

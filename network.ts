@@ -6,28 +6,28 @@ interface Connection {
     send: (msg: {}) => void;
 }
 
-interface Message {
+interface DescMessage {
     peers?: string[],
-    type: "new_connection" | "event",
+    type: "new_connection" | "DescEvent",
     sender: string,
     data?: any,
 }
-interface InitMessage extends Message{
+interface InitMessage extends DescMessage{
     type: "new_connection",
     peers: string[], 
-    eventsLedger: event[]
+    eventsLedger: DescEvent[]
 }
 
-class DescConnection {
+class DescNetwork {
     private peer: any;
     private originID = '';
     private connections: Connection[] = [];
     private peers: string[] = [];
     private eventsQueue = [];
-    public eventsLedger: event[] = [];
     public id = '';
 
-    constructor(private onEventReceived: (e: event) => void) {
+    constructor(private onEventReceived: (e: DescEvent) => void,
+                private onNewConnection: (e: DescMessage) => InitMessage) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         this.originID = parts ? parts[1] : '';
 
@@ -77,19 +77,19 @@ class DescConnection {
     }
 
     recieveMessage(conn: Connection) {
-        conn.on('data', (data: Message) => {
+        conn.on('data', (data: DescMessage) => {
             if (data.type === "new_connection") {
                 this.recieveNewConnection(data as InitMessage);
-            } else if(data.type === 'event') {
+            } else if(data.type === 'DescEvent') {
                 this.onEventReceived(data.data);
             }
         });
     }
 
-    broadcastEvent(e: event) {
+    broadcastEvent(e: DescEvent) {
         for(const conn of this.connections) {
-            const msg: Message = {
-                'type': 'event',
+            const msg: DescMessage = {
+                'type': 'DescEvent',
                 'sender': this.id,
                 data: e,
             };
@@ -100,13 +100,14 @@ class DescConnection {
 
     sendNewConnection(conn: Connection) {
         console.log("sending new connection message");
-        const newConnectionMessage: InitMessage = {
+        const newConnectionMessage: DescMessage = {
             'type': 'new_connection',
             'sender': this.id,
             'peers': this.peers,
-            'eventsLedger': this.eventsLedger
+            //'eventsLedger': this.eventsLedger
         };
-        conn.send(newConnectionMessage);
+        const decoratedMessage = this.onNewConnection(newConnectionMessage);
+        conn.send(decoratedMessage);
     }
 
     recieveNewConnection(data: InitMessage) {

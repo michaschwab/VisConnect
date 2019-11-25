@@ -1,33 +1,42 @@
-interface event {
+interface DescEvent {
     seqNum: number,
     event: SerializedEvent,
     sender: string
 }
 
 class DescVis {
-    private connection: DescConnection = new DescConnection(this.receiveEvent.bind(this));
-    private eventsQueue: event[] = [];
+    private network: DescNetwork = new DescNetwork(this.receiveEvent.bind(this), this.onNewConnection.bind(this));
+    private eventsQueue: DescEvent[] = [];
     private sequenceNumber: number = 0;
-    private eventsLedger: event[] = [];
+    private eventsLedger: DescEvent[] = [];
 
     constructor(private svg: SVGElement) {
         const listener: DescListener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
 
     hearEvent(eventObj: SerializedEvent) {
-        const newEvent: event = {
+        const newEvent: DescEvent = {
             'seqNum': this.sequenceNumber,
             'event': eventObj,
-            'sender': this.connection.id
-        }
+            'sender': this.network.id
+        };
         this.sequenceNumber++;
         this.eventsLedger.push(newEvent);
-        this.connection.eventsLedger = this.eventsLedger;
+        //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
-        this.connection.broadcastEvent(newEvent);
+        this.network.broadcastEvent(newEvent);
     }
 
-    receiveEvent(remoteEvent: event) {
+    onNewConnection(originalMsg: DescMessage): InitMessage {
+        return {
+            'type': 'new_connection',
+            'sender': originalMsg.sender,
+            'peers': originalMsg.peers as string[],
+            'eventsLedger': this.eventsLedger,
+        };
+    }
+
+    receiveEvent(remoteEvent: DescEvent) {
         let eventObject: SerializedEvent = remoteEvent.event;
 
         if (remoteEvent.seqNum >= this.sequenceNumber){
@@ -35,7 +44,7 @@ class DescVis {
         } 
         
         this.eventsLedger.push(remoteEvent);
-        this.connection.eventsLedger = this.eventsLedger;
+        //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
 
         const targetSelector = eventObject.target;
