@@ -136,7 +136,17 @@ class DescVis {
         let target: Element = this.svg;
         let e: Event;
         if(eventObject.type.substr(0, 5) === 'touch') {
-            e = new TouchEvent(eventObject.type, eventObject as any);
+            e = document.createEvent('TouchEvent');
+            e.initEvent(eventObject.type, true, false);
+            for(const prop in eventObject) {
+                if(prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                    Object.defineProperty(e, prop, {
+                        writable: true,
+                        value: eventObject[prop],
+                    });
+                }
+            }
+            //e = new TouchEvent(eventObject.type, eventObject as any);
         } else if(eventObject.type.substr(0, 5) === 'mouse') {
             e = new MouseEvent(eventObject.type, eventObject as any);
         } else if(eventObject.type.substr(0, 4) === 'drag') {

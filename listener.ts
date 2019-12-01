@@ -1,7 +1,8 @@
 export interface StrippedEvent {
     type: string,
     target: string,
-    [key: string]: string|number;
+    touches: {clientX: number, clientY: number}[],
+    [key: string]: string|number|{clientX: number, clientY: number}[];
 }
 
 export class DescListener {
@@ -31,6 +32,7 @@ export class DescListener {
         element.addEventListener('mousemove', boundCapture);
         element.addEventListener('mouseup', boundCapture);
         element.addEventListener('mousedown', boundCapture);
+        element.addEventListener('touchmove', boundCapture);
         element.addEventListener('mouseenter', boundCapture);
         element.addEventListener('mouseout', boundCapture);
         element.addEventListener('click', boundCapture);
@@ -80,11 +82,16 @@ export class DescListener {
     }
 
     getStrippedEvent(e: MouseEvent|TouchEvent|Event) {
-        let obj: StrippedEvent = {type: '', target: ''};
+        let obj: StrippedEvent = {type: '', target: '', touches: []};
         for(const key in e) {
             const val = (e as any)[key];
             if(typeof val !== 'object' && typeof val !== 'function') {
                 obj[key] = val;
+            }
+        }
+        if(e instanceof TouchEvent && e.touches && e.touches.length) {
+            for(const touch of e.touches) {
+                obj.touches.push({clientX: touch.clientX, clientY: touch.clientY});
             }
         }
         const target = this.getElementSelector(e.target as Element);

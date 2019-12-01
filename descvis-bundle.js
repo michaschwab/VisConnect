@@ -142,6 +142,7 @@ var DescListener = /** @class */ (function () {
         element.addEventListener('mousemove', boundCapture);
         element.addEventListener('mouseup', boundCapture);
         element.addEventListener('mousedown', boundCapture);
+        element.addEventListener('touchmove', boundCapture);
         element.addEventListener('mouseenter', boundCapture);
         element.addEventListener('mouseout', boundCapture);
         element.addEventListener('click', boundCapture);
@@ -187,11 +188,17 @@ var DescListener = /** @class */ (function () {
         };
     };
     DescListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '' };
+        var obj = { type: '', target: '', touches: [] };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
                 obj[key] = val;
+            }
+        }
+        if (e instanceof TouchEvent && e.touches && e.touches.length) {
+            for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
+                var touch = _a[_i];
+                obj.touches.push({ clientX: touch.clientX, clientY: touch.clientY });
             }
         }
         var target = this.getElementSelector(e.target);
@@ -330,7 +337,17 @@ var DescVis = /** @class */ (function () {
         var target = this.svg;
         var e;
         if (eventObject.type.substr(0, 5) === 'touch') {
-            e = new TouchEvent(eventObject.type, eventObject);
+            e = document.createEvent('TouchEvent');
+            e.initEvent(eventObject.type, true, false);
+            for (var prop in eventObject) {
+                if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                    Object.defineProperty(e, prop, {
+                        writable: true,
+                        value: eventObject[prop],
+                    });
+                }
+            }
+            //e = new TouchEvent(eventObject.type, eventObject as any);
         }
         else if (eventObject.type.substr(0, 5) === 'mouse') {
             e = new MouseEvent(eventObject.type, eventObject);
