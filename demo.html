@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+
+<script src="descvis-bundle.js"></script>
+
+<svg width="960" height="600"></svg>
+
+<script>
+var svg = d3.select("svg");
+
+var color = d3.scaleOrdinal(d3.schemeCategory20);
+var participants = ["Luke", "David K", "David Sl", "Micha", "David Sa", "Kunal", "Girik", "Abhi", "Niklas", "Aaron",
+    "Schuyler", "Kincaid", "Peng", "Xiaming", "David St", "Xuangui", "Rahul", "Naveen", "Hongxian", "Rashika", "Avijit",
+    "Dat", "Cristina", "Asad"];
+var nodes = participants.map(name => { return {name, x: Math.random() * 500, y: Math.random() * 500,
+    color: Math.round(Math.random() * 20)}});
+
+var node = svg.append("g")
+    .attr("class", "nodes")
+    .selectAll(".node")
+    .data(nodes)
+    .enter().append("g").attr("class", "node")
+    .attr('transform', d => `translate(${d.x}, ${d.y})`)
+    .on('mousedown', function() { this['dragging'] = true; })
+    .on('mouseup', function() { this['dragging'] = false; })
+    .on('mousemove', function(d) { if(this['dragging']) { dragged.call(this, d);}});
+
+node.append('circle')
+    .attr("r", 30)
+    .attr('stroke-width', 3)
+    .attr("fill", function(d) { return color(d.color); })
+    .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
+    .on('mouseout', function() { d3.select(this).attr('stroke', '')});
+
+node.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('alignment-baseline', 'middle')
+    .attr('pointer-events', 'none')
+    .text(d => d.name);
+
+function dragged(d) {
+    let node = d3.select(this);
+    node.attr('transform', `translate(${d3.event.x}, ${d3.event.y})`);
+}
+
+</script>
+</body>
+</html>
