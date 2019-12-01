@@ -78,6 +78,7 @@ function dragged(d, eventX, eventY) {
     d.y += eventY - this['dragPos'].y;
     this['dragPos'] = {x: eventX, y: eventY};
     d3.select(this).attr('transform', `translate(${d.x}, ${d.y})`);
+    d3.event.preventDefault(); // Disable scrolling
 }
 
 </script>
