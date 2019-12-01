@@ -1,8 +1,31 @@
-interface DescEvent {
+import {DescNetwork, DescMessage, InitMessage, NewLeaseeMessage} from './network';
+import {DescListener, StrippedEvent} from "./listener";
+
+export interface DescEvent {
     seqNum: number,
     event: StrippedEvent,
     sender: string
 }
+
+// The visualization's event listeners need to be called after DESCVis' event listeners.
+// For this reason, we delay calling event listeners that are added before DESCVis is started.
+(Element as any).prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+Element.prototype.addEventListener = function(this: Element, eventName: string, callback: () => void) {
+    console.log('doing a delayed execution on ', eventName);
+    const that = this;
+    setTimeout(function() {
+        (Element as any).prototype['addEventListenerBackup'].call(that, eventName, callback);
+    }, 100);
+} as any;
+
+console.log('descvis');
+// After the visualization code is run, reset the addEventListener function to its normal functionality, and start
+// DESCVis.
+window.setTimeout(() => {
+    console.log('hi');
+    Element.prototype.addEventListener = (Element as any).prototype['addEventListenerBackup'];
+    new DescVis(document.getElementsByTagName('svg')[0]);
+}, 20);
 
 class DescVis {
     private network: DescNetwork = new DescNetwork(this.receiveEvent.bind(this),
@@ -141,10 +164,4 @@ class DescVis {
         (e as any)['desc-received'] = true;
         target.dispatchEvent(e);
     }
-}
-
-interface StrippedEvent {
-    type: string,
-    target: string,
-    [key: string]: string|number;
 }

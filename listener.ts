@@ -1,4 +1,10 @@
-class DescListener {
+export interface StrippedEvent {
+    type: string,
+    target: string,
+    [key: string]: string|number;
+}
+
+export class DescListener {
 
     private dragElement: HTMLElement|null = null;
 

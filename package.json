@@ -1,0 +1,28 @@
+{
+  "name": "descvis",
+  "version": "1.0.0",
+  "description": "Demo at https://dsaffo.github.io/DESCVis/index.html",
+  "main": "descvis-bundle.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "rollup": "^1.27.6",
+    "rollup-plugin-typescript": "^1.0.1",
+    "tslib": "^1.10.0",
+    "typescript": "^3.7.2"
+  },
+  "scripts": {
+    "compile": "rollup -c rollup.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dsaffo/DESCVis.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dsaffo/DESCVis/issues"
+  },
+  "homepage": "https://github.com/dsaffo/DESCVis#readme"
+}

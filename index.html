@@ -6,22 +6,17 @@
 </head>
 <body>
 
+<!--<script src="network.js"></script>
+<script src="listener.js"></script>-->
+<script src="descvis-bundle.js"></script>
+
 <svg width="960" height="600"></svg>
 
 <script>
 
-Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
-Element.prototype.addEventListener = function(eventName, callback) {
-  console.log('doing a delayed execution on ', eventName);
-  var that = this;
-  setTimeout(function() {
-    Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
-  }, 100);
-};
 
-var svg = d3.select("svg"),
-        width = +svg.attr("width"),
-        height = +svg.attr("height");
+
+var svg = d3.select("svg");
 
 var color = d3.scaleOrdinal(d3.schemeCategory20);
 var nodes = [{group: 'A', x: 100, y: 100}, {group: 'B', x: 140, y: 200}, {group: 'C', x: 300, y: 150}];
@@ -38,16 +33,9 @@ var node = svg.append("g")
         .attr("fill", function(d) { return color(d.group); })
         .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
         .on('mouseout', function() { d3.select(this).attr('stroke', '')})
-        //.on('click', function() { d3.select(this).style('fill', d3.select(this).style('fill') === 'red' ? '' : 'red');})
         .on('mousedown', function() { this['dragging'] = true; })
         .on('mouseup', function() { this['dragging'] = false; })
         .on('mousemove', function(d) { if(this['dragging']) { dragged.call(this, d);}});
-        //.call(d3.drag().on("drag", dragged));
-/*
-svg.on('mousemove', function() {
-  console.log(d3.event.target);
-});*/
-
 
 function dragged(d) {
   let circle = d3.select(this);
@@ -55,11 +43,6 @@ function dragged(d) {
   circle.attr("cy", d.y = d3.event.y);
 }
 
-Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
 </script>
-<script src="network.js"></script>
-<script src="listener.js"></script>
-<script src="descvis.js"></script>
-<script>var descVis = new DescVis(document.getElementsByTagName('svg')[0]);</script>
 </body>
 </html>

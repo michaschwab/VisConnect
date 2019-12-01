@@ -1,3 +1,5 @@
+import {DescEvent} from './descvis';
+
 declare var Peer: any;
 
 interface Connection {
@@ -6,26 +8,26 @@ interface Connection {
     send: (msg: {}) => void;
 }
 
-interface DescMessage {
+export interface DescMessage {
     peers?: string[],
     type: "new_connection" | "DescEvent" | "NewLeasee",
     sender: string,
     data?: any,
 }
 
-interface InitMessage extends DescMessage{
+export interface InitMessage extends DescMessage{
     type: "new_connection",
     peers: string[], 
     eventsLedger: DescEvent[]
 }
 
-interface NewLeaseeMessage extends DescMessage {
+export interface NewLeaseeMessage extends DescMessage {
     type: "NewLeasee",
     targetSelector: string,
     leasee: string,
 }
 
-class DescNetwork {
+export class DescNetwork {
     private peer: any;
     private originID = '';
     private connections: Connection[] = [];
