@@ -3,15 +3,30 @@
 <head>
     <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
     <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
 </head>
 <body>
 
 <script src="descvis-bundle.js"></script>
 
-<svg width="960" height="600"></svg>
+<h1>Where are you from?</h1>
+<svg width="1100" height="600">
+    <g id="map"></g>
+</svg>
 
 <script>
 var svg = d3.select("svg");
+var width = svg.attr('width');
+
+var path = d3.geoPath().projection(d3.geoMercator().scale(width * 0.18).translate([width * 0.5, 400]));
+d3.json("https://unpkg.com/world-atlas@1/world/110m.json", function(error, world) {
+    if (error) throw error;
+    svg.select('#map').selectAll("path")
+        .data(topojson.feature(world,world.objects.countries).features)
+        .enter().append("path")
+        .attr("d", path)
+        .attr('fill', '#ccc');
+});
 
 var color = d3.scaleOrdinal(d3.schemeCategory20);
 var participants = ["Luke", "David K", "David Sl", "Micha", "David Sa", "Kunal", "Girik", "Abhi", "Niklas", "Aaron",
@@ -26,9 +41,9 @@ var node = svg.append("g")
     .data(nodes)
     .enter().append("g").attr("class", "node")
     .attr('transform', d => `translate(${d.x}, ${d.y})`)
-    .on('mousedown', function() { this['dragging'] = true; })
-    .on('mouseup', function() { this['dragging'] = false; })
-    .on('mousemove', function(d) { if(this['dragging']) { dragged.call(this, d);}});
+    .on('mousedown', function() { this['dragPos'] = {x: d3.event.x, y: d3.event.y}; })
+    .on('mouseup', function() { this['dragPos'] = null; })
+    .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d);}});
 
 node.append('circle')
     .attr("r", 30)
@@ -44,8 +59,10 @@ node.append('text')
     .text(d => d.name);
 
 function dragged(d) {
-    let node = d3.select(this);
-    node.attr('transform', `translate(${d3.event.x}, ${d3.event.y})`);
+    d.x += d3.event.x - this['dragPos'].x;
+    d.y += d3.event.y - this['dragPos'].y;
+    this['dragPos'] = {x: d3.event.x, y: d3.event.y};
+    d3.select(this).attr('transform', `translate(${d.x}, ${d.y})`);
 }
 
 </script>
