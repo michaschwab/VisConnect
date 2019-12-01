@@ -53,8 +53,11 @@ var node = svg.append("g")
     .enter().append("g").attr("class", "node")
     .attr('transform', d => `translate(${d.x}, ${d.y})`)
     .on('mousedown', function() { this['dragPos'] = {x: d3.event.x, y: d3.event.y}; })
+    .on('touchstart', function() { this['dragPos'] = {x: d3.event.touches[0].clientX, y: d3.event.touches[0].clientY}; })
     .on('mouseup', function() { this['dragPos'] = null; })
-    .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d);}});
+    .on('touchend', function() { this['dragPos'] = null; })
+    .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.x, d3.event.y);}})
+    .on('touchmove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.touches[0].clientX, d3.event.touches[0].clientY);}});
 
 node.append('path')
     .attr('d', 'm 5,0 h 50 c 2.5,0 5,2.5 5,5 v 20 c 0,2.5 -2.5,5 -5,5 H 35 l -5,5 -5,-5 H 5 c -2.5,0 -5,-2.23 -5,-5 v -20 c 0,-2.5 2.5,-5 5,-5 z')
@@ -70,10 +73,10 @@ node.append('text')
     .attr('pointer-events', 'none')
     .text(d => d.name);
 
-function dragged(d) {
-    d.x += d3.event.x - this['dragPos'].x;
-    d.y += d3.event.y - this['dragPos'].y;
-    this['dragPos'] = {x: d3.event.x, y: d3.event.y};
+function dragged(d, eventX, eventY) {
+    d.x += eventX - this['dragPos'].x;
+    d.y += eventY - this['dragPos'].y;
+    this['dragPos'] = {x: eventX, y: eventY};
     d3.select(this).attr('transform', `translate(${d.x}, ${d.y})`);
 }
 
