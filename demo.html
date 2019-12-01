@@ -17,6 +17,7 @@
 <script>
 var svg = d3.select("svg");
 var width = svg.attr('width');
+var height = svg.attr('height');
 
 var path = d3.geoPath().projection(d3.geoMercator().scale(width * 0.18).translate([width * 0.5, 400]));
 d3.json("https://unpkg.com/world-atlas@1/world/110m.json", function(error, world) {
@@ -32,7 +33,10 @@ var color = d3.scaleOrdinal(d3.schemeCategory20);
 var participants = ["Luke", "David K", "David Sl", "Micha", "David Sa", "Kunal", "Girik", "Abhi", "Niklas", "Aaron",
     "Schuyler", "Kincaid", "Peng", "Xiaming", "David St", "Xuangui", "Rahul", "Naveen", "Hongxian", "Rashika", "Avijit",
     "Dat", "Cristina", "Asad"];
-var nodes = participants.map(name => { return {name, x: Math.random() * 500, y: Math.random() * 500,
+var nodes = participants.map(name => { return {
+    name,
+    x: (0.1 + 0.8 * Math.random()) * width,
+    y: (0.1 + 0.8 * Math.random()) * height,
     color: Math.round(Math.random() * 20)}});
 
 var node = svg.append("g")
@@ -45,8 +49,9 @@ var node = svg.append("g")
     .on('mouseup', function() { this['dragPos'] = null; })
     .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d);}});
 
-node.append('circle')
-    .attr("r", 30)
+node.append('path')
+    .attr('d', 'm 5,0 h 50 c 2.5,0 5,2.5 5,5 v 20 c 0,2.5 -2.5,5 -5,5 H 35 l -5,5 -5,-5 H 5 c -2.5,0 -5,-2.23 -5,-5 v -20 c 0,-2.5 2.5,-5 5,-5 z')
+    .attr('transform', 'translate(-30,-16)')
     .attr('stroke-width', 3)
     .attr("fill", function(d) { return color(d.color); })
     .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
