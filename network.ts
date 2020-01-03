@@ -1,12 +1,7 @@
 import {DescEvent} from './descvis';
+import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
+import {DescConnection} from "./peerjs-connection";
 
-declare var Peer: any;
-
-interface Connection {
-    on: (id: string, callback: (data: any) => void) => void;
-    peer: string,
-    send: (msg: {}) => void;
-}
 
 export interface DescMessage {
     peers?: string[],
@@ -15,7 +10,7 @@ export interface DescMessage {
     data?: any,
 }
 
-export interface InitMessage extends DescMessage{
+export interface InitMessage extends DescMessage {
     type: "new_connection",
     peers: string[], 
     eventsLedger: DescEvent[]
@@ -27,27 +22,19 @@ export interface NewLeaseeMessage extends DescMessage {
     leasee: string,
 }
 
-export class DescNetwork {
-    private peer: any;
-    private originID = '';
-    private connections: Connection[] = [];
+export class DescCommunication {
+    private peer: DescNetwork;
+    private connections: DescConnection[] = [];
     private peers: string[] = [];
     private eventsQueue = [];
     public id = '';
 
-    constructor(private onEventReceived: (e: DescEvent) => void,
+    constructor(private originID: string,
+                private onEventReceived: (e: DescEvent) => void,
                 private onNewConnection: (e: DescMessage) => InitMessage,
                 private onNewLeasee: (msg: NewLeaseeMessage) => void) {
-        let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
-        this.originID = parts ? parts[1] : '';
-
-        this.peer = new Peer();
-
-        if(this.peer.id) {
-            this.onOpen(); // In case it was done too fast.
-        } else {
-            this.peer.on('open', this.onOpen.bind(this));
-        }
+        this.peer = new PeerjsNetwork();
+        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
 
     setLeasee(targetSelector: string, leasee: string) {
@@ -64,7 +51,7 @@ export class DescNetwork {
     }
 
     onOpen() {
-        this.id = this.peer.id;
+        this.id = this.peer.getId();
 
         console.log("originID", this.originID);
         console.log("myID", this.id);
@@ -78,42 +65,41 @@ export class DescNetwork {
             this.connectToPeer(this.originID);
         }
 
-        this.peer.on('connection', this.onConnection.bind(this));
+
     }
 
-    onConnection(connection: Connection) {
-        this.peers.push(connection.peer);
+    async onConnection(connection: DescConnection) {
+        this.peers.push(connection.getPeer());
         this.connections.push(connection);
         console.log("new connection", this.peers, this.connections.length);
-        connection.on('open', () => {
-            this.recieveMessage(connection);
-            if (!this.originID) {
-                this.sendNewConnection(connection);
-            }
-        });
+
+        await connection.open();
+
+        this.receiveMessage(connection);
+        if (!this.originID) {
+            this.sendNewConnection(connection);
+        }
     }
 
-    connectToPeer(id: string) {
-        const conn = this.peer.connect(id);
-        conn.on('open', () => {
-            this.connections.push(conn);
-            this.peers.push(id);
-            console.log("new connection", this.peers, this.connections.length);
-            this.recieveMessage(conn);
-        });
-        return conn;
+    async connectToPeer(id: string) {
+        const conn: DescConnection = await this.peer.connect(id);
+
+        this.connections.push(conn);
+        this.peers.push(id);
+        console.log("new connection", this.peers, this.connections.length);
+        this.receiveMessage(conn);
     }
 
-    recieveMessage(conn: Connection) {
-        conn.on('data', (data: DescMessage) => {
-            if (data.type === "new_connection") {
-                this.recieveNewConnection(data as InitMessage);
-            } else if(data.type === 'DescEvent') {
-                this.onEventReceived(data.data);
-            } else if(data.type === 'NewLeasee') {
-                this.onNewLeasee(data as NewLeaseeMessage);
-            }
-        });
+    async receiveMessage(conn: DescConnection) {
+        const data: DescMessage = await conn.receiveMessage();
+
+        if (data.type === "new_connection") {
+            this.recieveNewConnection(data as InitMessage);
+        } else if(data.type === 'DescEvent') {
+            this.onEventReceived(data.data);
+        } else if(data.type === 'NewLeasee') {
+            this.onNewLeasee(data as NewLeaseeMessage);
+        }
     }
 
     broadcastEvent(e: DescEvent) {
@@ -128,7 +114,7 @@ export class DescNetwork {
         }
     }
 
-    sendNewConnection(conn: Connection) {
+    sendNewConnection(conn: DescConnection) {
         console.log("sending new connection message");
         const newConnectionMessage: DescMessage = {
             'type': 'new_connection',

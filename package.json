@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Demo at https://dsaffo.github.io/DESCVis/index.html",
   "main": "descvis-bundle.js",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "rollup": "^1.27.6",
     "rollup-plugin-typescript": "^1.0.1",

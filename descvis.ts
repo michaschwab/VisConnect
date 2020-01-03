@@ -1,4 +1,4 @@
-import {DescNetwork, DescMessage, InitMessage, NewLeaseeMessage} from './network';
+import {DescCommunication, DescMessage, InitMessage, NewLeaseeMessage} from './network';
 import {DescListener, StrippedEvent} from "./listener";
 
 export interface DescEvent {
@@ -28,8 +28,7 @@ window.setTimeout(() => {
 }, 20);
 
 class DescVis {
-    private network: DescNetwork = new DescNetwork(this.receiveEvent.bind(this),
-        this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
+    private network: DescCommunication;
     private eventsQueue: DescEvent[] = [];
     private sequenceNumber: number = 0;
     private eventsLedger: DescEvent[] = [];
@@ -39,6 +38,12 @@ class DescVis {
     private leaseeTimeouts = new Map<HTMLElement, number>();
 
     constructor(private svg: SVGElement) {
+        let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
+        const originID = parts ? parts[1] : '';
+
+        this.network = new DescCommunication(originID, this.receiveEvent.bind(this),
+            this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
+
         this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
 
@@ -71,7 +76,7 @@ class DescVis {
 
         const prevTimeout = this.leaseeTimeouts.get(target);
         clearTimeout(prevTimeout);
-        const newTimeout = setTimeout(() => this.unlease(target), 1000);
+        const newTimeout = window.setTimeout(() => this.unlease(target), 1000);
         this.leaseeTimeouts.set(target, newTimeout);
 
         const newEvent: DescEvent = {
