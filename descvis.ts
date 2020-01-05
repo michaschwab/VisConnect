@@ -1,6 +1,6 @@
 import {DESC_MESSAGE_TYPE, DescCommunication, DescMessage, InitMessage, NewLeaseeMessage} from './communication';
 import {DescListener, StrippedEvent} from "./listener";
-import {delayAddEventListener} from "./dom";
+import {delayAddEventListener, disableStopPropagation, recreateEvent, stopPropagation} from "./dom";
 
 export interface DescEvent {
     seqNum: number,
@@ -8,6 +8,7 @@ export interface DescEvent {
     sender: string
 }
 
+disableStopPropagation();
 delayAddEventListener().then(() => {
     new DescVis(document.getElementsByTagName('svg')[0]);
 });
@@ -42,7 +43,7 @@ class DescVis {
         }
         if(!this.network.id) {
             console.log('network not ready');
-            (event as any)['stopImmediatePropagationBackup']();
+            stopPropagation(event);
             return;
         }
         const target = event.target as HTMLElement;
@@ -56,8 +57,7 @@ class DescVis {
         if(this.leasees.get(target) !== peerId) {
             // Prevent event.
             //console.log('Can not edit this element because I am not the leader.', target);
-            (event as any)['stopImmediatePropagationBackup']();
-            event.stopPropagation();
+            stopPropagation(event);
             return;
         }
 
@@ -123,46 +123,11 @@ class DescVis {
         //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
 
-        const targetSelector = eventObject.target;
-        let target: Element = this.svg;
-        let e: Event;
-        if(eventObject.type.substr(0, 5) === 'touch') {
-            e = document.createEvent('TouchEvent');
-            e.initEvent(eventObject.type, true, false);
-            for(const prop in eventObject) {
-                if(prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                    Object.defineProperty(e, prop, {
-                        writable: true,
-                        value: eventObject[prop],
-                    });
-                }
-            }
-            //e = new TouchEvent(eventObject.type, eventObject as any);
-        } else if(eventObject.type.substr(0, 5) === 'mouse') {
-            e = new MouseEvent(eventObject.type, eventObject as any);
-        } else if(eventObject.type.substr(0, 4) === 'drag') {
-            e = new DragEvent(eventObject.type, eventObject as any);
-        } else {
-            e = new Event(eventObject.type, eventObject as any);
-        }
+        const e = recreateEvent(eventObject, this.svg);
 
-        if(targetSelector) {
-            let newTarget: Element|null = document.querySelector(targetSelector);
-            if(!newTarget) {
-                console.error('element not found', targetSelector);
-                return;
-            }
-            target = newTarget;
-        }
-        Object.defineProperty(e, 'target', {
-            writable: true,
-            value: target,
-        });
-        Object.defineProperty(e, 'view', {
-            writable: true,
-            value: window,
-        });
         (e as any)['desc-received'] = true;
-        target.dispatchEvent(e);
+        if(e.target) {
+            e.target.dispatchEvent(e);
+        }
     }
 }

@@ -1,3 +1,5 @@
+import {disableStopPropagation} from "./dom";
+
 export interface StrippedEvent {
     type: string,
     target: string,
@@ -12,14 +14,9 @@ export class DescListener {
     constructor(private svg: SVGElement, private hearEvent: (e: StrippedEvent, event: Event) => void) {
         console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
-
-        // Prevent d3 from blocking DescVis and other code to have access to events.
-        (Event as any).prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
-        Event.prototype.stopImmediatePropagation = () => {};
     }
 
     addListenersToElementAndChildren(element: Element) {
-        
         this.addListenersToElement(element);
         for(const child of element.children) {
             this.addListenersToElementAndChildren(child);

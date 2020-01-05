@@ -1050,9 +1050,6 @@ var DescListener = /** @class */ (function () {
         this.dragElement = null;
         console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
-        // Prevent d3 from blocking DescVis and other code to have access to events.
-        Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
-        Event.prototype.stopImmediatePropagation = function () { };
     }
     DescListener.prototype.addListenersToElementAndChildren = function (element) {
         this.addListenersToElement(element);
@@ -1170,7 +1167,60 @@ function delayAddEventListener() {
         }, 20);
     });
 }
+function disableStopPropagation() {
+    // Prevent d3 from blocking DescVis and other code to have access to events.
+    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
+    Event.prototype.stopImmediatePropagation = function () { };
+}
+function stopPropagation(event) {
+    event['stopImmediatePropagationBackup']();
+    event.stopPropagation();
+}
+function recreateEvent(eventObject, target) {
+    var targetSelector = eventObject.target;
+    var e;
+    if (eventObject.type.substr(0, 5) === 'touch') {
+        e = document.createEvent('TouchEvent');
+        e.initEvent(eventObject.type, true, false);
+        for (var prop in eventObject) {
+            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                Object.defineProperty(e, prop, {
+                    writable: true,
+                    value: eventObject[prop],
+                });
+            }
+        }
+        //e = new TouchEvent(eventObject.type, eventObject as any);
+    }
+    else if (eventObject.type.substr(0, 5) === 'mouse') {
+        e = new MouseEvent(eventObject.type, eventObject);
+    }
+    else if (eventObject.type.substr(0, 4) === 'drag') {
+        e = new DragEvent(eventObject.type, eventObject);
+    }
+    else {
+        e = new Event(eventObject.type, eventObject);
+    }
+    if (targetSelector) {
+        var newTarget = document.querySelector(targetSelector);
+        if (!newTarget) {
+            console.error('element not found', targetSelector);
+            throw new Error('element not found');
+        }
+        target = newTarget;
+    }
+    Object.defineProperty(e, 'target', {
+        writable: true,
+        value: target,
+    });
+    Object.defineProperty(e, 'view', {
+        writable: true,
+        value: window,
+    });
+    return e;
+}
 
+disableStopPropagation();
 delayAddEventListener().then(function () {
     new DescVis(document.getElementsByTagName('svg')[0]);
 });
@@ -1198,7 +1248,7 @@ var DescVis = /** @class */ (function () {
         }
         if (!this.network.id) {
             console.log('network not ready');
-            event['stopImmediatePropagationBackup']();
+            stopPropagation(event);
             return;
         }
         var target = event.target;
@@ -1210,8 +1260,7 @@ var DescVis = /** @class */ (function () {
         if (this.leasees.get(target) !== peerId) {
             // Prevent event.
             //console.log('Can not edit this element because I am not the leader.', target);
-            event['stopImmediatePropagationBackup']();
-            event.stopPropagation();
+            stopPropagation(event);
             return;
         }
         var prevTimeout = this.leaseeTimeouts.get(target);
@@ -1267,49 +1316,11 @@ var DescVis = /** @class */ (function () {
         this.eventsLedger.push(remoteEvent);
         //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
-        var targetSelector = eventObject.target;
-        var target = this.svg;
-        var e;
-        if (eventObject.type.substr(0, 5) === 'touch') {
-            e = document.createEvent('TouchEvent');
-            e.initEvent(eventObject.type, true, false);
-            for (var prop in eventObject) {
-                if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                    Object.defineProperty(e, prop, {
-                        writable: true,
-                        value: eventObject[prop],
-                    });
-                }
-            }
-            //e = new TouchEvent(eventObject.type, eventObject as any);
-        }
-        else if (eventObject.type.substr(0, 5) === 'mouse') {
-            e = new MouseEvent(eventObject.type, eventObject);
-        }
-        else if (eventObject.type.substr(0, 4) === 'drag') {
-            e = new DragEvent(eventObject.type, eventObject);
-        }
-        else {
-            e = new Event(eventObject.type, eventObject);
-        }
-        if (targetSelector) {
-            var newTarget = document.querySelector(targetSelector);
-            if (!newTarget) {
-                console.error('element not found', targetSelector);
-                return;
-            }
-            target = newTarget;
-        }
-        Object.defineProperty(e, 'target', {
-            writable: true,
-            value: target,
-        });
-        Object.defineProperty(e, 'view', {
-            writable: true,
-            value: window,
-        });
+        var e = recreateEvent(eventObject, this.svg);
         e['desc-received'] = true;
-        target.dispatchEvent(e);
+        if (e.target) {
+            e.target.dispatchEvent(e);
+        }
     };
     return DescVis;
 }());
