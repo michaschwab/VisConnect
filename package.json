@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "Demo at https://dsaffo.github.io/DESCVis/index.html",
   "main": "descvis-bundle.js",
-  "dependencies": {},
+  "dependencies": {
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rxjs": "^6.5.4"
+  },
   "devDependencies": {
     "rollup": "^1.27.6",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-typescript": "^1.0.1",
     "tslib": "^1.10.0",
     "typescript": "^3.7.2"

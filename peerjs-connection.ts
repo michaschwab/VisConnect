@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 export interface PeerjsConnectionI {
     on: (id: string, callback: (data: any) => void) => void;
     peer: string,
@@ -7,13 +9,17 @@ export interface PeerjsConnectionI {
 export interface DescConnection {
     send(message: {}): void;
     getPeer(): string;
-    receiveMessage(): Promise<any>;
+    messages: Subject<any>;
     open(): Promise<void>;
 }
 
-export class PeerjsConnection implements DescConnection{
-    constructor(private connection: PeerjsConnectionI) {
+export class PeerjsConnection implements DescConnection {
+    messages = new Subject<{}>();
 
+    constructor(private connection: PeerjsConnectionI) {
+        this.connection.on('data', message => {
+            this.receiveMessage(message);
+        });
     }
 
     send(message: {}) {
@@ -24,12 +30,8 @@ export class PeerjsConnection implements DescConnection{
         return this.connection.peer;
     }
 
-    receiveMessage() {
-        return new Promise<any>(resolve => {
-            this.connection.on('data', message => {
-                resolve(message);
-            });
-        });
+    private receiveMessage(message: any) {
+        this.messages.next(message);
     }
 
     open() {

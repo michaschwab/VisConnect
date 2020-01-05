@@ -64,35 +64,33 @@ export class DescCommunication {
             console.log(window.location.href);
             this.connectToPeer(this.originID);
         }
-
-
     }
 
     async onConnection(connection: DescConnection) {
+        // Incoming connection: Leader receives connection from client
         this.peers.push(connection.getPeer());
         this.connections.push(connection);
         console.log("new connection", this.peers, this.connections.length);
 
         await connection.open();
+        connection.messages.subscribe(this.receiveMessage.bind(this));
 
-        this.receiveMessage(connection);
         if (!this.originID) {
             this.sendNewConnection(connection);
         }
     }
 
     async connectToPeer(id: string) {
+        // Outgoing connection: Client connects to leader
         const conn: DescConnection = await this.peer.connect(id);
 
         this.connections.push(conn);
         this.peers.push(id);
         console.log("new connection", this.peers, this.connections.length);
-        this.receiveMessage(conn);
+        conn.messages.subscribe(this.receiveMessage.bind(this));
     }
 
-    async receiveMessage(conn: DescConnection) {
-        const data: DescMessage = await conn.receiveMessage();
-
+    receiveMessage(data: DescMessage) {
         if (data.type === "new_connection") {
             this.recieveNewConnection(data as InitMessage);
         } else if(data.type === 'DescEvent') {

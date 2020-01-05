@@ -68,7 +68,7 @@ class DescVis {
 
         if(this.leasees.get(target) !== peerId) {
             // Prevent event.
-            console.log('Can not edit this element because I am not the leader.', target);
+            //console.log('Can not edit this element because I am not the leader.', target);
             (event as any)['stopImmediatePropagationBackup']();
             event.stopPropagation();
             return;
@@ -131,8 +131,8 @@ class DescVis {
 
         if (remoteEvent.seqNum >= this.sequenceNumber){
             this.sequenceNumber = remoteEvent.seqNum + 1;
-        } 
-        
+        }
+
         this.eventsLedger.push(remoteEvent);
         //this.network.eventsLedger = this.eventsLedger;
         console.log(this.sequenceNumber);
