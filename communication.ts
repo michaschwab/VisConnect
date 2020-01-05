@@ -2,7 +2,7 @@ import {DescEvent} from './descvis';
 import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
 import {DescConnection} from "./peerjs-connection";
 
-enum DESC_MESSAGE_TYPE {
+export enum DESC_MESSAGE_TYPE {
     NEW_CONNECTION,
     EVENT,
     NEW_LEASEE
@@ -55,24 +55,25 @@ export class DescCommunication {
         }
     }
 
+    getId() {
+        return this.peer.getId();
+    }
+
     onOpen() {
-        this.id = this.peer.getId();
+        this.id = this.getId();
 
         console.log("originID", this.originID);
         console.log("myID", this.id);
 
         this.connectToPeer(this.id);
 
-        if (!this.originID) {
-            console.log(window.location + '?id=' + this.id);
-        } else {
-            console.log(window.location.href);
+        if (this.originID) {
             this.connectToPeer(this.originID);
         }
     }
 
     async onConnection(connection: DescConnection) {
-        // Incoming connection: Leader receives connection from client
+        // Incoming connection: Leader or client receives connection from client.
         this.peers.push(connection.getPeer());
         this.connections.push(connection);
         console.log("new connection", this.peers, this.connections.length);
@@ -86,7 +87,7 @@ export class DescCommunication {
     }
 
     async connectToPeer(id: string) {
-        // Outgoing connection: Client connects to leader
+        // Outgoing connection: Client connects to leader or other client.
         const conn: DescConnection = await this.peer.connect(id);
 
         this.connections.push(conn);
@@ -97,7 +98,7 @@ export class DescCommunication {
 
     receiveMessage(data: DescMessage) {
         if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
-            this.recieveNewConnection(data as InitMessage);
+            this.receiveNewConnection(data as InitMessage);
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
         } else if(data.type === DESC_MESSAGE_TYPE.NEW_LEASEE) {
@@ -129,7 +130,7 @@ export class DescCommunication {
         conn.send(decoratedMessage);
     }
 
-    recieveNewConnection(data: InitMessage) {
+    receiveNewConnection(data: InitMessage) {
         console.log("new connection message", data);
         for (let i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {

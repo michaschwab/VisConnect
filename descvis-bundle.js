@@ -915,6 +915,12 @@ var PeerjsNetwork = /** @class */ (function () {
     return PeerjsNetwork;
 }());
 
+var DESC_MESSAGE_TYPE;
+(function (DESC_MESSAGE_TYPE) {
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_CONNECTION"] = 0] = "NEW_CONNECTION";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_LEASEE"] = 2] = "NEW_LEASEE";
+})(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 var DescCommunication = /** @class */ (function () {
     function DescCommunication(originID, onEventReceived, onNewConnection, onNewLeasee) {
         this.originID = originID;
@@ -932,7 +938,7 @@ var DescCommunication = /** @class */ (function () {
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
             var msg = {
-                type: "NewLeasee",
+                type: DESC_MESSAGE_TYPE.NEW_LEASEE,
                 targetSelector: targetSelector,
                 leasee: leasee,
                 sender: this.id,
@@ -940,16 +946,15 @@ var DescCommunication = /** @class */ (function () {
             conn.send(msg);
         }
     };
+    DescCommunication.prototype.getId = function () {
+        return this.peer.getId();
+    };
     DescCommunication.prototype.onOpen = function () {
-        this.id = this.peer.getId();
+        this.id = this.getId();
         console.log("originID", this.originID);
         console.log("myID", this.id);
         this.connectToPeer(this.id);
-        if (!this.originID) {
-            console.log(window.location + '?id=' + this.id);
-        }
-        else {
-            console.log(window.location.href);
+        if (this.originID) {
             this.connectToPeer(this.originID);
         }
     };
@@ -958,7 +963,7 @@ var DescCommunication = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        // Incoming connection: Leader receives connection from client
+                        // Incoming connection: Leader or client receives connection from client.
                         this.peers.push(connection.getPeer());
                         this.connections.push(connection);
                         console.log("new connection", this.peers, this.connections.length);
@@ -992,13 +997,13 @@ var DescCommunication = /** @class */ (function () {
         });
     };
     DescCommunication.prototype.receiveMessage = function (data) {
-        if (data.type === "new_connection") {
-            this.recieveNewConnection(data);
+        if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
+            this.receiveNewConnection(data);
         }
-        else if (data.type === 'DescEvent') {
+        else if (data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
         }
-        else if (data.type === 'NewLeasee') {
+        else if (data.type === DESC_MESSAGE_TYPE.NEW_LEASEE) {
             this.onNewLeasee(data);
         }
     };
@@ -1006,7 +1011,7 @@ var DescCommunication = /** @class */ (function () {
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
             var msg = {
-                'type': 'DescEvent',
+                'type': DESC_MESSAGE_TYPE.EVENT,
                 'sender': this.id,
                 data: e,
             };
@@ -1016,14 +1021,14 @@ var DescCommunication = /** @class */ (function () {
     DescCommunication.prototype.sendNewConnection = function (conn) {
         console.log("sending new connection message");
         var newConnectionMessage = {
-            'type': 'new_connection',
+            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
             'peers': this.peers,
         };
         var decoratedMessage = this.onNewConnection(newConnectionMessage);
         conn.send(decoratedMessage);
     };
-    DescCommunication.prototype.recieveNewConnection = function (data) {
+    DescCommunication.prototype.receiveNewConnection = function (data) {
         console.log("new connection message", data);
         for (var i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
@@ -1164,6 +1169,7 @@ window.setTimeout(function () {
 }, 20);
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
+        var _this = this;
         this.svg = svg;
         this.eventsQueue = [];
         this.sequenceNumber = 0;
@@ -1173,6 +1179,9 @@ var DescVis = /** @class */ (function () {
         var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         var originID = parts ? parts[1] : '';
         this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
+        if (!originID) {
+            setTimeout(function () { return console.log(window.location + '?id=' + _this.network.getId()); }, 1000);
+        }
         this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
     DescVis.prototype.hearEvent = function (eventObj, event) {
@@ -1240,7 +1249,7 @@ var DescVis = /** @class */ (function () {
     };
     DescVis.prototype.onNewConnection = function (originalMsg) {
         return {
-            'type': 'new_connection',
+            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': originalMsg.sender,
             'peers': originalMsg.peers,
             'eventsLedger': this.eventsLedger,

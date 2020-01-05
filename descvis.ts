@@ -1,4 +1,4 @@
-import {DescCommunication, DescMessage, InitMessage, NewLeaseeMessage} from './network';
+import {DESC_MESSAGE_TYPE, DescCommunication, DescMessage, InitMessage, NewLeaseeMessage} from './communication';
 import {DescListener, StrippedEvent} from "./listener";
 
 export interface DescEvent {
@@ -43,6 +43,10 @@ class DescVis {
 
         this.network = new DescCommunication(originID, this.receiveEvent.bind(this),
             this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
+
+        if(!originID) {
+            setTimeout(() => console.log(window.location + '?id=' + this.network.getId()), 1000);
+        }
 
         this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
@@ -119,7 +123,7 @@ class DescVis {
 
     onNewConnection(originalMsg: DescMessage): InitMessage {
         return {
-            'type': 'new_connection',
+            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': originalMsg.sender,
             'peers': originalMsg.peers as string[],
             'eventsLedger': this.eventsLedger,
