@@ -2,22 +2,27 @@ import {DescEvent} from './descvis';
 import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
 import {DescConnection} from "./peerjs-connection";
 
+enum DESC_MESSAGE_TYPE {
+    NEW_CONNECTION,
+    EVENT,
+    NEW_LEASEE
+}
 
 export interface DescMessage {
     peers?: string[],
-    type: "new_connection" | "DescEvent" | "NewLeasee",
+    type: DESC_MESSAGE_TYPE,
     sender: string,
     data?: any,
 }
 
 export interface InitMessage extends DescMessage {
-    type: "new_connection",
+    type: DESC_MESSAGE_TYPE.NEW_CONNECTION,
     peers: string[], 
     eventsLedger: DescEvent[]
 }
 
 export interface NewLeaseeMessage extends DescMessage {
-    type: "NewLeasee",
+    type: DESC_MESSAGE_TYPE.NEW_LEASEE,
     targetSelector: string,
     leasee: string,
 }
@@ -40,7 +45,7 @@ export class DescCommunication {
     setLeasee(targetSelector: string, leasee: string) {
         for(const conn of this.connections) {
             const msg: NewLeaseeMessage = {
-                type: "NewLeasee",
+                type: DESC_MESSAGE_TYPE.NEW_LEASEE,
                 targetSelector,
                 leasee,
                 sender: this.id,
@@ -91,11 +96,11 @@ export class DescCommunication {
     }
 
     receiveMessage(data: DescMessage) {
-        if (data.type === "new_connection") {
+        if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.recieveNewConnection(data as InitMessage);
-        } else if(data.type === 'DescEvent') {
+        } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
-        } else if(data.type === 'NewLeasee') {
+        } else if(data.type === DESC_MESSAGE_TYPE.NEW_LEASEE) {
             this.onNewLeasee(data as NewLeaseeMessage);
         }
     }
@@ -103,7 +108,7 @@ export class DescCommunication {
     broadcastEvent(e: DescEvent) {
         for(const conn of this.connections) {
             const msg: DescMessage = {
-                'type': 'DescEvent',
+                'type': DESC_MESSAGE_TYPE.EVENT,
                 'sender': this.id,
                 data: e,
             };
@@ -115,7 +120,7 @@ export class DescCommunication {
     sendNewConnection(conn: DescConnection) {
         console.log("sending new connection message");
         const newConnectionMessage: DescMessage = {
-            'type': 'new_connection',
+            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
             'peers': this.peers,
             //'eventsLedger': this.eventsLedger
