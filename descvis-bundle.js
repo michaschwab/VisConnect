@@ -922,14 +922,13 @@ var DESC_MESSAGE_TYPE;
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_LEASEE"] = 2] = "NEW_LEASEE";
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 var DescCommunication = /** @class */ (function () {
-    function DescCommunication(originID, onEventReceived, onNewConnection, onNewLeasee) {
+    function DescCommunication(originID, onEventReceived, onNewLeasee, getPastEvents) {
         this.originID = originID;
         this.onEventReceived = onEventReceived;
-        this.onNewConnection = onNewConnection;
         this.onNewLeasee = onNewLeasee;
+        this.getPastEvents = getPastEvents;
         this.connections = [];
         this.peers = [];
-        this.eventsQueue = [];
         this.id = '';
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
@@ -1020,12 +1019,12 @@ var DescCommunication = /** @class */ (function () {
     };
     DescCommunication.prototype.sendNewConnection = function (conn) {
         console.log("sending new connection message");
-        var newConnectionMessage = {
+        var decoratedMessage = {
             'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
             'peers': this.peers,
+            'eventsLedger': this.getPastEvents(),
         };
-        var decoratedMessage = this.onNewConnection(newConnectionMessage);
         conn.send(decoratedMessage);
     };
     DescCommunication.prototype.receiveNewConnection = function (data) {
@@ -1235,7 +1234,7 @@ var DescVis = /** @class */ (function () {
         this.leaseeTimeouts = new Map();
         var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         var originID = parts ? parts[1] : '';
-        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
+        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this), function () { return _this.eventsLedger; });
         if (!originID) {
             setTimeout(function () { return console.log(window.location + '?id=' + _this.network.getId()); }, 1000);
         }
@@ -1299,14 +1298,6 @@ var DescVis = /** @class */ (function () {
         else {
             this.leasees.set(target, msg.leasee);
         }
-    };
-    DescVis.prototype.onNewConnection = function (originalMsg) {
-        return {
-            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
-            'sender': originalMsg.sender,
-            'peers': originalMsg.peers,
-            'eventsLedger': this.eventsLedger,
-        };
     };
     DescVis.prototype.receiveEvent = function (remoteEvent) {
         var eventObject = remoteEvent.event;

@@ -31,13 +31,12 @@ export class DescCommunication {
     private peer: DescNetwork;
     private connections: DescConnection[] = [];
     private peers: string[] = [];
-    private eventsQueue = [];
     public id = '';
 
     constructor(private originID: string,
                 private onEventReceived: (e: DescEvent) => void,
-                private onNewConnection: (e: DescMessage) => InitMessage,
-                private onNewLeasee: (msg: NewLeaseeMessage) => void) {
+                private onNewLeasee: (msg: NewLeaseeMessage) => void,
+                private getPastEvents: () => DescEvent[]) {
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
@@ -120,13 +119,13 @@ export class DescCommunication {
 
     sendNewConnection(conn: DescConnection) {
         console.log("sending new connection message");
-        const newConnectionMessage: DescMessage = {
+        const decoratedMessage: InitMessage = {
             'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
-            'peers': this.peers,
-            //'eventsLedger': this.eventsLedger
+            'peers': this.peers as string[],
+            'eventsLedger': this.getPastEvents(),
         };
-        const decoratedMessage = this.onNewConnection(newConnectionMessage);
+
         conn.send(decoratedMessage);
     }
 

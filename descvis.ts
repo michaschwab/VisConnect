@@ -27,8 +27,8 @@ class DescVis {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         const originID = parts ? parts[1] : '';
 
-        this.network = new DescCommunication(originID, this.receiveEvent.bind(this),
-            this.onNewConnection.bind(this), this.onNewLeasee.bind(this));
+        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
+            () => this.eventsLedger);
 
         if(!originID) {
             setTimeout(() => console.log(window.location + '?id=' + this.network.getId()), 1000);
@@ -101,15 +101,6 @@ class DescVis {
         } else {
             this.leasees.set(target as HTMLElement, msg.leasee);
         }
-    }
-
-    onNewConnection(originalMsg: DescMessage): InitMessage {
-        return {
-            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
-            'sender': originalMsg.sender,
-            'peers': originalMsg.peers as string[],
-            'eventsLedger': this.eventsLedger,
-        };
     }
 
     receiveEvent(remoteEvent: DescEvent) {
