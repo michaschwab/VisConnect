@@ -1149,24 +1149,31 @@ var DescListener = /** @class */ (function () {
     return DescListener;
 }());
 
-// The visualization's event listeners need to be called after DESCVis' event listeners.
-// For this reason, we delay calling event listeners that are added before DESCVis is started.
-Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
-Element.prototype.addEventListener = function (eventName, callback) {
-    console.log('doing a delayed execution on ', eventName);
-    var that = this;
-    setTimeout(function () {
-        Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
-    }, 100);
-};
-console.log('descvis');
-// After the visualization code is run, reset the addEventListener function to its normal functionality, and start
-// DESCVis.
-window.setTimeout(function () {
-    console.log('hi');
-    Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
+function delayAddEventListener() {
+    // The visualization's event listeners need to be called after DESCVis' event listeners.
+    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+    Element.prototype.addEventListener = function (eventName, callback) {
+        console.log('doing a delayed execution on ', eventName);
+        var that = this;
+        setTimeout(function () {
+            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
+        }, 100);
+    };
+    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
+    // DESCVis.
+    return new Promise(function (resolve) {
+        window.setTimeout(function () {
+            console.log('hi');
+            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
+            resolve();
+        }, 20);
+    });
+}
+
+delayAddEventListener().then(function () {
     new DescVis(document.getElementsByTagName('svg')[0]);
-}, 20);
+});
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
         var _this = this;
@@ -1197,11 +1204,9 @@ var DescVis = /** @class */ (function () {
         var target = event.target;
         var peerId = this.network.id;
         if (!this.leasees.has(target)) {
-            //console.log('setting the leader of ', target, ' to ', peerId);
             this.leasees.set(target, peerId);
             this.network.setLeasee(eventObj.target, peerId);
         }
-        //console.log('checking ', this.leasees.get(target), peerId, this.leasees.get(target) === peerId);
         if (this.leasees.get(target) !== peerId) {
             // Prevent event.
             //console.log('Can not edit this element because I am not the leader.', target);
@@ -1224,7 +1229,6 @@ var DescVis = /** @class */ (function () {
         this.network.broadcastEvent(newEvent);
     };
     DescVis.prototype.unlease = function (element) {
-        console.log('releasing ', element);
         this.leasees.delete(element);
         var selector = this.listener.getElementSelector(element);
         if (!selector) {
