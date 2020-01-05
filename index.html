@@ -33,14 +33,21 @@ var node = svg.append("g")
         .attr("fill", function(d) { return color(d.group); })
         .on('mouseenter', function() { d3.select(this).attr('stroke', 'red')})
         .on('mouseout', function() { d3.select(this).attr('stroke', '')})
-        .on('mousedown', function() { this['dragging'] = true; })
-        .on('mouseup', function() { this['dragging'] = false; })
-        .on('mousemove', function(d) { if(this['dragging']) { dragged.call(this, d);}});
+        .on('mousedown', function() { this['dragPos'] = {x: d3.event.x, y: d3.event.y}; })
+        .on('touchstart', function() { this['dragPos'] = {x: d3.event.touches[0].clientX, y: d3.event.touches[0].clientY}; })
+        .on('mouseup', function() { this['dragPos'] = null; })
+        .on('touchend', function() { this['dragPos'] = null; })
+        .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.x, d3.event.y);}})
+        .on('touchmove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.touches[0].clientX, d3.event.touches[0].clientY);}});
 
-function dragged(d) {
+function dragged(d, eventX, eventY) {
   let circle = d3.select(this);
-  circle.attr("cx", d.x = d3.event.x);
-  circle.attr("cy", d.y = d3.event.y);
+  d.x += eventX - this['dragPos'].x;
+  d.y += eventY - this['dragPos'].y;
+  this['dragPos'] = {x: eventX, y: eventY};
+  circle.attr("cx", d.x);
+  circle.attr("cy", d.y);
+  d3.event.preventDefault(); // Disable scrolling
 }
 
 </script>
