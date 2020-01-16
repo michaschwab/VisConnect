@@ -27,6 +27,7 @@ export interface NewLeaseeMessage extends DescMessage {
     leasee: string,
 }
 
+// this file should know all the message types and create the messages
 export class DescCommunication {
     private peer: DescNetwork;
     private connections: DescConnection[] = [];
