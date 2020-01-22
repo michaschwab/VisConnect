@@ -1,6 +1,7 @@
 import {DESC_MESSAGE_TYPE, DescCommunication, DescMessage, InitMessage, NewLeaseeMessage} from './communication';
 import {DescListener, StrippedEvent} from "./listener";
 import {delayAddEventListener, disableStopPropagation, recreateEvent, stopPropagation} from "./dom";
+import {DescProtocol} from "./protocol";
 
 export interface DescEvent {
     seqNum: number,
@@ -14,12 +15,13 @@ delayAddEventListener().then(() => {
 });
 
 class DescVis {
-    private network: DescCommunication;
+    private communication: DescCommunication;
     private eventsQueue: DescEvent[] = [];
     private sequenceNumber: number = 0;
     private eventsLedger: DescEvent[] = [];
     private leasees = new Map<HTMLElement, string>();
     private listener: DescListener;
+    private protocol: DescProtocol;
 
     private leaseeTimeouts = new Map<HTMLElement, number>();
 
@@ -27,31 +29,33 @@ class DescVis {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         const originID = parts ? parts[1] : '';
 
-        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
-            () => this.eventsLedger);
+        this.communication = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
+            () => this.eventsLedger, this.init.bind(this));
 
-        if(!originID) {
-            setTimeout(() => console.log(window.location + '?id=' + this.network.getId()), 1000);
-        }
-
+        this.protocol = new DescProtocol();
         this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
+    }
+
+    init() {
+        console.log('init');
+        console.log(window.location + '?id=' + this.communication.getId());
     }
 
     hearEvent(eventObj: StrippedEvent, event: Event) {
         if(!event.target) {
             return new Error('event has no target');
         }
-        if(!this.network.id) {
+        if(!this.communication.id) {
             console.log('network not ready');
             stopPropagation(event);
             return;
         }
         const target = event.target as HTMLElement;
-        const peerId = this.network.id;
+        const peerId = this.communication.id;
 
         if(!this.leasees.has(target)) {
             this.leasees.set(target, peerId);
-            this.network.setLeasee(eventObj.target, peerId);
+            this.communication.setLeasee(eventObj.target, peerId);
         }
 
         if(this.leasees.get(target) !== peerId) {
@@ -69,12 +73,12 @@ class DescVis {
         const newEvent: DescEvent = {
             'seqNum': this.sequenceNumber,
             'event': eventObj,
-            'sender': this.network.id
+            'sender': this.communication.id
         };
         this.sequenceNumber++;
         this.eventsLedger.push(newEvent);
         //console.log(this.sequenceNumber);
-        this.network.broadcastEvent(newEvent);
+        this.communication.broadcastEvent(newEvent);
     }
 
     unlease(element: HTMLElement) {
@@ -83,7 +87,7 @@ class DescVis {
         if(!selector) {
             return new Error('selector not found');
         }
-        this.network.setLeasee(selector, '');
+        this.communication.setLeasee(selector, '');
     }
 
     onNewLeasee(msg: NewLeaseeMessage) {

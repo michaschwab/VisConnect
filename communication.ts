@@ -5,7 +5,8 @@ import {DescConnection} from "./peerjs-connection";
 export enum DESC_MESSAGE_TYPE {
     NEW_CONNECTION,
     EVENT,
-    NEW_LEASEE
+    LOCK_REQUESTED,
+    LOCK_VOTE
 }
 
 export interface DescMessage {
@@ -21,10 +22,16 @@ export interface InitMessage extends DescMessage {
     eventsLedger: DescEvent[]
 }
 
-export interface NewLeaseeMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.NEW_LEASEE,
+export interface LockRequestMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
     targetSelector: string,
-    leasee: string,
+    owner: string,
+}
+
+export interface LockVoteMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.LOCK_VOTE,
+    targetSelector: string,
+    owner: string,
 }
 
 // this file should know all the message types and create the messages
@@ -37,11 +44,25 @@ export class DescCommunication {
     constructor(private originID: string,
                 private onEventReceived: (e: DescEvent) => void,
                 private onNewLeasee: (msg: NewLeaseeMessage) => void,
-                private getPastEvents: () => DescEvent[]) {
+                private getPastEvents: () => DescEvent[],
+                private onOpenCallback: () => void) {
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
 
+    requestLock(targetSelector: string, owner: string) {
+        for(const conn of this.connections) {
+            const msg: LockRequestMessage = {
+                type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+                targetSelector,
+                owner,
+                sender: this.id,
+            };
+
+            conn.send(msg);
+        }
+    }
+/*
     setLeasee(targetSelector: string, leasee: string) {
         for(const conn of this.connections) {
             const msg: NewLeaseeMessage = {
@@ -53,7 +74,7 @@ export class DescCommunication {
 
             conn.send(msg);
         }
-    }
+    }*/
 
     getId() {
         return this.peer.getId();
@@ -70,6 +91,7 @@ export class DescCommunication {
         if (this.originID) {
             this.connectToPeer(this.originID);
         }
+        this.onOpenCallback();
     }
 
     async onConnection(connection: DescConnection) {

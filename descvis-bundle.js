@@ -921,12 +921,14 @@ var DESC_MESSAGE_TYPE;
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_LEASEE"] = 2] = "NEW_LEASEE";
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
+// this file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
-    function DescCommunication(originID, onEventReceived, onNewLeasee, getPastEvents) {
+    function DescCommunication(originID, onEventReceived, onNewLeasee, getPastEvents, onOpenCallback) {
         this.originID = originID;
         this.onEventReceived = onEventReceived;
         this.onNewLeasee = onNewLeasee;
         this.getPastEvents = getPastEvents;
+        this.onOpenCallback = onOpenCallback;
         this.connections = [];
         this.peers = [];
         this.id = '';
@@ -956,6 +958,7 @@ var DescCommunication = /** @class */ (function () {
         if (this.originID) {
             this.connectToPeer(this.originID);
         }
+        this.onOpenCallback();
     };
     DescCommunication.prototype.onConnection = function (connection) {
         return __awaiter(this, void 0, void 0, function () {
@@ -1234,12 +1237,13 @@ var DescVis = /** @class */ (function () {
         this.leaseeTimeouts = new Map();
         var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         var originID = parts ? parts[1] : '';
-        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this), function () { return _this.eventsLedger; });
-        if (!originID) {
-            setTimeout(function () { return console.log(window.location + '?id=' + _this.network.getId()); }, 1000);
-        }
+        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this), function () { return _this.eventsLedger; }, this.init.bind(this));
         this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
+    DescVis.prototype.init = function () {
+        console.log('init');
+        console.log(window.location + '?id=' + this.network.getId());
+    };
     DescVis.prototype.hearEvent = function (eventObj, event) {
         var _this = this;
         if (!event.target) {
