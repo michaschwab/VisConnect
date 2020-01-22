@@ -1,44 +1,44 @@
 import {StrippedEvent} from "./listener";
-import {DescNetwork} from "./peerjs-network";
+import {DescCommunication} from "./communication";
 
 export class DescProtocol {
     private ledgers = new Map<EventTarget, DescEvent[]>();
     private lockOwners = new Map<EventTarget, string>();
 
     constructor(private isHost: boolean,
-                private network: DescNetwork,
+                private communication: DescCommunication,
                 private participantId: string,
                 private executeEvent: (e: Event) => void,
                 private stopEvent: (e: Event) => void) {
 
     }
 
-
     localEvent(stripped: StrippedEvent, event: Event & {target: EventTarget}) {
         const element = event.target;
 
         if(this.lockOwners.has(element) && this.lockOwners.get(element) === this.participantId) {
             this.executeEvent(event);
-            this.addEventToLedger(element, stripped);
-            this.extendLock(element);
+            const descEvent = this.addEventToLedger(element, stripped);
+            this.extendLock(stripped.target);
+            this.communication.broadcastEvent(descEvent);
         } else if(this.lockOwners.has(element) && this.lockOwners.get(element) !== this.participantId) {
             this.stopEvent(event);
         } else {
-            //TODO: Request lock
+            this.requestLock(stripped.target);
+            //TODO: Block for now, execute once approval comes in.
         }
     }
-
 
     receiveRemoteEvent() {
 
     }
 
-    private extendLock(element: EventTarget) {
+    private extendLock(selector: string) {
         //TODO
     }
 
-    private requestLock() {
-        //TODO
+    private requestLock(selector: string) {
+        this.communication.requestLock(selector);
     }
 
     private addEventToLedger(element: EventTarget, stripped: StrippedEvent) {
@@ -54,6 +54,8 @@ export class DescProtocol {
         };
 
         ledger.push(newEvent);
+
+        return newEvent;
     }
 }
 

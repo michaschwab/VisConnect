@@ -18,6 +18,7 @@ class DescVis {
     private communication: DescCommunication;
     private eventsQueue: DescEvent[] = [];
     private sequenceNumber: number = 0;
+    private isHost = false;
     private eventsLedger: DescEvent[] = [];
     private leasees = new Map<HTMLElement, string>();
     private listener: DescListener;
@@ -28,20 +29,25 @@ class DescVis {
     constructor(private svg: SVGElement) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         const originID = parts ? parts[1] : '';
+        this.isHost = !originID;
 
         this.communication = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
             () => this.eventsLedger, this.init.bind(this));
-
-        this.protocol = new DescProtocol();
-        this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
     }
 
     init() {
-        console.log('init');
         console.log(window.location + '?id=' + this.communication.getId());
+
+        this.protocol = new DescProtocol(this.isHost, this.communication, this.communication.getId(),
+            this.executeEvent.bind(this), stopPropagation);
+        this.listener = new DescListener(this.svg, this.protocol.localEvent.bind(this));
     }
 
-    hearEvent(eventObj: StrippedEvent, event: Event) {
+    executeEvent() {
+
+    }
+
+    /*hearEvent(eventObj: StrippedEvent, event: Event) {
         if(!event.target) {
             return new Error('event has no target');
         }
@@ -79,7 +85,7 @@ class DescVis {
         this.eventsLedger.push(newEvent);
         //console.log(this.sequenceNumber);
         this.communication.broadcastEvent(newEvent);
-    }
+    }*/
 
     unlease(element: HTMLElement) {
         this.leasees.delete(element);

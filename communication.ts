@@ -50,12 +50,12 @@ export class DescCommunication {
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
 
-    requestLock(targetSelector: string, owner: string) {
+    requestLock(targetSelector: string) {
         for(const conn of this.connections) {
             const msg: LockRequestMessage = {
                 type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
                 targetSelector,
-                owner,
+                owner: this.id,
                 sender: this.id,
             };
 
