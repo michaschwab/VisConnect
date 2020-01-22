@@ -21,6 +21,15 @@ var svg = d3.select("svg");
 var color = d3.scaleOrdinal(d3.schemeCategory20);
 var nodes = [{group: 'A', x: 100, y: 100}, {group: 'B', x: 140, y: 200}, {group: 'C', x: 300, y: 150}];
 
+const clientColor = randomColor();
+
+var colorMarker = svg.append("g")
+        .append("rect")
+        .attr('width', 50)
+        .attr('height', 50)
+        .attr('fill', clientColor)
+
+
 var node = svg.append("g")
         .attr("class", "nodes")
         .selectAll("circle")
@@ -38,7 +47,8 @@ var node = svg.append("g")
         .on('mouseup', function() { this['dragPos'] = null; })
         .on('touchend', function() { this['dragPos'] = null; })
         .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.x, d3.event.y);}})
-        .on('touchmove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.touches[0].clientX, d3.event.touches[0].clientY);}});
+        .on('touchmove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.touches[0].clientX, d3.event.touches[0].clientY);}})
+        .on('click', function(d){d3.select(this).attr('fill', clientColor)})
 
 function dragged(d, eventX, eventY) {
   let circle = d3.select(this);
@@ -50,6 +60,39 @@ function dragged(d, eventX, eventY) {
   d3.event.preventDefault(); // Disable scrolling
 }
 
+// Adapted from http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+function randomColor(){
+  var golden_ratio_conjugate = 0.618033988749895;
+  var h = Math.random();
+  return hslToRgb(h, 0.5, 0.60);
+};
+
+function hslToRgb(h, s, l){
+      var r, g, b;
+
+      if(s == 0){
+          r = g = b = l; // achromatic
+      }else{
+          function hue2rgb(p, q, t){
+              if(t < 0) t += 1;
+              if(t > 1) t -= 1;
+              if(t < 1/6) return p + (q - p) * 6 * t;
+              if(t < 1/2) return q;
+              if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+              return p;
+          }
+
+          var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          var p = 2 * l - q;
+          r = hue2rgb(p, q, h + 1/3);
+          g = hue2rgb(p, q, h);
+          b = hue2rgb(p, q, h - 1/3);
+      }
+
+      return '#'+Math.round(r * 255).toString(16)+Math.round(g * 255).toString(16)+Math.round(b * 255).toString(16);
+  };
+
+console.log(randomColor())
 </script>
 </body>
 </html>
