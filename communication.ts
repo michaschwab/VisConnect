@@ -167,6 +167,10 @@ export class DescCommunication {
             this.receiveNewConnection(data as InitMessage);
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
+        } else if(data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
+
+        } else if(data.type === DESC_MESSAGE_TYPE.LOCK_VOTE) {
+
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
             this.onNewLockOwner(msg.targetSelector, msg.owner);

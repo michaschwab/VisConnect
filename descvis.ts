@@ -15,33 +15,24 @@ delayAddEventListener().then(() => {
 });
 
 class DescVis {
-    private sequenceNumber: number = 0;
-    private isLeader = false;
-    private eventsLedger: DescEvent[] = [];
-    private leasees = new Map<HTMLElement, string>();
     private listener: DescListener;
     private protocol: DescProtocol;
-
     private leaseeTimeouts = new Map<HTMLElement, number>(); //TODO: implement this in the protocol or leader protocol.
 
     constructor(private svg: SVGElement) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         const leaderId = parts ? parts[1] : '';
-        this.isLeader = !leaderId;
+        const isLeader = !leaderId;
 
         /*this.communication = new DescCommunication(leaderId, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
             () => this.eventsLedger, this.init.bind(this));
 
         console.log(window.location + '?id=' + this.communication.getId());*/
 
-        const Protocol = this.isLeader ? DescLeaderProtocol : DescProtocol;
+        const Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
 
         this.protocol = new Protocol(leaderId, this.executeEvent.bind(this));
         this.listener = new DescListener(this.svg, this.localEvent.bind(this));
-    }
-
-    init() {
-
     }
 
     localEvent(stripped: StrippedEvent, event: Event) {
