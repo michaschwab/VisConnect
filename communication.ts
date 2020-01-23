@@ -25,19 +25,21 @@ export interface InitMessage extends DescMessage {
 export interface LockRequestMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
     targetSelector: string,
-    owner: string,
+    requester: string,
 }
 
 export interface LockVoteMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.LOCK_VOTE,
     targetSelector: string,
-    owner: string,
+    requester: string,
+    agree: boolean
 }
 
-// this file should know all the message types and create the messages
+// This file should know all the message types and create the messages
 export class DescCommunication {
     private peer: DescNetwork;
     private connections: DescConnection[] = [];
+    private leaderConnection?: DescConnection;
     private peers: string[] = [];
     public id = '';
 
@@ -50,18 +52,39 @@ export class DescCommunication {
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
 
+    /**
+     * Requests all clients to vote to agree that this client gets the lock on the element.
+     */
     requestLock(targetSelector: string) {
         for(const conn of this.connections) {
             const msg: LockRequestMessage = {
                 type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
                 targetSelector,
-                owner: this.id,
+                requester: this.id,
                 sender: this.id,
             };
 
             conn.send(msg);
         }
     }
+
+    /**
+     * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
+     */
+    sendLockVote(targetSelector: string, requester: string, agree: boolean) {
+        const msg: LockVoteMessage = {
+            type: DESC_MESSAGE_TYPE.LOCK_VOTE,
+            sender: this.id,
+            targetSelector,
+            requester,
+            agree
+        };
+        if(!this.leaderConnection) {
+            return console.error('Can not send lock vote because no leader connection exists.');
+        }
+        this.leaderConnection.send(msg);
+    }
+
 /*
     setLeasee(targetSelector: string, leasee: string) {
         for(const conn of this.connections) {
@@ -94,11 +117,21 @@ export class DescCommunication {
         this.onOpenCallback();
     }
 
+    getNumberOfConnections() {
+        return this.connections.length;
+    }
+
     async onConnection(connection: DescConnection) {
         // Incoming connection: Leader or client receives connection from client.
-        this.peers.push(connection.getPeer());
+        const peer = connection.getPeer();
+
+        this.peers.push(peer);
         this.connections.push(connection);
         console.log("new connection", this.peers, this.connections.length);
+
+        if(peer === this.originID) {
+            this.leaderConnection = connection;
+        }
 
         await connection.open();
         connection.messages.subscribe(this.receiveMessage.bind(this));

@@ -2,30 +2,35 @@ import {StrippedEvent} from "./listener";
 import {DescCommunication} from "./communication";
 
 export class DescProtocol {
-    private ledgers = new Map<EventTarget, DescEvent[]>();
-    private lockOwners = new Map<EventTarget, string>();
+    protected ledgers = new Map<string, DescEvent[]>();
+    protected lockOwners = new Map<string, string>();
+    protected requestedLocks = new Set<string>();
+    protected heldEvents = new Map<string, StrippedEvent[]>();
 
-    constructor(private isHost: boolean,
-                private communication: DescCommunication,
-                private participantId: string,
-                private executeEvent: (e: Event) => void,
-                private stopEvent: (e: Event) => void) {
+    constructor(protected isHost: boolean,
+                protected communication: DescCommunication,
+                protected participantId: string,
+                protected executeEvent: (e: StrippedEvent) => void) {
 
     }
 
-    localEvent(stripped: StrippedEvent, event: Event & {target: EventTarget}) {
-        const element = event.target;
+    localEvent(stripped: StrippedEvent) {
+        const selector = stripped.target;
 
-        if(this.lockOwners.has(element) && this.lockOwners.get(element) === this.participantId) {
-            this.executeEvent(event);
-            const descEvent = this.addEventToLedger(element, stripped);
+        if(this.lockOwners.has(selector) && this.lockOwners.get(selector) === this.participantId) {
+            this.executeEvent(stripped);
+            const descEvent = this.addEventToLedger(selector, stripped);
             this.extendLock(stripped.target);
             this.communication.broadcastEvent(descEvent);
-        } else if(this.lockOwners.has(element) && this.lockOwners.get(element) !== this.participantId) {
-            this.stopEvent(event);
+        } else if(this.lockOwners.has(selector) && this.lockOwners.get(selector) !== this.participantId) {
+            // Do nothing - do not execute the event.
         } else {
-            this.requestLock(stripped.target);
-            //TODO: Block for now, execute once approval comes in.
+            this.requestLock(selector);
+
+            if(!this.heldEvents.has(selector)) {
+                this.heldEvents.set(selector, []);
+            }
+            this.heldEvents.get(selector)!.push(stripped);
         }
     }
 
@@ -33,15 +38,28 @@ export class DescProtocol {
 
     }
 
-    private extendLock(selector: string) {
+    receiveLockRequest(selector: string, requester: string) {
+        let vote = false;
+        if(!this.lockOwners.has(selector) || this.lockOwners.get(selector) === requester) {
+            // Vote yes
+            vote = true;
+        }
+        this.communication.sendLockVote(selector, requester, vote);
+    }
+
+    protected extendLock(selector: string) {
         //TODO
     }
 
-    private requestLock(selector: string) {
+    protected requestLock(selector: string) {
+        if(this.requestedLocks.has(selector)) {
+            return;
+        }
+        this.requestedLocks.add(selector);
         this.communication.requestLock(selector);
     }
 
-    private addEventToLedger(element: EventTarget, stripped: StrippedEvent) {
+    protected addEventToLedger(element: string, stripped: StrippedEvent) {
         if(!this.ledgers.has(element)) {
             this.ledgers.set(element, []);
         }

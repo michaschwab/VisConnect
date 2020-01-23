@@ -39,8 +39,13 @@ class DescVis {
         console.log(window.location + '?id=' + this.communication.getId());
 
         this.protocol = new DescProtocol(this.isHost, this.communication, this.communication.getId(),
-            this.executeEvent.bind(this), stopPropagation);
-        this.listener = new DescListener(this.svg, this.protocol.localEvent.bind(this));
+            this.executeEvent.bind(this));
+        this.listener = new DescListener(this.svg, this.localEvent.bind(this));
+    }
+
+    localEvent(stripped: StrippedEvent, event: Event) {
+        stopPropagation(event);
+        this.protocol.localEvent(stripped);
     }
 
     executeEvent() {
