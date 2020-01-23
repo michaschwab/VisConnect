@@ -1,6 +1,7 @@
 import {DescEvent} from './descvis';
 import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
 import {DescConnection} from "./peerjs-connection";
+import {StrippedEvent} from "./listener";
 
 export enum DESC_MESSAGE_TYPE {
     NEW_CONNECTION,
@@ -52,11 +53,11 @@ export class DescCommunication {
     private peers: string[] = [];
     public id = '';
 
-    constructor(private originID: string,
-                private onEventReceived: (e: DescEvent) => void,
-                private onNewLockOwner: (msg: LockOwnerChangedMessage) => void,
+    constructor(private leaderId: string,
+                private onEventReceived: (e: StrippedEvent) => void,
+                private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
-                private onOpenCallback: () => void) {
+                private onOpenCallback: () => void = () => {}) {
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
@@ -116,13 +117,13 @@ export class DescCommunication {
     onOpen() {
         this.id = this.getId();
 
-        console.log("originID", this.originID);
+        console.log("originID", this.leaderId);
         console.log("myID", this.id);
 
         this.connectToPeer(this.id);
 
-        if (this.originID) {
-            this.connectToPeer(this.originID);
+        if (this.leaderId) {
+            this.connectToPeer(this.leaderId);
         }
         this.onOpenCallback();
     }
@@ -139,14 +140,14 @@ export class DescCommunication {
         this.connections.push(connection);
         console.log("new connection", this.peers, this.connections.length);
 
-        if(peer === this.originID) {
+        if(peer === this.leaderId) {
             this.leaderConnection = connection;
         }
 
         await connection.open();
         connection.messages.subscribe(this.receiveMessage.bind(this));
 
-        if (!this.originID) {
+        if (!this.leaderId) {
             this.sendNewConnection(connection);
         }
     }
@@ -167,7 +168,8 @@ export class DescCommunication {
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
-            this.onNewLockOwner(data as LockOwnerChangedMessage);
+            const msg = data as LockOwnerChangedMessage;
+            this.onNewLockOwner(msg.targetSelector, msg.owner);
         }
     }
 
@@ -205,7 +207,7 @@ export class DescCommunication {
         }
 
         for (let i = 0; i < data.eventsLedger.length; i++){
-            this.onEventReceived(data.eventsLedger[i]);
+            this.onEventReceived(data.eventsLedger[i].event);
         }
     }
 }

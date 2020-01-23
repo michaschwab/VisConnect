@@ -1,7 +1,7 @@
-import {DESC_MESSAGE_TYPE, DescCommunication, DescMessage, InitMessage, NewLeaseeMessage} from './communication';
 import {DescListener, StrippedEvent} from "./listener";
 import {delayAddEventListener, disableStopPropagation, recreateEvent, stopPropagation} from "./dom";
 import {DescProtocol} from "./protocol";
+import {DescLeaderProtocol} from "./leader-protocol";
 
 export interface DescEvent {
     seqNum: number,
@@ -15,32 +15,33 @@ delayAddEventListener().then(() => {
 });
 
 class DescVis {
-    private communication: DescCommunication;
-    private eventsQueue: DescEvent[] = [];
     private sequenceNumber: number = 0;
-    private isHost = false;
+    private isLeader = false;
     private eventsLedger: DescEvent[] = [];
     private leasees = new Map<HTMLElement, string>();
     private listener: DescListener;
     private protocol: DescProtocol;
 
-    private leaseeTimeouts = new Map<HTMLElement, number>();
+    private leaseeTimeouts = new Map<HTMLElement, number>(); //TODO: implement this in the protocol or leader protocol.
 
     constructor(private svg: SVGElement) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
-        const originID = parts ? parts[1] : '';
-        this.isHost = !originID;
+        const leaderId = parts ? parts[1] : '';
+        this.isLeader = !leaderId;
 
-        this.communication = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
+        /*this.communication = new DescCommunication(leaderId, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
             () => this.eventsLedger, this.init.bind(this));
+
+        console.log(window.location + '?id=' + this.communication.getId());*/
+
+        const Protocol = this.isLeader ? DescLeaderProtocol : DescProtocol;
+
+        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this));
+        this.listener = new DescListener(this.svg, this.localEvent.bind(this));
     }
 
     init() {
-        console.log(window.location + '?id=' + this.communication.getId());
 
-        this.protocol = new DescProtocol(this.isHost, this.communication, this.communication.getId(),
-            this.executeEvent.bind(this));
-        this.listener = new DescListener(this.svg, this.localEvent.bind(this));
     }
 
     localEvent(stripped: StrippedEvent, event: Event) {
@@ -48,8 +49,13 @@ class DescVis {
         this.protocol.localEvent(stripped);
     }
 
-    executeEvent() {
+    executeEvent(stripped: StrippedEvent) {
+        const event = recreateEvent(stripped, this.svg);
 
+        (event as any)['desc-received'] = true;
+        if(event.target) {
+            event.target.dispatchEvent(event);
+        }
     }
 
     /*hearEvent(eventObj: StrippedEvent, event: Event) {
@@ -91,7 +97,7 @@ class DescVis {
         //console.log(this.sequenceNumber);
         this.communication.broadcastEvent(newEvent);
     }*/
-
+/*
     unlease(element: HTMLElement) {
         this.leasees.delete(element);
         const selector = this.listener.getElementSelector(element);
@@ -99,8 +105,8 @@ class DescVis {
             return new Error('selector not found');
         }
         this.communication.setLeasee(selector, '');
-    }
-
+    }*/
+/*
     onNewLeasee(msg: NewLeaseeMessage) {
         // We are vulnerable to malicious actors here!
 
@@ -116,8 +122,8 @@ class DescVis {
         } else {
             this.leasees.set(target as HTMLElement, msg.leasee);
         }
-    }
-
+    }*/
+/*
     receiveEvent(remoteEvent: DescEvent) {
         let eventObject: StrippedEvent = remoteEvent.event;
 
@@ -135,5 +141,5 @@ class DescVis {
         if(e.target) {
             e.target.dispatchEvent(e);
         }
-    }
+    }*/
 }

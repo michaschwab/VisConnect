@@ -6,12 +6,19 @@ export class DescProtocol {
     protected lockOwners = new Map<string, string>();
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
+    protected communication: DescCommunication;
+    protected participantId: string;
 
-    constructor(protected isHost: boolean,
-                protected communication: DescCommunication,
-                protected participantId: string,
+    constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void) {
+        this.communication = new DescCommunication(leaderId, this.localEvent.bind(this),
+            this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this));
+        this.participantId = this.communication.getId();
+    }
 
+    getPastEvents() {
+        //TODO: Reconstruct the list of events from the ledgers, sorting by time.
+        return [];
     }
 
     localEvent(stripped: StrippedEvent) {
@@ -45,6 +52,21 @@ export class DescProtocol {
             vote = true;
         }
         this.communication.sendLockVote(selector, electionId, requester, vote);
+    }
+
+    lockOwnerChanged(selector: string, owner: string) {
+        this.lockOwners.set(selector, owner);
+
+        if(owner === this.participantId && this.heldEvents.has(selector)) {
+            // Finally, trigger these held up events.
+            const events = this.heldEvents.get(selector)!;
+            for(const stripped of events) {
+                this.executeEvent(stripped);
+                const descEvent = this.addEventToLedger(selector, stripped);
+                this.communication.broadcastEvent(descEvent);
+            }
+            this.heldEvents.delete(selector);
+        }
     }
 
     protected extendLock(selector: string) {
