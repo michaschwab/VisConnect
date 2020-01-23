@@ -38,13 +38,13 @@ export class DescProtocol {
 
     }
 
-    receiveLockRequest(selector: string, requester: string) {
+    receiveLockRequest(selector: string, electionId: string, requester: string) {
         let vote = false;
         if(!this.lockOwners.has(selector) || this.lockOwners.get(selector) === requester) {
             // Vote yes
             vote = true;
         }
-        this.communication.sendLockVote(selector, requester, vote);
+        this.communication.sendLockVote(selector, electionId, requester, vote);
     }
 
     protected extendLock(selector: string) {

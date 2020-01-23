@@ -6,7 +6,8 @@ export enum DESC_MESSAGE_TYPE {
     NEW_CONNECTION,
     EVENT,
     LOCK_REQUESTED,
-    LOCK_VOTE
+    LOCK_VOTE,
+    LOCK_OWNER_CHANGED,
 }
 
 export interface DescMessage {
@@ -24,15 +25,23 @@ export interface InitMessage extends DescMessage {
 
 export interface LockRequestMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+    electionId: string,
     targetSelector: string,
     requester: string,
 }
 
 export interface LockVoteMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.LOCK_VOTE,
+    electionId: string,
     targetSelector: string,
     requester: string,
     agree: boolean
+}
+
+export interface LockOwnerChangedMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+    targetSelector: string,
+    owner: string,
 }
 
 // This file should know all the message types and create the messages
@@ -45,7 +54,7 @@ export class DescCommunication {
 
     constructor(private originID: string,
                 private onEventReceived: (e: DescEvent) => void,
-                private onNewLeasee: (msg: NewLeaseeMessage) => void,
+                private onNewLockOwner: (msg: LockOwnerChangedMessage) => void,
                 private getPastEvents: () => DescEvent[],
                 private onOpenCallback: () => void) {
         this.peer = new PeerjsNetwork();
@@ -59,6 +68,7 @@ export class DescCommunication {
         for(const conn of this.connections) {
             const msg: LockRequestMessage = {
                 type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+                electionId: String(Math.random()).substr(2),
                 targetSelector,
                 requester: this.id,
                 sender: this.id,
@@ -71,9 +81,10 @@ export class DescCommunication {
     /**
      * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
      */
-    sendLockVote(targetSelector: string, requester: string, agree: boolean) {
+    sendLockVote(targetSelector: string, electionId: string, requester: string, agree: boolean) {
         const msg: LockVoteMessage = {
             type: DESC_MESSAGE_TYPE.LOCK_VOTE,
+            electionId,
             sender: this.id,
             targetSelector,
             requester,
@@ -85,19 +96,18 @@ export class DescCommunication {
         this.leaderConnection.send(msg);
     }
 
-/*
-    setLeasee(targetSelector: string, leasee: string) {
+    changeLockOwner(targetSelector: string, owner: string) {
         for(const conn of this.connections) {
-            const msg: NewLeaseeMessage = {
-                type: DESC_MESSAGE_TYPE.NEW_LEASEE,
+            const msg: LockOwnerChangedMessage = {
+                type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
                 targetSelector,
-                leasee,
+                owner,
                 sender: this.id,
             };
 
             conn.send(msg);
         }
-    }*/
+    }
 
     getId() {
         return this.peer.getId();
@@ -156,8 +166,8 @@ export class DescCommunication {
             this.receiveNewConnection(data as InitMessage);
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
-        } else if(data.type === DESC_MESSAGE_TYPE.NEW_LEASEE) {
-            this.onNewLeasee(data as NewLeaseeMessage);
+        } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
+            this.onNewLockOwner(data as LockOwnerChangedMessage);
         }
     }
 
