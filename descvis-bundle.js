@@ -1026,6 +1026,7 @@ var PeerjsConnection = /** @class */ (function () {
         var _this = this;
         this.connection = connection;
         this.messages = new Subject();
+        console.log('creating connection', this.connection);
         this.connection.on('data', function (message) {
             _this.receiveMessage(message);
         });
@@ -1167,10 +1168,13 @@ var DescCommunication = /** @class */ (function () {
     };
     DescCommunication.prototype.onOpen = function () {
         this.id = this.getId();
+        if (!this.leaderId) {
+            this.leaderId = this.id;
+        }
         console.log("originID", this.leaderId);
         console.log("myID", this.id);
         this.connectToPeer(this.id);
-        if (this.leaderId) {
+        if (this.leaderId && this.leaderId !== this.id) {
             this.connectToPeer(this.leaderId);
         }
         //this.onOpenCallback();
@@ -1187,8 +1191,10 @@ var DescCommunication = /** @class */ (function () {
                         peer = connection.getPeer();
                         this.peers.push(peer);
                         this.connections.push(connection);
-                        console.log("new connection", this.peers, this.connections.length);
+                        console.log("new incoming connection", this.peers, this.connections.length);
+                        console.log(peer, this.leaderId, this.id, peer === this.leaderId);
                         if (peer === this.leaderId) {
+                            // This is in case this client is the leader.
                             this.leaderConnection = connection;
                         }
                         return [4 /*yield*/, connection.open()];
@@ -1205,16 +1211,20 @@ var DescCommunication = /** @class */ (function () {
     };
     DescCommunication.prototype.connectToPeer = function (id) {
         return __awaiter(this, void 0, void 0, function () {
-            var conn;
+            var connection, peer;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.peer.connect(id)];
                     case 1:
-                        conn = _a.sent();
-                        this.connections.push(conn);
+                        connection = _a.sent();
+                        this.connections.push(connection);
                         this.peers.push(id);
-                        console.log("new connection", this.peers, this.connections.length);
-                        conn.messages.subscribe(this.receiveMessage.bind(this));
+                        console.log("new outgoing connection", this.peers, this.connections.length);
+                        peer = connection.getPeer();
+                        if (peer === this.leaderId) {
+                            this.leaderConnection = connection;
+                        }
+                        connection.messages.subscribe(this.receiveMessage.bind(this));
                         return [2 /*return*/];
                 }
             });

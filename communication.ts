@@ -121,12 +121,16 @@ export class DescCommunication {
     onOpen() {
         this.id = this.getId();
 
+        if(!this.leaderId) {
+            this.leaderId = this.id;
+        }
+
         console.log("originID", this.leaderId);
         console.log("myID", this.id);
 
         this.connectToPeer(this.id);
 
-        if (this.leaderId) {
+        if (this.leaderId && this.leaderId !== this.id) {
             this.connectToPeer(this.leaderId);
         }
         //this.onOpenCallback();
@@ -142,9 +146,10 @@ export class DescCommunication {
 
         this.peers.push(peer);
         this.connections.push(connection);
-        console.log("new connection", this.peers, this.connections.length);
+        console.log("new incoming connection", this.peers, this.connections.length);
 
         if(peer === this.leaderId) {
+            // This is in case this client is the leader.
             this.leaderConnection = connection;
         }
 
@@ -158,12 +163,19 @@ export class DescCommunication {
 
     async connectToPeer(id: string) {
         // Outgoing connection: Client connects to leader or other client.
-        const conn: DescConnection = await this.peer.connect(id);
+        const connection: DescConnection = await this.peer.connect(id);
 
-        this.connections.push(conn);
+        this.connections.push(connection);
         this.peers.push(id);
-        console.log("new connection", this.peers, this.connections.length);
-        conn.messages.subscribe(this.receiveMessage.bind(this));
+        console.log("new outgoing connection", this.peers, this.connections.length);
+
+        const peer = connection.getPeer();
+
+        if(peer === this.leaderId) {
+            this.leaderConnection = connection;
+        }
+
+        connection.messages.subscribe(this.receiveMessage.bind(this));
     }
 
     receiveMessage(data: DescMessage) {
