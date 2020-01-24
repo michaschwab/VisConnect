@@ -20,10 +20,10 @@ export class DescLeaderProtocol extends DescProtocol {
         votes.push({selector, requester, voter, vote});
 
         const minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
-        const countYes = votes.filter(v => v.vote).length + 1; // One implied vote by the requester.
+        const countYes = votes.filter(v => v.vote).length;
         const countNo = votes.filter(v => !v.vote).length;
 
-        console.log(electionId, minVotes, countYes, countNo);
+        console.log('election:', electionId, minVotes, countYes, countNo);
 
         if(countYes < minVotes && countNo < minVotes) {
             return;

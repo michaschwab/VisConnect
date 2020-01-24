@@ -1143,6 +1143,9 @@ var DescCommunication = /** @class */ (function () {
             return console.error('Can not send lock vote because no leader connection exists.');
         }
         this.leaderConnection.send(msg);
+        if (this.leaderId === this.id) {
+            this.receiveLockVote(targetSelector, electionId, requester, this.id, agree);
+        }
     };
     /**
      * This message is sent by the leader to inform clients that an element's lock owner has changed.
@@ -1414,9 +1417,9 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         }
         votes.push({ selector: selector, requester: requester, voter: voter, vote: vote });
         var minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
-        var countYes = votes.filter(function (v) { return v.vote; }).length + 1; // One implied vote by the requester.
+        var countYes = votes.filter(function (v) { return v.vote; }).length;
         var countNo = votes.filter(function (v) { return !v.vote; }).length;
-        console.log(electionId, minVotes, countYes, countNo);
+        console.log('election:', electionId, minVotes, countYes, countNo);
         if (countYes < minVotes && countNo < minVotes) {
             return;
         }

@@ -59,6 +59,9 @@ export class DescCommunication {
             return console.error('Can not send lock vote because no leader connection exists.');
         }
         this.leaderConnection.send(msg);
+        if(this.leaderId === this.id) {
+            this.receiveLockVote(targetSelector, electionId, requester, this.id, agree);
+        }
     }
 
     /**
