@@ -1306,7 +1306,6 @@ var DescProtocol = /** @class */ (function () {
     }
     DescProtocol.prototype.init = function () {
         this.participantId = this.communication.getId();
-        console.log('participant', this.participantId);
     };
     DescProtocol.prototype.getPastEvents = function () {
         //TODO: Reconstruct the list of events from the ledgers, sorting by time.
@@ -1317,7 +1316,6 @@ var DescProtocol = /** @class */ (function () {
         console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
         if (this.lockOwners.has(selector) && this.lockOwners.get(selector) === this.participantId) {
             var descEvent = this.addEventToLedger(stripped, this.participantId);
-            this.extendLock(stripped.target);
             if (descEvent) {
                 this.communication.broadcastEvent(stripped);
             }
@@ -1344,6 +1342,10 @@ var DescProtocol = /** @class */ (function () {
     };
     DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
         console.log('lock owner changed', selector, owner);
+        if (!owner) {
+            this.lockOwners.delete(selector);
+            return;
+        }
         this.lockOwners.set(selector, owner);
         if (owner === this.participantId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
@@ -1362,9 +1364,6 @@ var DescProtocol = /** @class */ (function () {
     DescProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
         console.error('Clients are not supposed to receive lock votes.');
     };
-    DescProtocol.prototype.extendLock = function (selector) {
-        //TODO
-    };
     DescProtocol.prototype.requestLock = function (selector) {
         if (this.requestedLocks.has(selector)) {
             return;
@@ -1376,9 +1375,8 @@ var DescProtocol = /** @class */ (function () {
         var selector = stripped.target;
         var lockOwner = this.lockOwners.get(selector);
         if (!lockOwner || lockOwner !== sender) {
-            console.log(stripped);
             console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
-            return;
+            return false;
         }
         this.executeEvent(stripped);
         if (!this.ledgers.has(selector)) {
@@ -1391,7 +1389,7 @@ var DescProtocol = /** @class */ (function () {
             'sender': this.participantId
         };
         ledger.push(newEvent);
-        return newEvent;
+        return true;
     };
     return DescProtocol;
 }());
@@ -1402,10 +1400,10 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
     function DescLeaderProtocol() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.lockVotes = new Map();
+        _this.lockTimeouts = new Map();
         return _this;
     }
     DescLeaderProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
-        console.log('got lock vote');
         if (!this.lockVotes.has(electionId)) {
             this.lockVotes.set(electionId, []);
         }
@@ -1419,12 +1417,41 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         var countYes = votes.filter(function (v) { return v.vote; }).length + 1; // One implied vote by the requester.
         var countNo = votes.filter(function (v) { return !v.vote; }).length;
         console.log(electionId, minVotes, countYes, countNo);
+        if (countYes < minVotes && countNo < minVotes) {
+            return;
+        }
         if (countYes >= minVotes) {
             // Decide yes
             this.lockOwners.set(selector, requester);
             this.communication.changeLockOwner(selector, requester);
             console.log('changing lock owner', selector, requester);
+            this.extendLock(selector);
         }
+        this.lockVotes.delete(selector);
+    };
+    DescLeaderProtocol.prototype.extendLock = function (selector) {
+        // Delete any previous timeouts
+        var prevTimeout = this.lockTimeouts.get(selector);
+        if (prevTimeout) {
+            clearTimeout(prevTimeout);
+        }
+        var timeout = window.setTimeout(this.expireLock(selector), 1000);
+        this.lockTimeouts.set(selector, timeout);
+    };
+    DescLeaderProtocol.prototype.expireLock = function (selector) {
+        var _this = this;
+        return function () {
+            _this.lockOwners.delete(selector);
+            _this.communication.changeLockOwner(selector, '');
+            console.log('expiring lock owner', selector);
+        };
+    };
+    DescLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
+        var success = _super.prototype.addEventToLedger.call(this, stripped, sender);
+        if (success) {
+            this.extendLock(stripped.target);
+        }
+        return success;
     };
     return DescLeaderProtocol;
 }(DescProtocol));
@@ -1436,14 +1463,9 @@ delayAddEventListener().then(function () {
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
         this.svg = svg;
-        this.leaseeTimeouts = new Map(); //TODO: implement this in the protocol or leader protocol.
         var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         var leaderId = parts ? parts[1] : '';
         var isLeader = !leaderId;
-        /*this.communication = new DescCommunication(leaderId, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
-            () => this.eventsLedger, this.init.bind(this));
-
-        console.log(window.location + '?id=' + this.communication.getId());*/
         var Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
         this.protocol = new Protocol(leaderId, this.executeEvent.bind(this));
         this.listener = new DescListener(this.svg, this.localEvent.bind(this));
@@ -1454,7 +1476,7 @@ var DescVis = /** @class */ (function () {
     };
     DescVis.prototype.executeEvent = function (stripped) {
         var event = recreateEvent(stripped, this.svg);
-        console.log('executing event', stripped, event);
+        //console.log('executing event', stripped, event);
         event['desc-received'] = true;
         if (event.target) {
             event.target.dispatchEvent(event);

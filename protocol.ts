@@ -31,7 +31,6 @@ export class DescProtocol {
 
         if(this.lockOwners.has(selector) && this.lockOwners.get(selector) === this.participantId) {
             const descEvent = this.addEventToLedger(stripped, this.participantId);
-            this.extendLock(stripped.target);
             if(descEvent) {
                 this.communication.broadcastEvent(stripped);
             }
@@ -62,6 +61,10 @@ export class DescProtocol {
 
     lockOwnerChanged(selector: string, owner: string) {
         console.log('lock owner changed', selector, owner);
+        if(!owner) {
+            this.lockOwners.delete(selector);
+            return;
+        }
         this.lockOwners.set(selector, owner);
 
         if(owner === this.participantId && this.heldEvents.has(selector)) {
@@ -82,10 +85,6 @@ export class DescProtocol {
         console.error('Clients are not supposed to receive lock votes.');
     }
 
-    protected extendLock(selector: string) {
-        //TODO
-    }
-
     protected requestLock(selector: string) {
         if(this.requestedLocks.has(selector)) {
             return;
@@ -100,7 +99,7 @@ export class DescProtocol {
         const lockOwner = this.lockOwners.get(selector);
         if(!lockOwner || lockOwner !== sender) {
             console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
-            return;
+            return false;
         }
 
         this.executeEvent(stripped);
@@ -118,7 +117,7 @@ export class DescProtocol {
 
         ledger.push(newEvent);
 
-        return newEvent;
+        return true;
     }
 }
 
