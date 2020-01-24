@@ -1094,13 +1094,14 @@ var PeerjsNetwork = /** @class */ (function () {
 
 // This file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
-    function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote) {
+    function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote, onOpenCallback) {
         this.leaderId = leaderId;
         this.onEventReceived = onEventReceived;
         this.onNewLockOwner = onNewLockOwner;
         this.getPastEvents = getPastEvents;
         this.onLockRequested = onLockRequested;
         this.receiveLockVote = receiveLockVote;
+        this.onOpenCallback = onOpenCallback;
         this.connections = [];
         this.peers = [];
         this.id = '';
@@ -1173,7 +1174,7 @@ var DescCommunication = /** @class */ (function () {
         if (this.leaderId && this.leaderId !== this.id) {
             this.connectToPeer(this.leaderId);
         }
-        //this.onOpenCallback();
+        this.onOpenCallback();
     };
     DescCommunication.prototype.getNumberOfConnections = function () {
         return this.connections.length;
@@ -1300,9 +1301,13 @@ var DescProtocol = /** @class */ (function () {
         this.lockOwners = new Map();
         this.requestedLocks = new Set();
         this.heldEvents = new Map();
-        this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this));
-        this.participantId = this.communication.getId();
+        this.participantId = '';
+        this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this), this.init.bind(this));
     }
+    DescProtocol.prototype.init = function () {
+        this.participantId = this.communication.getId();
+        console.log('participant', this.participantId);
+    };
     DescProtocol.prototype.getPastEvents = function () {
         //TODO: Reconstruct the list of events from the ledgers, sorting by time.
         return [];
@@ -1314,7 +1319,7 @@ var DescProtocol = /** @class */ (function () {
             var descEvent = this.addEventToLedger(stripped, this.participantId);
             this.extendLock(stripped.target);
             if (descEvent) {
-                this.communication.broadcastEvent(descEvent);
+                this.communication.broadcastEvent(stripped);
             }
         }
         else if (this.lockOwners.has(selector) && this.lockOwners.get(selector) !== this.participantId) ;
@@ -1348,7 +1353,7 @@ var DescProtocol = /** @class */ (function () {
                 var stripped = events_1[_i];
                 var descEvent = this.addEventToLedger(stripped, this.participantId);
                 if (descEvent) {
-                    this.communication.broadcastEvent(descEvent);
+                    this.communication.broadcastEvent(stripped);
                 }
             }
             this.heldEvents.delete(selector);
@@ -1371,7 +1376,8 @@ var DescProtocol = /** @class */ (function () {
         var selector = stripped.target;
         var lockOwner = this.lockOwners.get(selector);
         if (!lockOwner || lockOwner !== sender) {
-            console.error('Trying to execute event on element with different lock owner');
+            console.log(stripped);
+            console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
             return;
         }
         this.executeEvent(stripped);

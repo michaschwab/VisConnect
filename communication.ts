@@ -17,7 +17,8 @@ export class DescCommunication {
                 private getPastEvents: () => DescEvent[],
                 private onLockRequested: (selector: string, electionId: string, requester: string) => void,
                 private receiveLockVote: (selector: string, electionId: string, requester: string, voter: string,
-                                          vote: boolean) => void) {
+                                          vote: boolean) => void,
+                private onOpenCallback: () => void) {
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
@@ -96,7 +97,7 @@ export class DescCommunication {
         if (this.leaderId && this.leaderId !== this.id) {
             this.connectToPeer(this.leaderId);
         }
-        //this.onOpenCallback();
+        this.onOpenCallback();
     }
 
     getNumberOfConnections() {
@@ -160,7 +161,7 @@ export class DescCommunication {
         }
     }
 
-    broadcastEvent(e: DescEvent) {
+    broadcastEvent(e: StrippedEvent) {
         const msg: DescEventMessage = {
             'type': DESC_MESSAGE_TYPE.EVENT,
             'sender': this.id,
@@ -216,7 +217,8 @@ export interface DescMessage {
 }
 
 export interface DescEventMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.EVENT
+    type: DESC_MESSAGE_TYPE.EVENT,
+    data: StrippedEvent
 }
 
 export interface InitMessage extends DescMessage {

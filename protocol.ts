@@ -7,13 +7,16 @@ export class DescProtocol {
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
     protected communication: DescCommunication;
-    protected participantId: string;
+    protected participantId = '';
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void) {
         this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this),
             this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
-            this.receiveLockVote.bind(this));
+            this.receiveLockVote.bind(this), this.init.bind(this));
+    }
+
+    init() {
         this.participantId = this.communication.getId();
     }
 
@@ -30,7 +33,7 @@ export class DescProtocol {
             const descEvent = this.addEventToLedger(stripped, this.participantId);
             this.extendLock(stripped.target);
             if(descEvent) {
-                this.communication.broadcastEvent(descEvent);
+                this.communication.broadcastEvent(stripped);
             }
         } else if(this.lockOwners.has(selector) && this.lockOwners.get(selector) !== this.participantId) {
             // Do nothing - do not execute the event.
@@ -68,7 +71,7 @@ export class DescProtocol {
             for(const stripped of events) {
                 const descEvent = this.addEventToLedger(stripped, this.participantId);
                 if(descEvent) {
-                    this.communication.broadcastEvent(descEvent);
+                    this.communication.broadcastEvent(stripped);
                 }
             }
             this.heldEvents.delete(selector);
@@ -96,7 +99,7 @@ export class DescProtocol {
 
         const lockOwner = this.lockOwners.get(selector);
         if(!lockOwner || lockOwner !== sender) {
-            console.error('Trying to execute event on element with different lock owner');
+            console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
             return;
         }
 
