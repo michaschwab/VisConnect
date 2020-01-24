@@ -57,7 +57,9 @@ export class DescCommunication {
                 private onEventReceived: (e: StrippedEvent) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
-                private onOpenCallback: () => void = () => {}) {
+                private onLockRequested: (selector: string, electionId: string, requester: string) => void,
+                private receiveLockVote: (selector: string, electionId: string, requester: string, voter: string,
+                                          vote: boolean) => void) {
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
@@ -74,6 +76,7 @@ export class DescCommunication {
                 requester: this.id,
                 sender: this.id,
             };
+            console.log('requesting lock', msg);
 
             conn.send(msg);
         }
@@ -91,6 +94,7 @@ export class DescCommunication {
             requester,
             agree
         };
+        console.log('sending lock vote', msg);
         if(!this.leaderConnection) {
             return console.error('Can not send lock vote because no leader connection exists.');
         }
@@ -125,7 +129,7 @@ export class DescCommunication {
         if (this.leaderId) {
             this.connectToPeer(this.leaderId);
         }
-        this.onOpenCallback();
+        //this.onOpenCallback();
     }
 
     getNumberOfConnections() {
@@ -168,9 +172,12 @@ export class DescCommunication {
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
-
+            const msg = data as LockRequestMessage;
+            this.onLockRequested(msg.targetSelector, msg.electionId, msg.requester);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_VOTE) {
-
+            const msg = data as LockVoteMessage;
+            this.receiveLockVote(msg.targetSelector, msg.electionId, msg.requester, msg.sender, msg.agree);
+            //receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean)
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
             this.onNewLockOwner(msg.targetSelector, msg.owner);

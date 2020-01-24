@@ -12,7 +12,8 @@ export class DescProtocol {
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void) {
         this.communication = new DescCommunication(leaderId, this.localEvent.bind(this),
-            this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this));
+            this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
+            this.receiveLockVote.bind(this));
         this.participantId = this.communication.getId();
     }
 
@@ -67,6 +68,10 @@ export class DescProtocol {
             }
             this.heldEvents.delete(selector);
         }
+    }
+
+    receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean) {
+        console.error('Clients are not supposed to receive lock votes.');
     }
 
     protected extendLock(selector: string) {

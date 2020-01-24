@@ -1,5 +1,182 @@
 'use strict';
 
+var DescListener = /** @class */ (function () {
+    function DescListener(svg, hearEvent) {
+        this.svg = svg;
+        this.hearEvent = hearEvent;
+        this.dragElement = null;
+        console.log("step 1");
+        this.addListenersToElementAndChildren(this.svg);
+    }
+    DescListener.prototype.addListenersToElementAndChildren = function (element) {
+        this.addListenersToElement(element);
+        for (var _i = 0, _a = element.children; _i < _a.length; _i++) {
+            var child = _a[_i];
+            this.addListenersToElementAndChildren(child);
+        }
+    };
+    DescListener.prototype.addListenersToElement = function (element) {
+        var boundCapture = this.captureEvent(element).bind(this);
+        element.addEventListener('mousemove', boundCapture);
+        element.addEventListener('mouseup', boundCapture);
+        element.addEventListener('mousedown', boundCapture);
+        element.addEventListener('touchmove', boundCapture);
+        element.addEventListener('mouseenter', boundCapture);
+        element.addEventListener('mouseout', boundCapture);
+        element.addEventListener('click', boundCapture);
+        element.addEventListener('touchstart', boundCapture);
+        element.addEventListener('touchend', boundCapture);
+        element.addEventListener('selectstart', boundCapture);
+        element.addEventListener('dragstart', boundCapture);
+    };
+    DescListener.prototype.captureEvent = function (element) {
+        var _this = this;
+        return function (e) {
+            if (e.target !== element) {
+                // Only capture for the correct target.
+                return;
+            }
+            if (e['desc-received']) {
+                // Don't broadcast events that have been received from other clients.
+                return;
+            }
+            if (e.type === 'mousedown') {
+                _this.dragElement = e.target;
+            }
+            if (e.type === 'mouseup') {
+                _this.dragElement = null;
+            }
+            if (e.type === 'mousemove' && _this.dragElement && e.target !== _this.dragElement) {
+                console.log('changing event target');
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                e['stopImmediatePropagationBackup']();
+                e.preventDefault();
+                Object.defineProperty(e, 'target', {
+                    enumerable: false,
+                    writable: true,
+                    value: _this.dragElement,
+                });
+                var eventCopy = new MouseEvent(e.type, e);
+                _this.dragElement.dispatchEvent(eventCopy);
+            }
+            var eventObj = _this.getStrippedEvent(e);
+            //this.connection.broadcastEvent(eventObj);
+            _this.hearEvent(eventObj, e);
+        };
+    };
+    DescListener.prototype.getStrippedEvent = function (e) {
+        var obj = { type: '', target: '', touches: [] };
+        for (var key in e) {
+            var val = e[key];
+            if (typeof val !== 'object' && typeof val !== 'function') {
+                obj[key] = val;
+            }
+        }
+        if (e instanceof TouchEvent && e.touches && e.touches.length) {
+            for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
+                var touch = _a[_i];
+                obj.touches.push({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        }
+        var target = this.getElementSelector(e.target);
+        if (target) {
+            obj.target = target;
+        }
+        return obj;
+    };
+    DescListener.prototype.getElementSelector = function (element) {
+        if (!element) {
+            return null;
+        }
+        if (element === this.svg) {
+            return 'svg';
+        }
+        var parent = element.parentNode;
+        if (!parent) {
+            return null;
+        }
+        var index = Array.from(parent.children).indexOf(element);
+        var type = element.tagName;
+        return this.getElementSelector(parent) + (" > " + type + ":nth-child(" + (index + 1) + ")");
+    };
+    return DescListener;
+}());
+
+function delayAddEventListener() {
+    // The visualization's event listeners need to be called after DESCVis' event listeners.
+    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+    Element.prototype.addEventListener = function (eventName, callback) {
+        console.log('doing a delayed execution on ', eventName);
+        var that = this;
+        setTimeout(function () {
+            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
+        }, 100);
+    };
+    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
+    // DESCVis.
+    return new Promise(function (resolve) {
+        window.setTimeout(function () {
+            console.log('hi');
+            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
+            resolve();
+        }, 20);
+    });
+}
+function disableStopPropagation() {
+    // Prevent d3 from blocking DescVis and other code to have access to events.
+    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
+    Event.prototype.stopImmediatePropagation = function () { };
+}
+function stopPropagation(event) {
+    event['stopImmediatePropagationBackup']();
+    event.stopPropagation();
+}
+function recreateEvent(eventObject, target) {
+    var targetSelector = eventObject.target;
+    var e;
+    if (eventObject.type.substr(0, 5) === 'touch') {
+        e = document.createEvent('TouchEvent');
+        e.initEvent(eventObject.type, true, false);
+        for (var prop in eventObject) {
+            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                Object.defineProperty(e, prop, {
+                    writable: true,
+                    value: eventObject[prop],
+                });
+            }
+        }
+        //e = new TouchEvent(eventObject.type, eventObject as any);
+    }
+    else if (eventObject.type.substr(0, 5) === 'mouse') {
+        e = new MouseEvent(eventObject.type, eventObject);
+    }
+    else if (eventObject.type.substr(0, 4) === 'drag') {
+        e = new DragEvent(eventObject.type, eventObject);
+    }
+    else {
+        e = new Event(eventObject.type, eventObject);
+    }
+    if (targetSelector) {
+        var newTarget = document.querySelector(targetSelector);
+        if (!newTarget) {
+            console.error('element not found', targetSelector);
+            throw new Error('element not found');
+        }
+        target = newTarget;
+    }
+    Object.defineProperty(e, 'target', {
+        writable: true,
+        value: target,
+    });
+    Object.defineProperty(e, 'view', {
+        writable: true,
+        value: window,
+    });
+    return e;
+}
+
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -919,29 +1096,67 @@ var DESC_MESSAGE_TYPE;
 (function (DESC_MESSAGE_TYPE) {
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_CONNECTION"] = 0] = "NEW_CONNECTION";
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_LEASEE"] = 2] = "NEW_LEASEE";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_REQUESTED"] = 2] = "LOCK_REQUESTED";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_VOTE"] = 3] = "LOCK_VOTE";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_OWNER_CHANGED"] = 4] = "LOCK_OWNER_CHANGED";
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
-// this file should know all the message types and create the messages
+// This file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
-    function DescCommunication(originID, onEventReceived, onNewLeasee, getPastEvents, onOpenCallback) {
-        this.originID = originID;
+    function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote) {
+        this.leaderId = leaderId;
         this.onEventReceived = onEventReceived;
-        this.onNewLeasee = onNewLeasee;
+        this.onNewLockOwner = onNewLockOwner;
         this.getPastEvents = getPastEvents;
-        this.onOpenCallback = onOpenCallback;
+        this.onLockRequested = onLockRequested;
+        this.receiveLockVote = receiveLockVote;
         this.connections = [];
         this.peers = [];
         this.id = '';
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
     }
-    DescCommunication.prototype.setLeasee = function (targetSelector, leasee) {
+    /**
+     * Requests all clients to vote to agree that this client gets the lock on the element.
+     */
+    DescCommunication.prototype.requestLock = function (targetSelector) {
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
             var msg = {
-                type: DESC_MESSAGE_TYPE.NEW_LEASEE,
+                type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+                electionId: String(Math.random()).substr(2),
                 targetSelector: targetSelector,
-                leasee: leasee,
+                requester: this.id,
+                sender: this.id,
+            };
+            console.log('requesting lock', msg);
+            conn.send(msg);
+        }
+    };
+    /**
+     * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
+     */
+    DescCommunication.prototype.sendLockVote = function (targetSelector, electionId, requester, agree) {
+        var msg = {
+            type: DESC_MESSAGE_TYPE.LOCK_VOTE,
+            electionId: electionId,
+            sender: this.id,
+            targetSelector: targetSelector,
+            requester: requester,
+            agree: agree
+        };
+        console.log('sending lock vote', msg);
+        if (!this.leaderConnection) {
+            return console.error('Can not send lock vote because no leader connection exists.');
+        }
+        this.leaderConnection.send(msg);
+    };
+    DescCommunication.prototype.changeLockOwner = function (targetSelector, owner) {
+        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
+            var conn = _a[_i];
+            var msg = {
+                type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+                targetSelector: targetSelector,
+                owner: owner,
                 sender: this.id,
             };
             conn.send(msg);
@@ -952,28 +1167,35 @@ var DescCommunication = /** @class */ (function () {
     };
     DescCommunication.prototype.onOpen = function () {
         this.id = this.getId();
-        console.log("originID", this.originID);
+        console.log("originID", this.leaderId);
         console.log("myID", this.id);
         this.connectToPeer(this.id);
-        if (this.originID) {
-            this.connectToPeer(this.originID);
+        if (this.leaderId) {
+            this.connectToPeer(this.leaderId);
         }
-        this.onOpenCallback();
+        //this.onOpenCallback();
+    };
+    DescCommunication.prototype.getNumberOfConnections = function () {
+        return this.connections.length;
     };
     DescCommunication.prototype.onConnection = function (connection) {
         return __awaiter(this, void 0, void 0, function () {
+            var peer;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        // Incoming connection: Leader or client receives connection from client.
-                        this.peers.push(connection.getPeer());
+                        peer = connection.getPeer();
+                        this.peers.push(peer);
                         this.connections.push(connection);
                         console.log("new connection", this.peers, this.connections.length);
+                        if (peer === this.leaderId) {
+                            this.leaderConnection = connection;
+                        }
                         return [4 /*yield*/, connection.open()];
                     case 1:
                         _a.sent();
                         connection.messages.subscribe(this.receiveMessage.bind(this));
-                        if (!this.originID) {
+                        if (!this.leaderId) {
                             this.sendNewConnection(connection);
                         }
                         return [2 /*return*/];
@@ -1005,8 +1227,18 @@ var DescCommunication = /** @class */ (function () {
         else if (data.type === DESC_MESSAGE_TYPE.EVENT) {
             this.onEventReceived(data.data);
         }
-        else if (data.type === DESC_MESSAGE_TYPE.NEW_LEASEE) {
-            this.onNewLeasee(data);
+        else if (data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
+            var msg = data;
+            this.onLockRequested(msg.targetSelector, msg.electionId, msg.requester);
+        }
+        else if (data.type === DESC_MESSAGE_TYPE.LOCK_VOTE) {
+            var msg = data;
+            this.receiveLockVote(msg.targetSelector, msg.electionId, msg.requester, msg.sender, msg.agree);
+            //receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean)
+        }
+        else if (data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
+            var msg = data;
+            this.onNewLockOwner(msg.targetSelector, msg.owner);
         }
     };
     DescCommunication.prototype.broadcastEvent = function (e) {
@@ -1039,188 +1271,126 @@ var DescCommunication = /** @class */ (function () {
             }
         }
         for (var i = 0; i < data.eventsLedger.length; i++) {
-            this.onEventReceived(data.eventsLedger[i]);
+            this.onEventReceived(data.eventsLedger[i].event);
         }
     };
     return DescCommunication;
 }());
 
-var DescListener = /** @class */ (function () {
-    function DescListener(svg, hearEvent) {
-        this.svg = svg;
-        this.hearEvent = hearEvent;
-        this.dragElement = null;
-        console.log("step 1");
-        this.addListenersToElementAndChildren(this.svg);
+var DescProtocol = /** @class */ (function () {
+    function DescProtocol(leaderId, executeEvent) {
+        this.leaderId = leaderId;
+        this.executeEvent = executeEvent;
+        this.ledgers = new Map();
+        this.lockOwners = new Map();
+        this.requestedLocks = new Set();
+        this.heldEvents = new Map();
+        this.communication = new DescCommunication(leaderId, this.localEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this));
+        this.participantId = this.communication.getId();
     }
-    DescListener.prototype.addListenersToElementAndChildren = function (element) {
-        this.addListenersToElement(element);
-        for (var _i = 0, _a = element.children; _i < _a.length; _i++) {
-            var child = _a[_i];
-            this.addListenersToElementAndChildren(child);
+    DescProtocol.prototype.getPastEvents = function () {
+        //TODO: Reconstruct the list of events from the ledgers, sorting by time.
+        return [];
+    };
+    DescProtocol.prototype.localEvent = function (stripped) {
+        var selector = stripped.target;
+        if (this.lockOwners.has(selector) && this.lockOwners.get(selector) === this.participantId) {
+            this.executeEvent(stripped);
+            var descEvent = this.addEventToLedger(selector, stripped);
+            this.extendLock(stripped.target);
+            this.communication.broadcastEvent(descEvent);
+        }
+        else if (this.lockOwners.has(selector) && this.lockOwners.get(selector) !== this.participantId) ;
+        else {
+            this.requestLock(selector);
+            if (!this.heldEvents.has(selector)) {
+                this.heldEvents.set(selector, []);
+            }
+            this.heldEvents.get(selector).push(stripped);
         }
     };
-    DescListener.prototype.addListenersToElement = function (element) {
-        var boundCapture = this.captureEvent(element).bind(this);
-        element.addEventListener('mousemove', boundCapture);
-        element.addEventListener('mouseup', boundCapture);
-        element.addEventListener('mousedown', boundCapture);
-        element.addEventListener('touchmove', boundCapture);
-        element.addEventListener('mouseenter', boundCapture);
-        element.addEventListener('mouseout', boundCapture);
-        element.addEventListener('click', boundCapture);
-        element.addEventListener('touchstart', boundCapture);
-        element.addEventListener('touchend', boundCapture);
-        element.addEventListener('selectstart', boundCapture);
-        element.addEventListener('dragstart', boundCapture);
+    DescProtocol.prototype.receiveRemoteEvent = function () {
     };
-    DescListener.prototype.captureEvent = function (element) {
-        var _this = this;
-        return function (e) {
-            if (e.target !== element) {
-                // Only capture for the correct target.
-                return;
+    DescProtocol.prototype.receiveLockRequest = function (selector, electionId, requester) {
+        var vote = false;
+        if (!this.lockOwners.has(selector) || this.lockOwners.get(selector) === requester) {
+            // Vote yes
+            vote = true;
+        }
+        this.communication.sendLockVote(selector, electionId, requester, vote);
+    };
+    DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
+        this.lockOwners.set(selector, owner);
+        if (owner === this.participantId && this.heldEvents.has(selector)) {
+            // Finally, trigger these held up events.
+            var events = this.heldEvents.get(selector);
+            for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
+                var stripped = events_1[_i];
+                this.executeEvent(stripped);
+                var descEvent = this.addEventToLedger(selector, stripped);
+                this.communication.broadcastEvent(descEvent);
             }
-            if (e['desc-received']) {
-                // Don't broadcast events that have been received from other clients.
-                return;
-            }
-            if (e.type === 'mousedown') {
-                _this.dragElement = e.target;
-            }
-            if (e.type === 'mouseup') {
-                _this.dragElement = null;
-            }
-            if (e.type === 'mousemove' && _this.dragElement && e.target !== _this.dragElement) {
-                console.log('changing event target');
-                e.stopImmediatePropagation();
-                e.stopPropagation();
-                e['stopImmediatePropagationBackup']();
-                e.preventDefault();
-                Object.defineProperty(e, 'target', {
-                    enumerable: false,
-                    writable: true,
-                    value: _this.dragElement,
-                });
-                var eventCopy = new MouseEvent(e.type, e);
-                _this.dragElement.dispatchEvent(eventCopy);
-            }
-            var eventObj = _this.getStrippedEvent(e);
-            //this.connection.broadcastEvent(eventObj);
-            _this.hearEvent(eventObj, e);
+            this.heldEvents.delete(selector);
+        }
+    };
+    DescProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
+        console.error('Clients are not supposed to receive lock votes.');
+    };
+    DescProtocol.prototype.extendLock = function (selector) {
+        //TODO
+    };
+    DescProtocol.prototype.requestLock = function (selector) {
+        if (this.requestedLocks.has(selector)) {
+            return;
+        }
+        this.requestedLocks.add(selector);
+        this.communication.requestLock(selector);
+    };
+    DescProtocol.prototype.addEventToLedger = function (element, stripped) {
+        if (!this.ledgers.has(element)) {
+            this.ledgers.set(element, []);
+        }
+        var ledger = this.ledgers.get(element);
+        var newEvent = {
+            'seqNum': -1,
+            'event': stripped,
+            'sender': this.participantId
         };
+        ledger.push(newEvent);
+        return newEvent;
     };
-    DescListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', touches: [] };
-        for (var key in e) {
-            var val = e[key];
-            if (typeof val !== 'object' && typeof val !== 'function') {
-                obj[key] = val;
-            }
-        }
-        if (e instanceof TouchEvent && e.touches && e.touches.length) {
-            for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
-                var touch = _a[_i];
-                obj.touches.push({ clientX: touch.clientX, clientY: touch.clientY });
-            }
-        }
-        var target = this.getElementSelector(e.target);
-        if (target) {
-            obj.target = target;
-        }
-        return obj;
-    };
-    DescListener.prototype.getElementSelector = function (element) {
-        if (!element) {
-            return null;
-        }
-        if (element === this.svg) {
-            return 'svg';
-        }
-        var parent = element.parentNode;
-        if (!parent) {
-            return null;
-        }
-        var index = Array.from(parent.children).indexOf(element);
-        var type = element.tagName;
-        return this.getElementSelector(parent) + (" > " + type + ":nth-child(" + (index + 1) + ")");
-    };
-    return DescListener;
+    return DescProtocol;
 }());
 
-function delayAddEventListener() {
-    // The visualization's event listeners need to be called after DESCVis' event listeners.
-    // For this reason, we delay calling event listeners that are added before DESCVis is started.
-    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
-    Element.prototype.addEventListener = function (eventName, callback) {
-        console.log('doing a delayed execution on ', eventName);
-        var that = this;
-        setTimeout(function () {
-            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
-        }, 100);
+var VOTE_DECISION_THRESHHOLD = 0.5001;
+var DescLeaderProtocol = /** @class */ (function (_super) {
+    __extends(DescLeaderProtocol, _super);
+    function DescLeaderProtocol() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.lockVotes = new Map();
+        return _this;
+    }
+    DescLeaderProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
+        if (!this.lockVotes.has(electionId)) {
+            this.lockVotes.set(electionId, []);
+        }
+        var votes = this.lockVotes.get(electionId);
+        if (votes.filter(function (v) { return v.voter === voter; }).length > 0) {
+            console.log('Not counting a lock vote because the voter has already voted on this element.');
+            return;
+        }
+        votes.push({ selector: selector, requester: requester, voter: voter, vote: vote });
+        var minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
+        var countYes = votes.filter(function (v) { return v.vote; }).length;
+        var countNo = votes.filter(function (v) { return !v.vote; }).length;
+        if (countYes >= minVotes) {
+            // Decide yes
+            this.lockOwners.set(selector, requester);
+            this.communication.changeLockOwner(selector, requester);
+        }
     };
-    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
-    // DESCVis.
-    return new Promise(function (resolve) {
-        window.setTimeout(function () {
-            console.log('hi');
-            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
-            resolve();
-        }, 20);
-    });
-}
-function disableStopPropagation() {
-    // Prevent d3 from blocking DescVis and other code to have access to events.
-    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
-    Event.prototype.stopImmediatePropagation = function () { };
-}
-function stopPropagation(event) {
-    event['stopImmediatePropagationBackup']();
-    event.stopPropagation();
-}
-function recreateEvent(eventObject, target) {
-    var targetSelector = eventObject.target;
-    var e;
-    if (eventObject.type.substr(0, 5) === 'touch') {
-        e = document.createEvent('TouchEvent');
-        e.initEvent(eventObject.type, true, false);
-        for (var prop in eventObject) {
-            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                Object.defineProperty(e, prop, {
-                    writable: true,
-                    value: eventObject[prop],
-                });
-            }
-        }
-        //e = new TouchEvent(eventObject.type, eventObject as any);
-    }
-    else if (eventObject.type.substr(0, 5) === 'mouse') {
-        e = new MouseEvent(eventObject.type, eventObject);
-    }
-    else if (eventObject.type.substr(0, 4) === 'drag') {
-        e = new DragEvent(eventObject.type, eventObject);
-    }
-    else {
-        e = new Event(eventObject.type, eventObject);
-    }
-    if (targetSelector) {
-        var newTarget = document.querySelector(targetSelector);
-        if (!newTarget) {
-            console.error('element not found', targetSelector);
-            throw new Error('element not found');
-        }
-        target = newTarget;
-    }
-    Object.defineProperty(e, 'target', {
-        writable: true,
-        value: target,
-    });
-    Object.defineProperty(e, 'view', {
-        writable: true,
-        value: window,
-    });
-    return e;
-}
+    return DescLeaderProtocol;
+}(DescProtocol));
 
 disableStopPropagation();
 delayAddEventListener().then(function () {
@@ -1228,93 +1398,28 @@ delayAddEventListener().then(function () {
 });
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
-        var _this = this;
         this.svg = svg;
-        this.eventsQueue = [];
-        this.sequenceNumber = 0;
-        this.eventsLedger = [];
-        this.leasees = new Map();
-        this.leaseeTimeouts = new Map();
+        this.leaseeTimeouts = new Map(); //TODO: implement this in the protocol or leader protocol.
         var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
-        var originID = parts ? parts[1] : '';
-        this.network = new DescCommunication(originID, this.receiveEvent.bind(this), this.onNewLeasee.bind(this), function () { return _this.eventsLedger; }, this.init.bind(this));
-        this.listener = new DescListener(this.svg, this.hearEvent.bind(this));
+        var leaderId = parts ? parts[1] : '';
+        var isLeader = !leaderId;
+        /*this.communication = new DescCommunication(leaderId, this.receiveEvent.bind(this), this.onNewLeasee.bind(this),
+            () => this.eventsLedger, this.init.bind(this));
+
+        console.log(window.location + '?id=' + this.communication.getId());*/
+        var Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
+        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this));
+        this.listener = new DescListener(this.svg, this.localEvent.bind(this));
     }
-    DescVis.prototype.init = function () {
-        console.log('init');
-        console.log(window.location + '?id=' + this.network.getId());
+    DescVis.prototype.localEvent = function (stripped, event) {
+        stopPropagation(event);
+        this.protocol.localEvent(stripped);
     };
-    DescVis.prototype.hearEvent = function (eventObj, event) {
-        var _this = this;
-        if (!event.target) {
-            return new Error('event has no target');
-        }
-        if (!this.network.id) {
-            console.log('network not ready');
-            stopPropagation(event);
-            return;
-        }
-        var target = event.target;
-        var peerId = this.network.id;
-        if (!this.leasees.has(target)) {
-            this.leasees.set(target, peerId);
-            this.network.setLeasee(eventObj.target, peerId);
-        }
-        if (this.leasees.get(target) !== peerId) {
-            // Prevent event.
-            //console.log('Can not edit this element because I am not the leader.', target);
-            stopPropagation(event);
-            return;
-        }
-        var prevTimeout = this.leaseeTimeouts.get(target);
-        clearTimeout(prevTimeout);
-        var newTimeout = window.setTimeout(function () { return _this.unlease(target); }, 1000);
-        this.leaseeTimeouts.set(target, newTimeout);
-        var newEvent = {
-            'seqNum': this.sequenceNumber,
-            'event': eventObj,
-            'sender': this.network.id
-        };
-        this.sequenceNumber++;
-        this.eventsLedger.push(newEvent);
-        //console.log(this.sequenceNumber);
-        this.network.broadcastEvent(newEvent);
-    };
-    DescVis.prototype.unlease = function (element) {
-        this.leasees.delete(element);
-        var selector = this.listener.getElementSelector(element);
-        if (!selector) {
-            return new Error('selector not found');
-        }
-        this.network.setLeasee(selector, '');
-    };
-    DescVis.prototype.onNewLeasee = function (msg) {
-        // We are vulnerable to malicious actors here!
-        // First, find the html element.
-        var selector = msg.targetSelector;
-        var target = document.querySelector(selector);
-        if (!target) {
-            return new Error("could not find target element of leasee " + selector);
-        }
-        if (msg.leasee === '') {
-            this.leasees.delete(target);
-        }
-        else {
-            this.leasees.set(target, msg.leasee);
-        }
-    };
-    DescVis.prototype.receiveEvent = function (remoteEvent) {
-        var eventObject = remoteEvent.event;
-        if (remoteEvent.seqNum >= this.sequenceNumber) {
-            this.sequenceNumber = remoteEvent.seqNum + 1;
-        }
-        this.eventsLedger.push(remoteEvent);
-        //this.network.eventsLedger = this.eventsLedger;
-        console.log(this.sequenceNumber);
-        var e = recreateEvent(eventObject, this.svg);
-        e['desc-received'] = true;
-        if (e.target) {
-            e.target.dispatchEvent(e);
+    DescVis.prototype.executeEvent = function (stripped) {
+        var event = recreateEvent(stripped, this.svg);
+        event['desc-received'] = true;
+        if (event.target) {
+            event.target.dispatchEvent(event);
         }
     };
     return DescVis;
