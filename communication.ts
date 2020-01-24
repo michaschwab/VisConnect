@@ -3,48 +3,6 @@ import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
 import {DescConnection} from "./peerjs-connection";
 import {StrippedEvent} from "./listener";
 
-export enum DESC_MESSAGE_TYPE {
-    NEW_CONNECTION,
-    EVENT,
-    LOCK_REQUESTED,
-    LOCK_VOTE,
-    LOCK_OWNER_CHANGED,
-}
-
-export interface DescMessage {
-    peers?: string[],
-    type: DESC_MESSAGE_TYPE,
-    sender: string,
-    data?: any,
-}
-
-export interface InitMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.NEW_CONNECTION,
-    peers: string[], 
-    eventsLedger: DescEvent[]
-}
-
-export interface LockRequestMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
-    electionId: string,
-    targetSelector: string,
-    requester: string,
-}
-
-export interface LockVoteMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.LOCK_VOTE,
-    electionId: string,
-    targetSelector: string,
-    requester: string,
-    agree: boolean
-}
-
-export interface LockOwnerChangedMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
-    targetSelector: string,
-    owner: string,
-}
-
 // This file should know all the message types and create the messages
 export class DescCommunication {
     private peer: DescNetwork;
@@ -54,7 +12,7 @@ export class DescCommunication {
     public id = '';
 
     constructor(private leaderId: string,
-                private onEventReceived: (e: StrippedEvent) => void,
+                private onEventReceived: (e: StrippedEvent, sender: string) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
                 private onLockRequested: (selector: string, electionId: string, requester: string) => void,
@@ -68,18 +26,19 @@ export class DescCommunication {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     requestLock(targetSelector: string) {
-        for(const conn of this.connections) {
-            const msg: LockRequestMessage = {
-                type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
-                electionId: String(Math.random()).substr(2),
-                targetSelector,
-                requester: this.id,
-                sender: this.id,
-            };
-            console.log('requesting lock', msg);
+        const msg: LockRequestMessage = {
+            type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+            electionId: String(Math.random()).substr(2),
+            targetSelector,
+            requester: this.id,
+            sender: this.id,
+        };
 
+        for(const conn of this.connections) {
+            console.log('requesting lock', msg);
             conn.send(msg);
         }
+        this.receiveMessage(msg); // Request vote from oneself.
     }
 
     /**
@@ -101,17 +60,21 @@ export class DescCommunication {
         this.leaderConnection.send(msg);
     }
 
+    /**
+     * This message is sent by the leader to inform clients that an element's lock owner has changed.
+     */
     changeLockOwner(targetSelector: string, owner: string) {
-        for(const conn of this.connections) {
-            const msg: LockOwnerChangedMessage = {
-                type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
-                targetSelector,
-                owner,
-                sender: this.id,
-            };
+        const msg: LockOwnerChangedMessage = {
+            type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+            targetSelector,
+            owner,
+            sender: this.id,
+        };
 
+        for(const conn of this.connections) {
             conn.send(msg);
         }
+        this.receiveMessage(msg); // Tell itself that the lock owner has changed.
     }
 
     getId() {
@@ -182,7 +145,8 @@ export class DescCommunication {
         if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data as InitMessage);
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
-            this.onEventReceived(data.data);
+            const msg = data as DescEventMessage;
+            this.onEventReceived(msg.data, msg.sender);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
             const msg = data as LockRequestMessage;
             this.onLockRequested(msg.targetSelector, msg.electionId, msg.requester);
@@ -197,15 +161,15 @@ export class DescCommunication {
     }
 
     broadcastEvent(e: DescEvent) {
+        const msg: DescEventMessage = {
+            'type': DESC_MESSAGE_TYPE.EVENT,
+            'sender': this.id,
+            data: e,
+        };
         for(const conn of this.connections) {
-            const msg: DescMessage = {
-                'type': DESC_MESSAGE_TYPE.EVENT,
-                'sender': this.id,
-                data: e,
-            };
-
             conn.send(msg);
         }
+        //this.receiveMessage(msg);
     }
 
     sendNewConnection(conn: DescConnection) {
@@ -230,7 +194,54 @@ export class DescCommunication {
         }
 
         for (let i = 0; i < data.eventsLedger.length; i++){
-            this.onEventReceived(data.eventsLedger[i].event);
+            this.onEventReceived(data.eventsLedger[i].event, data.sender);
         }
     }
+}
+
+
+export enum DESC_MESSAGE_TYPE {
+    NEW_CONNECTION,
+    EVENT,
+    LOCK_REQUESTED,
+    LOCK_VOTE,
+    LOCK_OWNER_CHANGED,
+}
+
+export interface DescMessage {
+    peers?: string[],
+    type: DESC_MESSAGE_TYPE,
+    sender: string,
+    data?: any,
+}
+
+export interface DescEventMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.EVENT
+}
+
+export interface InitMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.NEW_CONNECTION,
+    peers: string[],
+    eventsLedger: DescEvent[]
+}
+
+export interface LockRequestMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+    electionId: string,
+    targetSelector: string,
+    requester: string,
+}
+
+export interface LockVoteMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.LOCK_VOTE,
+    electionId: string,
+    targetSelector: string,
+    requester: string,
+    agree: boolean
+}
+
+export interface LockOwnerChangedMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+    targetSelector: string,
+    owner: string,
 }

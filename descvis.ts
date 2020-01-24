@@ -42,6 +42,7 @@ class DescVis {
 
     executeEvent(stripped: StrippedEvent) {
         const event = recreateEvent(stripped, this.svg);
+        console.log('executing event', stripped, event);
 
         (event as any)['desc-received'] = true;
         if(event.target) {

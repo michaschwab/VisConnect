@@ -7,6 +7,7 @@ export class DescLeaderProtocol extends DescProtocol {
     private lockVotes = new Map<string, LockVote[]>();
 
     receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean) {
+        console.log('got lock vote');
         if(!this.lockVotes.has(electionId)) {
             this.lockVotes.set(electionId, []);
         }
@@ -19,13 +20,16 @@ export class DescLeaderProtocol extends DescProtocol {
         votes.push({selector, requester, voter, vote});
 
         const minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
-        const countYes = votes.filter(v => v.vote).length;
+        const countYes = votes.filter(v => v.vote).length + 1; // One implied vote by the requester.
         const countNo = votes.filter(v => !v.vote).length;
+
+        console.log(electionId, minVotes, countYes, countNo);
 
         if(countYes >= minVotes) {
             // Decide yes
             this.lockOwners.set(selector, requester);
             this.communication.changeLockOwner(selector, requester);
+            console.log('changing lock owner', selector, requester);
         } else if(countNo >= minVotes) {
             // Decide no
         }

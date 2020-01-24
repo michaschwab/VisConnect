@@ -1026,7 +1026,6 @@ var PeerjsConnection = /** @class */ (function () {
         var _this = this;
         this.connection = connection;
         this.messages = new Subject();
-        console.log('creating connection', this.connection);
         this.connection.on('data', function (message) {
             _this.receiveMessage(message);
         });
@@ -1093,14 +1092,6 @@ var PeerjsNetwork = /** @class */ (function () {
     return PeerjsNetwork;
 }());
 
-var DESC_MESSAGE_TYPE;
-(function (DESC_MESSAGE_TYPE) {
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_CONNECTION"] = 0] = "NEW_CONNECTION";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_REQUESTED"] = 2] = "LOCK_REQUESTED";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_VOTE"] = 3] = "LOCK_VOTE";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_OWNER_CHANGED"] = 4] = "LOCK_OWNER_CHANGED";
-})(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 // This file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
     function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote) {
@@ -1120,18 +1111,19 @@ var DescCommunication = /** @class */ (function () {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     DescCommunication.prototype.requestLock = function (targetSelector) {
+        var msg = {
+            type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+            electionId: String(Math.random()).substr(2),
+            targetSelector: targetSelector,
+            requester: this.id,
+            sender: this.id,
+        };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
-            var msg = {
-                type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
-                electionId: String(Math.random()).substr(2),
-                targetSelector: targetSelector,
-                requester: this.id,
-                sender: this.id,
-            };
             console.log('requesting lock', msg);
             conn.send(msg);
         }
+        this.receiveMessage(msg); // Request vote from oneself.
     };
     /**
      * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
@@ -1151,17 +1143,21 @@ var DescCommunication = /** @class */ (function () {
         }
         this.leaderConnection.send(msg);
     };
+    /**
+     * This message is sent by the leader to inform clients that an element's lock owner has changed.
+     */
     DescCommunication.prototype.changeLockOwner = function (targetSelector, owner) {
+        var msg = {
+            type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+            targetSelector: targetSelector,
+            owner: owner,
+            sender: this.id,
+        };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
-            var msg = {
-                type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
-                targetSelector: targetSelector,
-                owner: owner,
-                sender: this.id,
-            };
             conn.send(msg);
         }
+        this.receiveMessage(msg); // Tell itself that the lock owner has changed.
     };
     DescCommunication.prototype.getId = function () {
         return this.peer.getId();
@@ -1192,7 +1188,6 @@ var DescCommunication = /** @class */ (function () {
                         this.peers.push(peer);
                         this.connections.push(connection);
                         console.log("new incoming connection", this.peers, this.connections.length);
-                        console.log(peer, this.leaderId, this.id, peer === this.leaderId);
                         if (peer === this.leaderId) {
                             // This is in case this client is the leader.
                             this.leaderConnection = connection;
@@ -1235,7 +1230,8 @@ var DescCommunication = /** @class */ (function () {
             this.receiveNewConnection(data);
         }
         else if (data.type === DESC_MESSAGE_TYPE.EVENT) {
-            this.onEventReceived(data.data);
+            var msg = data;
+            this.onEventReceived(msg.data, msg.sender);
         }
         else if (data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
             var msg = data;
@@ -1252,15 +1248,16 @@ var DescCommunication = /** @class */ (function () {
         }
     };
     DescCommunication.prototype.broadcastEvent = function (e) {
+        var msg = {
+            'type': DESC_MESSAGE_TYPE.EVENT,
+            'sender': this.id,
+            data: e,
+        };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
-            var msg = {
-                'type': DESC_MESSAGE_TYPE.EVENT,
-                'sender': this.id,
-                data: e,
-            };
             conn.send(msg);
         }
+        //this.receiveMessage(msg);
     };
     DescCommunication.prototype.sendNewConnection = function (conn) {
         console.log("sending new connection message");
@@ -1281,11 +1278,19 @@ var DescCommunication = /** @class */ (function () {
             }
         }
         for (var i = 0; i < data.eventsLedger.length; i++) {
-            this.onEventReceived(data.eventsLedger[i].event);
+            this.onEventReceived(data.eventsLedger[i].event, data.sender);
         }
     };
     return DescCommunication;
 }());
+var DESC_MESSAGE_TYPE;
+(function (DESC_MESSAGE_TYPE) {
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_CONNECTION"] = 0] = "NEW_CONNECTION";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_REQUESTED"] = 2] = "LOCK_REQUESTED";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_VOTE"] = 3] = "LOCK_VOTE";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_OWNER_CHANGED"] = 4] = "LOCK_OWNER_CHANGED";
+})(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 
 var DescProtocol = /** @class */ (function () {
     function DescProtocol(leaderId, executeEvent) {
@@ -1295,7 +1300,7 @@ var DescProtocol = /** @class */ (function () {
         this.lockOwners = new Map();
         this.requestedLocks = new Set();
         this.heldEvents = new Map();
-        this.communication = new DescCommunication(leaderId, this.localEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this));
+        this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this));
         this.participantId = this.communication.getId();
     }
     DescProtocol.prototype.getPastEvents = function () {
@@ -1304,11 +1309,13 @@ var DescProtocol = /** @class */ (function () {
     };
     DescProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
+        console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
         if (this.lockOwners.has(selector) && this.lockOwners.get(selector) === this.participantId) {
-            this.executeEvent(stripped);
-            var descEvent = this.addEventToLedger(selector, stripped);
+            var descEvent = this.addEventToLedger(stripped, this.participantId);
             this.extendLock(stripped.target);
-            this.communication.broadcastEvent(descEvent);
+            if (descEvent) {
+                this.communication.broadcastEvent(descEvent);
+            }
         }
         else if (this.lockOwners.has(selector) && this.lockOwners.get(selector) !== this.participantId) ;
         else {
@@ -1319,7 +1326,8 @@ var DescProtocol = /** @class */ (function () {
             this.heldEvents.get(selector).push(stripped);
         }
     };
-    DescProtocol.prototype.receiveRemoteEvent = function () {
+    DescProtocol.prototype.receiveRemoteEvent = function (stripped, sender) {
+        this.addEventToLedger(stripped, sender);
     };
     DescProtocol.prototype.receiveLockRequest = function (selector, electionId, requester) {
         var vote = false;
@@ -1330,15 +1338,18 @@ var DescProtocol = /** @class */ (function () {
         this.communication.sendLockVote(selector, electionId, requester, vote);
     };
     DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
+        console.log('lock owner changed', selector, owner);
         this.lockOwners.set(selector, owner);
         if (owner === this.participantId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
+            console.log('triggering some held up events');
             var events = this.heldEvents.get(selector);
             for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
                 var stripped = events_1[_i];
-                this.executeEvent(stripped);
-                var descEvent = this.addEventToLedger(selector, stripped);
-                this.communication.broadcastEvent(descEvent);
+                var descEvent = this.addEventToLedger(stripped, this.participantId);
+                if (descEvent) {
+                    this.communication.broadcastEvent(descEvent);
+                }
             }
             this.heldEvents.delete(selector);
         }
@@ -1356,11 +1367,18 @@ var DescProtocol = /** @class */ (function () {
         this.requestedLocks.add(selector);
         this.communication.requestLock(selector);
     };
-    DescProtocol.prototype.addEventToLedger = function (element, stripped) {
-        if (!this.ledgers.has(element)) {
-            this.ledgers.set(element, []);
+    DescProtocol.prototype.addEventToLedger = function (stripped, sender) {
+        var selector = stripped.target;
+        var lockOwner = this.lockOwners.get(selector);
+        if (!lockOwner || lockOwner !== sender) {
+            console.error('Trying to execute event on element with different lock owner');
+            return;
         }
-        var ledger = this.ledgers.get(element);
+        this.executeEvent(stripped);
+        if (!this.ledgers.has(selector)) {
+            this.ledgers.set(selector, []);
+        }
+        var ledger = this.ledgers.get(selector);
         var newEvent = {
             'seqNum': -1,
             'event': stripped,
@@ -1381,6 +1399,7 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         return _this;
     }
     DescLeaderProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
+        console.log('got lock vote');
         if (!this.lockVotes.has(electionId)) {
             this.lockVotes.set(electionId, []);
         }
@@ -1391,12 +1410,14 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         }
         votes.push({ selector: selector, requester: requester, voter: voter, vote: vote });
         var minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
-        var countYes = votes.filter(function (v) { return v.vote; }).length;
+        var countYes = votes.filter(function (v) { return v.vote; }).length + 1; // One implied vote by the requester.
         var countNo = votes.filter(function (v) { return !v.vote; }).length;
+        console.log(electionId, minVotes, countYes, countNo);
         if (countYes >= minVotes) {
             // Decide yes
             this.lockOwners.set(selector, requester);
             this.communication.changeLockOwner(selector, requester);
+            console.log('changing lock owner', selector, requester);
         }
     };
     return DescLeaderProtocol;
@@ -1427,6 +1448,7 @@ var DescVis = /** @class */ (function () {
     };
     DescVis.prototype.executeEvent = function (stripped) {
         var event = recreateEvent(stripped, this.svg);
+        console.log('executing event', stripped, event);
         event['desc-received'] = true;
         if (event.target) {
             event.target.dispatchEvent(event);
