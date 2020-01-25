@@ -37,7 +37,9 @@ export class DescLeaderProtocol extends DescProtocol {
 
             this.extendLock(selector);
         } else if(countNo >= minVotes) {
-            // Decide no
+            // Decide no - inform everyone that the previous lock owner is still the owner.
+            const oldOwner = this.lockOwners.get(selector) || '';
+            this.communication.changeLockOwner(selector, oldOwner);
         }
         this.lockVotes.delete(selector);
 

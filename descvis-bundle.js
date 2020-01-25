@@ -1316,20 +1316,22 @@ var DescProtocol = /** @class */ (function () {
     };
     DescProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
-        console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
-        if (this.lockOwners.has(selector) && this.lockOwners.get(selector) === this.participantId) {
+        //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
+        var lockOwner = this.lockOwners.get(selector);
+        if (lockOwner && lockOwner === this.participantId) {
             var descEvent = this.addEventToLedger(stripped, this.participantId);
             if (descEvent) {
                 this.communication.broadcastEvent(stripped);
             }
         }
-        else if (this.lockOwners.has(selector) && this.lockOwners.get(selector) !== this.participantId) ;
+        else if (lockOwner && lockOwner !== this.participantId) ;
         else {
             this.requestLock(selector);
             if (!this.heldEvents.has(selector)) {
                 this.heldEvents.set(selector, []);
             }
             this.heldEvents.get(selector).push(stripped);
+            //console.log('held', this.heldEvents.get(selector));
         }
     };
     DescProtocol.prototype.receiveRemoteEvent = function (stripped, sender) {
@@ -1344,7 +1346,8 @@ var DescProtocol = /** @class */ (function () {
         this.communication.sendLockVote(selector, electionId, requester, vote);
     };
     DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
-        console.log('lock owner changed', selector, owner);
+        console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
+        this.requestedLocks.delete(selector);
         if (!owner) {
             this.lockOwners.delete(selector);
             return;
@@ -1352,8 +1355,8 @@ var DescProtocol = /** @class */ (function () {
         this.lockOwners.set(selector, owner);
         if (owner === this.participantId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
-            console.log('triggering some held up events');
             var events = this.heldEvents.get(selector);
+            console.log('Triggering some held up events', events);
             for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
                 var stripped = events_1[_i];
                 var descEvent = this.addEventToLedger(stripped, this.participantId);
@@ -1361,8 +1364,8 @@ var DescProtocol = /** @class */ (function () {
                     this.communication.broadcastEvent(stripped);
                 }
             }
-            this.heldEvents.delete(selector);
         }
+        this.heldEvents.delete(selector);
     };
     DescProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
         console.error('Clients are not supposed to receive lock votes.');
@@ -1371,6 +1374,7 @@ var DescProtocol = /** @class */ (function () {
         if (this.requestedLocks.has(selector)) {
             return;
         }
+        console.log('requesting lock on ', selector);
         this.requestedLocks.add(selector);
         this.communication.requestLock(selector);
     };
@@ -1429,6 +1433,11 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
             this.communication.changeLockOwner(selector, requester);
             console.log('changing lock owner', selector, requester);
             this.extendLock(selector);
+        }
+        else if (countNo >= minVotes) {
+            // Decide no - inform everyone that the previous lock owner is still the owner.
+            var oldOwner = this.lockOwners.get(selector) || '';
+            this.communication.changeLockOwner(selector, oldOwner);
         }
         this.lockVotes.delete(selector);
     };
