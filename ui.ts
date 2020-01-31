@@ -23,16 +23,11 @@ export class DescUi {
     }
 
     invite() {
-        const leaderId = this.descvis.protocol.communication.leaderId;
-        if (this.descvis.protocol.communication.leaderId === this.descvis.protocol.communication.id){
-            const url = location.href + '?id=' + leaderId;
-            copyToClipboard(url);
-        }
-        else{
-            const url = location.href;
-            copyToClipboard(url);
-        }
-        
+        const communication = this.descvis.protocol.communication;
+        const leaderId = communication.leaderId;
+        const url = leaderId === communication.id ? location.href + '?id=' + leaderId : location.href;
+        copyToClipboard(url);
+
         const logo = document.getElementById('desc-logo')!;
         const inviteLinkCopied = document.getElementById('desc-link-copied')!;
 
