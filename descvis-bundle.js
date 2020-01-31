@@ -1326,12 +1326,12 @@ var DescProtocol = /** @class */ (function () {
         }
         else if (lockOwner && lockOwner !== this.participantId) ;
         else {
-            this.requestLock(selector);
             if (!this.heldEvents.has(selector)) {
                 this.heldEvents.set(selector, []);
             }
             this.heldEvents.get(selector).push(stripped);
             //console.log('held', this.heldEvents.get(selector));
+            this.requestLock(selector);
         }
     };
     DescProtocol.prototype.receiveRemoteEvent = function (stripped, sender) {
