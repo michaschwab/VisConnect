@@ -21,13 +21,13 @@ var svg = d3.select("svg");
 var color = d3.scaleOrdinal(d3.schemeCategory20);
 var nodes = [{group: 'A', x: 100, y: 100}, {group: 'B', x: 140, y: 200}, {group: 'C', x: 300, y: 150}];
 
-const clientColor = randomColor();
+/*const clientColor = randomColor();
 
 var colorMarker = svg.append("g")
         .append("rect")
         .attr('width', 50)
         .attr('height', 50)
-        .attr('fill', clientColor)
+        .attr('fill', clientColor)*/
 
 
 var node = svg.append("g")
@@ -48,7 +48,7 @@ var node = svg.append("g")
         .on('touchend', function() { this['dragPos'] = null; })
         .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.x, d3.event.y);}})
         .on('touchmove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.touches[0].clientX, d3.event.touches[0].clientY);}})
-        .on('click', function(d){d3.select(this).attr('fill', clientColor)})
+        //.on('click', function(d){d3.select(this).attr('fill', clientColor)})
 
 function dragged(d, eventX, eventY) {
   let circle = d3.select(this);
