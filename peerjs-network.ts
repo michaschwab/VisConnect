@@ -17,7 +17,11 @@ export class PeerjsNetwork implements DescNetwork {
         this.onOpen = onOpen;
         this.onConnection = onConnection;
 
-        this.peer = new Peer();
+        this.peer = new Peer({
+            config:  {'iceServers': [
+                { url: 'stun:stun.l.google.com:19302' },
+            ]}
+        });
 
         if(this.peer.id) {
             this.onOpen(); // In case it was done too fast.
