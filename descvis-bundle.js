@@ -96,8 +96,14 @@ var DescUi = /** @class */ (function () {
     };
     DescUi.prototype.invite = function () {
         var leaderId = this.descvis.protocol.communication.leaderId;
-        var url = location.href + '?id=' + leaderId;
-        copyToClipboard(url);
+        if (this.descvis.protocol.communication.leaderId === this.descvis.protocol.communication.id) {
+            var url = location.href + '?id=' + leaderId;
+            copyToClipboard(url);
+        }
+        else {
+            var url = location.href;
+            copyToClipboard(url);
+        }
         var logo = document.getElementById('desc-logo');
         var inviteLinkCopied = document.getElementById('desc-link-copied');
         logo.style.display = 'none';
@@ -118,6 +124,7 @@ var DescUi = /** @class */ (function () {
 var copyToClipboard = function (str) {
     var el = document.createElement('textarea');
     el.value = str;
+    console.log(str);
     el.setAttribute('readonly', '');
     el.style.position = 'absolute';
     el.style.left = '-9999px';

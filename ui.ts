@@ -24,9 +24,15 @@ export class DescUi {
 
     invite() {
         const leaderId = this.descvis.protocol.communication.leaderId;
-        const url = location.href + '?id=' + leaderId;
-        copyToClipboard(url);
-
+        if (this.descvis.protocol.communication.leaderId === this.descvis.protocol.communication.id){
+            const url = location.href + '?id=' + leaderId;
+            copyToClipboard(url);
+        }
+        else{
+            const url = location.href;
+            copyToClipboard(url);
+        }
+        
         const logo = document.getElementById('desc-logo')!;
         const inviteLinkCopied = document.getElementById('desc-link-copied')!;
 
@@ -91,6 +97,7 @@ export class DescUi {
 const copyToClipboard = (str: string) => {
     const el = document.createElement('textarea');
     el.value = str;
+    //console.log(str);
     el.setAttribute('readonly', '');
     el.style.position = 'absolute';
     el.style.left = '-9999px';
