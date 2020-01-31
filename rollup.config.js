@@ -3,7 +3,7 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonJS from 'rollup-plugin-commonjs'
 
 export default {
-    input: './descvis.ts',
+    input: './main.ts',
     plugins: [
         resolve(),
         commonJS({

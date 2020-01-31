@@ -9,9 +9,10 @@ export class DescCommunication {
     private connections: DescConnection[] = [];
     private leaderConnection?: DescConnection;
     private peers: string[] = [];
+    onConnectionCallback = () => {};
     public id = '';
 
-    constructor(private leaderId: string,
+    constructor(public leaderId: string,
                 private onEventReceived: (e: StrippedEvent, sender: string) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
@@ -101,6 +102,7 @@ export class DescCommunication {
             this.connectToPeer(this.leaderId);
         }
         this.onOpenCallback();
+        this.onConnectionCallback();
     }
 
     getNumberOfConnections() {
@@ -114,6 +116,8 @@ export class DescCommunication {
         this.peers.push(peer);
         this.connections.push(connection);
         console.log("new incoming connection", this.peers, this.connections.length);
+
+        this.onConnectionCallback();
 
         if(peer === this.leaderId) {
             // This is in case this client is the leader.
@@ -135,6 +139,8 @@ export class DescCommunication {
         this.connections.push(connection);
         this.peers.push(id);
         console.log("new outgoing connection", this.peers, this.connections.length);
+
+        this.onConnectionCallback();
 
         const peer = connection.getPeer();
 

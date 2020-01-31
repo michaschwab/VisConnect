@@ -6,7 +6,7 @@ export class DescProtocol {
     protected lockOwners = new Map<string, string>();
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
-    protected communication: DescCommunication;
+    communication: DescCommunication;
     protected participantId = '';
 
     constructor(protected leaderId: string,

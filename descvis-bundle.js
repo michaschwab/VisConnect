@@ -1,5 +1,138 @@
 'use strict';
 
+function delayAddEventListener() {
+    // The visualization's event listeners need to be called after DESCVis' event listeners.
+    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+    Element.prototype.addEventListener = function (eventName, callback) {
+        console.log('doing a delayed execution on ', eventName);
+        var that = this;
+        setTimeout(function () {
+            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
+        }, 100);
+    };
+    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
+    // DESCVis.
+    return new Promise(function (resolve) {
+        window.setTimeout(function () {
+            console.log('hi');
+            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
+            resolve();
+        }, 20);
+    });
+}
+function disableStopPropagation() {
+    // Prevent d3 from blocking DescVis and other code to have access to events.
+    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
+    Event.prototype.stopImmediatePropagation = function () { };
+}
+function stopPropagation(event) {
+    event['stopImmediatePropagationBackup']();
+    event.stopPropagation();
+}
+function recreateEvent(eventObject, target) {
+    var targetSelector = eventObject.target;
+    var e;
+    if (eventObject.type.substr(0, 5) === 'touch') {
+        e = document.createEvent('TouchEvent');
+        e.initEvent(eventObject.type, true, false);
+        for (var prop in eventObject) {
+            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                Object.defineProperty(e, prop, {
+                    writable: true,
+                    value: eventObject[prop],
+                });
+            }
+        }
+        //e = new TouchEvent(eventObject.type, eventObject as any);
+    }
+    else if (eventObject.type.substr(0, 5) === 'mouse') {
+        e = new MouseEvent(eventObject.type, eventObject);
+    }
+    else if (eventObject.type.substr(0, 4) === 'drag') {
+        e = new DragEvent(eventObject.type, eventObject);
+    }
+    else {
+        e = new Event(eventObject.type, eventObject);
+    }
+    if (targetSelector) {
+        var newTarget = document.querySelector(targetSelector);
+        if (!newTarget) {
+            console.error('element not found', targetSelector);
+            throw new Error('element not found');
+        }
+        target = newTarget;
+    }
+    Object.defineProperty(e, 'target', {
+        writable: true,
+        value: target,
+    });
+    Object.defineProperty(e, 'view', {
+        writable: true,
+        value: window,
+    });
+    return e;
+}
+
+var DescUi = /** @class */ (function () {
+    function DescUi(descvis) {
+        this.descvis = descvis;
+        this.addTemplate();
+        this.descvis.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        this.updateConnections();
+    }
+    DescUi.prototype.updateConnections = function () {
+        var connections = this.descvis.protocol.communication.getNumberOfConnections();
+        var collaborators = connections - 1;
+        if (collaborators > 0) {
+            document.getElementById('desc-container').style.height = '70px';
+            document.getElementById('desc-collab-notice').style.display = 'inline';
+            document.getElementById('desc-collab-count').innerText = String(collaborators);
+        }
+        else {
+            document.getElementById('desc-container').style.height = '50px';
+            document.getElementById('desc-collab-notice').style.display = 'none';
+        }
+    };
+    DescUi.prototype.invite = function () {
+        var leaderId = this.descvis.protocol.communication.leaderId;
+        var url = location.href + '?id=' + leaderId;
+        copyToClipboard(url);
+        var logo = document.getElementById('desc-logo');
+        var inviteLinkCopied = document.getElementById('desc-link-copied');
+        logo.style.display = 'none';
+        inviteLinkCopied.style.display = 'inline';
+        setTimeout(function () {
+            logo.style.display = 'block';
+            inviteLinkCopied.style.display = 'none';
+        }, 2000);
+    };
+    DescUi.prototype.addTemplate = function () {
+        var template = "\n<div id=\"desc-container\">\n    <a id=\"desc-invite\">\n        <svg id=\"desc-logo\" width=\"50\" aria-hidden=\"true\" focusable=\"false\" data-prefix=\"fas\" data-icon=\"link\" role=\"img\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" class=\"svg-inline--fa fa-link fa-w-16 fa-2x\"><path fill=\"#fff\" d=\"M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z\" class=\"\"></path></svg>\n    </a>\n    <span id=\"desc-link-copied\">Invite Link Copied.</span>\n    <span id=\"desc-collab-notice\"><span id=\"desc-collab-count\"></span> connected</span>\n</div>\n<style>\n#desc-container {\n    position: fixed;\n    right: 10px;\n    bottom: 100px;\n    background: rgba(120,120,120,0.5);\n    border: 1px solid #ccc;\n    border-radius: 10px;\n    width: 80px;\n    height: 50px;\n    padding: 10px;\n    transition: height 500ms;\n    color: #fff;\n}\n#desc-logo {\n    padding-left: 15px;\n    display: block;\n}\n#desc-invite:hover {\n    cursor: pointer;\n}\n#desc-invite:hover #desc-logo path {\n    fill: #000;\n} \n#desc-link-copied, #desc-collab-notice {\n    display: none;\n}\n#desc-collab-notice {\n    font-size: 12pt;\n    position: relative;\n    top: 5px;\n}\n</style>";
+        document.body.innerHTML += template;
+        document.getElementById('desc-invite').onclick = this.invite.bind(this);
+    };
+    return DescUi;
+}());
+// From https://hackernoon.com/copying-text-to-clipboard-with-javascript-df4d4988697f
+var copyToClipboard = function (str) {
+    var el = document.createElement('textarea');
+    el.value = str;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    var selection = document.getSelection();
+    var selected = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : false;
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    if (selected && selection) {
+        selection.removeAllRanges();
+        selection.addRange(selected);
+    }
+};
+
 var DescListener = /** @class */ (function () {
     function DescListener(svg, hearEvent) {
         this.svg = svg;
@@ -102,80 +235,6 @@ var DescListener = /** @class */ (function () {
     };
     return DescListener;
 }());
-
-function delayAddEventListener() {
-    // The visualization's event listeners need to be called after DESCVis' event listeners.
-    // For this reason, we delay calling event listeners that are added before DESCVis is started.
-    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
-    Element.prototype.addEventListener = function (eventName, callback) {
-        console.log('doing a delayed execution on ', eventName);
-        var that = this;
-        setTimeout(function () {
-            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
-        }, 100);
-    };
-    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
-    // DESCVis.
-    return new Promise(function (resolve) {
-        window.setTimeout(function () {
-            console.log('hi');
-            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
-            resolve();
-        }, 20);
-    });
-}
-function disableStopPropagation() {
-    // Prevent d3 from blocking DescVis and other code to have access to events.
-    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
-    Event.prototype.stopImmediatePropagation = function () { };
-}
-function stopPropagation(event) {
-    event['stopImmediatePropagationBackup']();
-    event.stopPropagation();
-}
-function recreateEvent(eventObject, target) {
-    var targetSelector = eventObject.target;
-    var e;
-    if (eventObject.type.substr(0, 5) === 'touch') {
-        e = document.createEvent('TouchEvent');
-        e.initEvent(eventObject.type, true, false);
-        for (var prop in eventObject) {
-            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                Object.defineProperty(e, prop, {
-                    writable: true,
-                    value: eventObject[prop],
-                });
-            }
-        }
-        //e = new TouchEvent(eventObject.type, eventObject as any);
-    }
-    else if (eventObject.type.substr(0, 5) === 'mouse') {
-        e = new MouseEvent(eventObject.type, eventObject);
-    }
-    else if (eventObject.type.substr(0, 4) === 'drag') {
-        e = new DragEvent(eventObject.type, eventObject);
-    }
-    else {
-        e = new Event(eventObject.type, eventObject);
-    }
-    if (targetSelector) {
-        var newTarget = document.querySelector(targetSelector);
-        if (!newTarget) {
-            console.error('element not found', targetSelector);
-            throw new Error('element not found');
-        }
-        target = newTarget;
-    }
-    Object.defineProperty(e, 'target', {
-        writable: true,
-        value: target,
-    });
-    Object.defineProperty(e, 'view', {
-        writable: true,
-        value: window,
-    });
-    return e;
-}
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -1057,7 +1116,11 @@ var PeerjsNetwork = /** @class */ (function () {
         var _this = this;
         this.onOpen = onOpen;
         this.onConnection = onConnection;
-        this.peer = new Peer();
+        this.peer = new Peer({
+            config: { 'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                ] }
+        });
         if (this.peer.id) {
             this.onOpen(); // In case it was done too fast.
         }
@@ -1104,6 +1167,7 @@ var DescCommunication = /** @class */ (function () {
         this.onOpenCallback = onOpenCallback;
         this.connections = [];
         this.peers = [];
+        this.onConnectionCallback = function () { };
         this.id = '';
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
@@ -1178,6 +1242,7 @@ var DescCommunication = /** @class */ (function () {
             this.connectToPeer(this.leaderId);
         }
         this.onOpenCallback();
+        this.onConnectionCallback();
     };
     DescCommunication.prototype.getNumberOfConnections = function () {
         return this.connections.length;
@@ -1192,6 +1257,7 @@ var DescCommunication = /** @class */ (function () {
                         this.peers.push(peer);
                         this.connections.push(connection);
                         console.log("new incoming connection", this.peers, this.connections.length);
+                        this.onConnectionCallback();
                         if (peer === this.leaderId) {
                             // This is in case this client is the leader.
                             this.leaderConnection = connection;
@@ -1219,6 +1285,7 @@ var DescCommunication = /** @class */ (function () {
                         this.connections.push(connection);
                         this.peers.push(id);
                         console.log("new outgoing connection", this.peers, this.connections.length);
+                        this.onConnectionCallback();
                         peer = connection.getPeer();
                         if (peer === this.leaderId) {
                             this.leaderConnection = connection;
@@ -1468,10 +1535,6 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
     return DescLeaderProtocol;
 }(DescProtocol));
 
-disableStopPropagation();
-delayAddEventListener().then(function () {
-    new DescVis(document.getElementsByTagName('svg')[0]);
-});
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
         this.svg = svg;
@@ -1496,3 +1559,9 @@ var DescVis = /** @class */ (function () {
     };
     return DescVis;
 }());
+
+disableStopPropagation();
+delayAddEventListener().then(function () {
+    var descvis = new DescVis(document.getElementsByTagName('svg')[0]);
+    new DescUi(descvis);
+});

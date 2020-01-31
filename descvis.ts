@@ -1,5 +1,5 @@
 import {DescListener, StrippedEvent} from "./listener";
-import {delayAddEventListener, disableStopPropagation, recreateEvent, stopPropagation} from "./dom";
+import {recreateEvent, stopPropagation} from "./dom";
 import {DescProtocol} from "./protocol";
 import {DescLeaderProtocol} from "./leader-protocol";
 
@@ -9,14 +9,9 @@ export interface DescEvent {
     sender: string
 }
 
-disableStopPropagation();
-delayAddEventListener().then(() => {
-    new DescVis(document.getElementsByTagName('svg')[0]);
-});
-
-class DescVis {
+export class DescVis {
     private listener: DescListener;
-    private protocol: DescProtocol;
+    protocol: DescProtocol;
 
     constructor(private svg: SVGElement) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
