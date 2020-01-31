@@ -12,7 +12,6 @@ export class DescListener {
     private dragElement: HTMLElement|null = null;
 
     constructor(private svg: SVGElement, private hearEvent: (e: StrippedEvent, event: Event) => void) {
-        console.log("step 1");
         this.addListenersToElementAndChildren(this.svg);
     }
 
