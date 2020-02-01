@@ -127,7 +127,7 @@ export class DescCommunication {
         await connection.open();
         connection.messages.subscribe(this.receiveMessage.bind(this));
 
-        if (!this.leaderId) {
+        if (this.leaderId === this.id) {
             this.sendNewConnection(connection);
         }
     }

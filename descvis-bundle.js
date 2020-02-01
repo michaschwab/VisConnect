@@ -1269,7 +1269,7 @@ var DescCommunication = /** @class */ (function () {
                     case 1:
                         _a.sent();
                         connection.messages.subscribe(this.receiveMessage.bind(this));
-                        if (!this.leaderId) {
+                        if (this.leaderId === this.id) {
                             this.sendNewConnection(connection);
                         }
                         return [2 /*return*/];
