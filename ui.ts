@@ -79,7 +79,7 @@ export class DescUi {
     display: none;
 }
 #desc-collab-notice {
-    font-size: 12pt;
+    font-size: 11pt;
     position: relative;
     top: 5px;
 }
