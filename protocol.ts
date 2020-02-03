@@ -10,10 +10,15 @@ export class DescProtocol {
     protected participantId = '';
 
     constructor(protected leaderId: string,
-                protected executeEvent: (e: StrippedEvent) => void) {
-        this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this),
-            this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
-            this.receiveLockVote.bind(this), this.init.bind(this));
+                protected executeEvent: (e: StrippedEvent) => void,
+                mockCommunication?: DescCommunication) {
+        if(mockCommunication) {
+            this.communication = mockCommunication;
+        } else {
+            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this),
+                this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
+                this.receiveLockVote.bind(this), this.init.bind(this));
+        }
     }
 
     init() {

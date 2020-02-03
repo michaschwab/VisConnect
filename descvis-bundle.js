@@ -15,7 +15,6 @@ function delayAddEventListener() {
     // DESCVis.
     return new Promise(function (resolve) {
         window.setTimeout(function () {
-            console.log('hi');
             Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
             resolve();
         }, 20);
@@ -225,8 +224,11 @@ var DescListener = /** @class */ (function () {
         if (!element) {
             return null;
         }
-        if (element === this.svg) {
+        /*if(element === this.svg) {
             return 'svg';
+        }*/
+        if (element === document.body) {
+            return 'body';
         }
         var parent = element.parentNode;
         if (!parent) {
@@ -1121,12 +1123,7 @@ var PeerjsNetwork = /** @class */ (function () {
         this.onConnection = onConnection;
         this.peer = new Peer({
             config: { 'iceServers': [
-                    //{ url: 'stun:stun.l.google.com:19302' },
-                    {
-                        'urls': 'turn:numb.viagenie.ca',
-                        'credential': "a/j'/9CmxTCa",
-                        'username': 'saffo.d@husky.neu.edu'
-                    }
+                    { url: 'stun:stun.l.google.com:19302' },
                 ] }
         });
         if (this.peer.id) {
@@ -1372,7 +1369,7 @@ var DESC_MESSAGE_TYPE;
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 
 var DescProtocol = /** @class */ (function () {
-    function DescProtocol(leaderId, executeEvent) {
+    function DescProtocol(leaderId, executeEvent, mockCommunication) {
         this.leaderId = leaderId;
         this.executeEvent = executeEvent;
         this.ledgers = new Map();
@@ -1380,7 +1377,12 @@ var DescProtocol = /** @class */ (function () {
         this.requestedLocks = new Set();
         this.heldEvents = new Map();
         this.participantId = '';
-        this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this), this.init.bind(this));
+        if (mockCommunication) {
+            this.communication = mockCommunication;
+        }
+        else {
+            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this), this.init.bind(this));
+        }
     }
     DescProtocol.prototype.init = function () {
         this.participantId = this.communication.getId();
@@ -1570,6 +1572,8 @@ var DescVis = /** @class */ (function () {
 
 disableStopPropagation();
 delayAddEventListener().then(function () {
-    var descvis = new DescVis(document.getElementsByTagName('svg')[0]);
+    var elsWithAttribute = document.querySelectorAll('[collaboration]');
+    var el = elsWithAttribute.length ? elsWithAttribute[0] : document.getElementsByTagName('svg')[0];
+    var descvis = new DescVis(el);
     new DescUi(descvis);
 });
