@@ -45,7 +45,7 @@ function recreateEvent(eventObject, target) {
         }
         //e = new TouchEvent(eventObject.type, eventObject as any);
     }
-    else if (eventObject.type.substr(0, 5) === 'mouse') {
+    else if (eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
         e = new MouseEvent(eventObject.type, eventObject);
     }
     else if (eventObject.type.substr(0, 4) === 'drag') {
@@ -224,9 +224,6 @@ var DescListener = /** @class */ (function () {
         if (!element) {
             return null;
         }
-        /*if(element === this.svg) {
-            return 'svg';
-        }*/
         if (element === document.body) {
             return 'body';
         }
