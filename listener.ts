@@ -11,7 +11,7 @@ export class DescListener {
 
     private dragElement: HTMLElement|null = null;
 
-    constructor(private svg: SVGElement, private hearEvent: (e: StrippedEvent, event: Event) => void) {
+    constructor(private svg: Element, private hearEvent: (e: StrippedEvent, event: Event) => void) {
         this.addListenersToElementAndChildren(this.svg);
     }
 
@@ -101,8 +101,8 @@ export class DescListener {
         if(!element) {
             return null;
         }
-        if(element === this.svg) {
-            return 'svg';
+        if(element === document.body) {
+            return 'body';
         }
         const parent = element.parentNode;
         if(!parent) {

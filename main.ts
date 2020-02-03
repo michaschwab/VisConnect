@@ -4,7 +4,9 @@ import {DescVis} from "./descvis";
 
 disableStopPropagation();
 delayAddEventListener().then(() => {
-    const descvis = new DescVis(document.getElementsByTagName('svg')[0]);
+    const elsWithAttribute = document.querySelectorAll('[collaboration]');
+    const el = elsWithAttribute.length ? elsWithAttribute[0] : document.getElementsByTagName('svg')[0];
+    const descvis = new DescVis(el);
 
     new DescUi(descvis);
 });

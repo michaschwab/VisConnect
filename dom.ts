@@ -16,7 +16,6 @@ export function delayAddEventListener() {
     // DESCVis.
     return new Promise<void>(resolve => {
         window.setTimeout(() => {
-            console.log('hi');
             Element.prototype.addEventListener = (Element as any).prototype['addEventListenerBackup'];
             resolve();
         }, 20);
@@ -49,7 +48,7 @@ export function recreateEvent(eventObject: StrippedEvent, target: Element): Even
             }
         }
         //e = new TouchEvent(eventObject.type, eventObject as any);
-    } else if(eventObject.type.substr(0, 5) === 'mouse') {
+    } else if(eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
         e = new MouseEvent(eventObject.type, eventObject as any);
     } else if(eventObject.type.substr(0, 4) === 'drag') {
         e = new DragEvent(eventObject.type, eventObject as any);
