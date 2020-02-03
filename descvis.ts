@@ -13,7 +13,7 @@ export class DescVis {
     private listener: DescListener;
     protocol: DescProtocol;
 
-    constructor(private svg: SVGElement) {
+    constructor(private svg: Element) {
         let parts = window.location.href.match(/\?id=([a-z0-9]+)/);
         const leaderId = parts ? parts[1] : '';
         const isLeader = !leaderId;

@@ -16,7 +16,6 @@ export function delayAddEventListener() {
     // DESCVis.
     return new Promise<void>(resolve => {
         window.setTimeout(() => {
-            console.log('hi');
             Element.prototype.addEventListener = (Element as any).prototype['addEventListenerBackup'];
             resolve();
         }, 20);
