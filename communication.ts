@@ -37,7 +37,7 @@ export class DescCommunication {
         };
 
         for(const conn of this.connections) {
-            console.log('requesting lock', msg);
+            //console.log('Requesting lock', msg);
             conn.send(msg);
         }
         this.receiveMessage(msg); // Request vote from oneself.
@@ -55,7 +55,7 @@ export class DescCommunication {
             requester,
             agree
         };
-        console.log('sending lock vote', msg);
+        //console.log('Sending lock vote', msg);
         if(!this.leaderConnection) {
             return console.error('Can not send lock vote because no leader connection exists.');
         }
@@ -93,8 +93,8 @@ export class DescCommunication {
             this.leaderId = this.id;
         }
 
-        console.log("originID", this.leaderId);
-        console.log("myID", this.id);
+        //console.log("originID", this.leaderId);
+        //console.log("myID", this.id);
 
         this.connectToPeer(this.id);
 
@@ -115,7 +115,7 @@ export class DescCommunication {
 
         this.peers.push(peer);
         this.connections.push(connection);
-        console.log("new incoming connection", this.peers, this.connections.length);
+        //console.log("New incoming connection", this.peers, this.connections.length);
 
         this.onConnectionCallback();
 
@@ -138,7 +138,7 @@ export class DescCommunication {
 
         this.connections.push(connection);
         this.peers.push(id);
-        console.log("new outgoing connection", this.peers, this.connections.length);
+        //console.log("New outgoing connection", this.peers, this.connections.length);
 
         this.onConnectionCallback();
 
@@ -183,7 +183,7 @@ export class DescCommunication {
     }
 
     sendNewConnection(conn: DescConnection) {
-        console.log("sending new connection message");
+        //console.log("Sending new connection message");
         const decoratedMessage: InitMessage = {
             'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
@@ -195,7 +195,7 @@ export class DescCommunication {
     }
 
     receiveNewConnection(data: InitMessage) {
-        console.log("new connection message", data);
+        //console.log("New connection message", data);
         for (let i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
                 console.log("connecting to new peer", data.peers[i]);

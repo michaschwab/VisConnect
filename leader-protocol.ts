@@ -23,7 +23,7 @@ export class DescLeaderProtocol extends DescProtocol {
         const countYes = votes.filter(v => v.vote).length;
         const countNo = votes.filter(v => !v.vote).length;
 
-        console.log('election:', electionId, minVotes, countYes, countNo);
+        //console.log('Election:', electionId, minVotes, countYes, countNo);
 
         if(countYes < minVotes && countNo < minVotes) {
             return;
@@ -33,7 +33,7 @@ export class DescLeaderProtocol extends DescProtocol {
             // Decide yes
             this.lockOwners.set(selector, requester);
             this.communication.changeLockOwner(selector, requester);
-            console.log('changing lock owner', selector, requester);
+            //console.log('Changing lock owner', selector, requester);
 
             this.extendLock(selector);
         } else if(countNo >= minVotes) {
@@ -59,7 +59,7 @@ export class DescLeaderProtocol extends DescProtocol {
         return () => {
             this.lockOwners.delete(selector);
             this.communication.changeLockOwner(selector, '');
-            console.log('expiring lock owner', selector);
+            //console.log('Expiring lock owner', selector);
         };
     }
 

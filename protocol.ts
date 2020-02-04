@@ -68,7 +68,7 @@ export class DescProtocol {
     }
 
     lockOwnerChanged(selector: string, owner: string) {
-        console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
+        //console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
 
         if(!owner) {
@@ -99,7 +99,7 @@ export class DescProtocol {
         if(this.requestedLocks.has(selector)) {
             return;
         }
-        console.log('requesting lock on ', selector);
+        //console.log('Requesting lock on ', selector);
         this.requestedLocks.add(selector);
         this.communication.requestLock(selector);
     }

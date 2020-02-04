@@ -46,6 +46,8 @@ function recreateEvent(eventObject, target) {
         //e = new TouchEvent(eventObject.type, eventObject as any);
     }
     else if (eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
+        if (eventObject.type === 'click')
+            console.log('click', eventObject);
         e = new MouseEvent(eventObject.type, eventObject);
     }
     else if (eventObject.type.substr(0, 4) === 'drag') {
@@ -1192,7 +1194,7 @@ var DescCommunication = /** @class */ (function () {
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
-            console.log('requesting lock', msg);
+            //console.log('Requesting lock', msg);
             conn.send(msg);
         }
         this.receiveMessage(msg); // Request vote from oneself.
@@ -1209,7 +1211,7 @@ var DescCommunication = /** @class */ (function () {
             requester: requester,
             agree: agree
         };
-        console.log('sending lock vote', msg);
+        //console.log('Sending lock vote', msg);
         if (!this.leaderConnection) {
             return console.error('Can not send lock vote because no leader connection exists.');
         }
@@ -1242,8 +1244,8 @@ var DescCommunication = /** @class */ (function () {
         if (!this.leaderId) {
             this.leaderId = this.id;
         }
-        console.log("originID", this.leaderId);
-        console.log("myID", this.id);
+        //console.log("originID", this.leaderId);
+        //console.log("myID", this.id);
         this.connectToPeer(this.id);
         if (this.leaderId && this.leaderId !== this.id) {
             this.connectToPeer(this.leaderId);
@@ -1263,7 +1265,7 @@ var DescCommunication = /** @class */ (function () {
                         peer = connection.getPeer();
                         this.peers.push(peer);
                         this.connections.push(connection);
-                        console.log("new incoming connection", this.peers, this.connections.length);
+                        //console.log("New incoming connection", this.peers, this.connections.length);
                         this.onConnectionCallback();
                         if (peer === this.leaderId) {
                             // This is in case this client is the leader.
@@ -1291,7 +1293,7 @@ var DescCommunication = /** @class */ (function () {
                         connection = _a.sent();
                         this.connections.push(connection);
                         this.peers.push(id);
-                        console.log("new outgoing connection", this.peers, this.connections.length);
+                        //console.log("New outgoing connection", this.peers, this.connections.length);
                         this.onConnectionCallback();
                         peer = connection.getPeer();
                         if (peer === this.leaderId) {
@@ -1338,7 +1340,7 @@ var DescCommunication = /** @class */ (function () {
         //this.receiveMessage(msg);
     };
     DescCommunication.prototype.sendNewConnection = function (conn) {
-        console.log("sending new connection message");
+        //console.log("Sending new connection message");
         var decoratedMessage = {
             'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
@@ -1348,7 +1350,7 @@ var DescCommunication = /** @class */ (function () {
         conn.send(decoratedMessage);
     };
     DescCommunication.prototype.receiveNewConnection = function (data) {
-        console.log("new connection message", data);
+        //console.log("New connection message", data);
         for (var i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
                 console.log("connecting to new peer", data.peers[i]);
@@ -1425,7 +1427,7 @@ var DescProtocol = /** @class */ (function () {
         this.communication.sendLockVote(selector, electionId, requester, vote);
     };
     DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
-        console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
+        //console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
         if (!owner) {
             this.lockOwners.delete(selector);
@@ -1453,7 +1455,7 @@ var DescProtocol = /** @class */ (function () {
         if (this.requestedLocks.has(selector)) {
             return;
         }
-        console.log('requesting lock on ', selector);
+        //console.log('Requesting lock on ', selector);
         this.requestedLocks.add(selector);
         this.communication.requestLock(selector);
     };
@@ -1502,7 +1504,7 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         var minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
         var countYes = votes.filter(function (v) { return v.vote; }).length;
         var countNo = votes.filter(function (v) { return !v.vote; }).length;
-        console.log('election:', electionId, minVotes, countYes, countNo);
+        //console.log('Election:', electionId, minVotes, countYes, countNo);
         if (countYes < minVotes && countNo < minVotes) {
             return;
         }
@@ -1510,7 +1512,7 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
             // Decide yes
             this.lockOwners.set(selector, requester);
             this.communication.changeLockOwner(selector, requester);
-            console.log('changing lock owner', selector, requester);
+            //console.log('Changing lock owner', selector, requester);
             this.extendLock(selector);
         }
         else if (countNo >= minVotes) {
@@ -1534,7 +1536,7 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         return function () {
             _this.lockOwners.delete(selector);
             _this.communication.changeLockOwner(selector, '');
-            console.log('expiring lock owner', selector);
+            //console.log('Expiring lock owner', selector);
         };
     };
     DescLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
