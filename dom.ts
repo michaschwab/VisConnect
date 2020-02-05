@@ -5,7 +5,7 @@ export function delayAddEventListener() {
     // For this reason, we delay calling event listeners that are added before DESCVis is started.
     (Element as any).prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
     Element.prototype.addEventListener = function(this: Element, eventName: string, callback: () => void) {
-        console.log('doing a delayed execution on ', eventName, this);
+        //console.log('doing a delayed execution on ', eventName, this);
         const that = this;
         setTimeout(function() {
             (Element as any).prototype['addEventListenerBackup'].call(that, eventName, callback);

@@ -5,7 +5,7 @@ function delayAddEventListener() {
     // For this reason, we delay calling event listeners that are added before DESCVis is started.
     Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
     Element.prototype.addEventListener = function (eventName, callback) {
-        console.log('doing a delayed execution on ', eventName, this);
+        //console.log('doing a delayed execution on ', eventName, this);
         var that = this;
         setTimeout(function () {
             Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
@@ -1145,19 +1145,17 @@ var PeerjsNetwork = /** @class */ (function () {
         this.peer.on('disconnected', function () {
             onDisconnection();
         });
-        //im sure there is a nicer way to do this
-        var _this = this;
-        window.addEventListener("beforeunload", function (e) {
-            //e.preventDefault();
-            _this.peer.disconnect();
-        });
+        window.addEventListener("beforeunload", function () { return onDisconnection(); });
+        //window.onbeforeunload = () => onDisconnection();
+        //window.addEventListener("beforeunload", () => alert('close1'));
+        //window.onbeforeunload = () => alert('close2');
     };
     PeerjsNetwork.prototype.getId = function () {
         return this.peer.id;
     };
     PeerjsNetwork.prototype.connect = function (peerId) {
-        var _this_1 = this;
-        return new Promise(function (resolve) { return __awaiter(_this_1, void 0, void 0, function () {
+        var _this = this;
+        return new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
             var conn, connection;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1386,6 +1384,7 @@ var DescCommunication = /** @class */ (function () {
         }
     };
     DescCommunication.prototype.sendDisconnectMessage = function () {
+        console.log('informing of disconnect');
         var decoratedMessage = {
             'type': DESC_MESSAGE_TYPE.DISCONNECTION,
             'sender': this.id
@@ -1396,16 +1395,17 @@ var DescCommunication = /** @class */ (function () {
         }
     };
     DescCommunication.prototype.recieveDisconnectMessage = function (msg) {
-        console.log("peer:", msg.sender, "is disconnecting");
+        console.log("Peer", msg.sender, "is disconnecting");
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
             //console.log('Requesting lock', msg);
             if (conn.getPeer() === msg.sender) {
-                console.log("removing peer and connection");
+                console.log("Removing peer and connection");
                 this.peers.splice(this.peers.indexOf(msg.sender), 1);
                 this.connections.splice(this.connections.indexOf(conn), 1);
             }
         }
+        this.onConnectionCallback();
     };
     return DescCommunication;
 }());

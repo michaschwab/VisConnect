@@ -5,7 +5,7 @@ declare var Peer: any;
 export interface DescNetwork {
     init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void): void;
     getId(): string;
-    connect(peerId: string): Promise<PeerjsConnection>;  
+    connect(peerId: string): Promise<PeerjsConnection>;
 }
 
 export class PeerjsNetwork implements DescNetwork {
@@ -41,14 +41,7 @@ export class PeerjsNetwork implements DescNetwork {
             onDisconnection();
         });
 
-        //im sure there is a nicer way to do this
-        var _this = this;
-        window.addEventListener("beforeunload", function(e){
-            //e.preventDefault();
-            _this.peer.disconnect();
-        });
-
-
+        window.addEventListener("beforeunload", () => onDisconnection());
     }
 
     getId(): string {

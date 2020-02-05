@@ -155,8 +155,6 @@ export class DescCommunication {
         connection.messages.subscribe(this.receiveMessage.bind(this));
     }
 
-   
-
     receiveMessage(data: DescMessage) {
         if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data as InitMessage);
@@ -177,7 +175,6 @@ export class DescCommunication {
             const msg = data as DisconnectMessage;
             this.recieveDisconnectMessage(msg);
         }
-
     }
 
     broadcastEvent(e: StrippedEvent) {
@@ -222,7 +219,7 @@ export class DescCommunication {
         const decoratedMessage: DisconnectMessage = {
             'type': DESC_MESSAGE_TYPE.DISCONNECTION,
             'sender': this.id
-        }
+        };
 
         for(const conn of this.connections) {
             conn.send(decoratedMessage);
@@ -230,22 +227,19 @@ export class DescCommunication {
     }
 
     recieveDisconnectMessage(msg: DisconnectMessage){
-        console.log("peer:", msg.sender, "is disconnecting");
+        console.log("Peer", msg.sender, "is disconnecting");
 
         for(const conn of this.connections) {
             //console.log('Requesting lock', msg);
             if (conn.getPeer() === msg.sender){
-                console.log("removing peer and connection");
+                console.log("Removing peer and connection");
                 this.peers.splice(this.peers.indexOf(msg.sender), 1);
                 this.connections.splice(this.connections.indexOf(conn),1);
             }   
         }
-
+        this.onConnectionCallback();
     }
-
-
 }
-
 
 export enum DESC_MESSAGE_TYPE {
     NEW_CONNECTION,
