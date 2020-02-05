@@ -80,7 +80,7 @@ export class DescProtocol {
         if(owner === this.participantId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
             const events = this.heldEvents.get(selector)!;
-            console.log('Triggering some held up events', events);
+            //console.log('Triggering some held up events', events);
             for(const stripped of events) {
                 const descEvent = this.addEventToLedger(stripped, this.participantId);
                 if(descEvent) {

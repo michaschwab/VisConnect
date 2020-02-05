@@ -36,6 +36,15 @@ export class DescListener {
         element.addEventListener('touchend', boundCapture);
         element.addEventListener('selectstart', boundCapture);
         element.addEventListener('dragstart', boundCapture);
+
+        // Add listeners to future child elements.
+        const appendBackup = element.appendChild;
+        const that = this;
+
+        element.appendChild = function<T extends Node>(newChild: T) {
+            that.addListenersToElement(newChild as unknown as Element);
+            return appendBackup.call(this, newChild) as T;
+        }
     }
 
     captureEvent(element: Element) {

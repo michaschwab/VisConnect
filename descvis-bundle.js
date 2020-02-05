@@ -5,7 +5,7 @@ function delayAddEventListener() {
     // For this reason, we delay calling event listeners that are added before DESCVis is started.
     Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
     Element.prototype.addEventListener = function (eventName, callback) {
-        console.log('doing a delayed execution on ', eventName);
+        console.log('doing a delayed execution on ', eventName, this);
         var that = this;
         setTimeout(function () {
             Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
@@ -46,8 +46,6 @@ function recreateEvent(eventObject, target) {
         //e = new TouchEvent(eventObject.type, eventObject as any);
     }
     else if (eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
-        if (eventObject.type === 'click')
-            console.log('click', eventObject);
         e = new MouseEvent(eventObject.type, eventObject);
     }
     else if (eventObject.type.substr(0, 4) === 'drag') {
@@ -165,6 +163,13 @@ var DescListener = /** @class */ (function () {
         element.addEventListener('touchend', boundCapture);
         element.addEventListener('selectstart', boundCapture);
         element.addEventListener('dragstart', boundCapture);
+        // Add listeners to future child elements.
+        var appendBackup = element.appendChild;
+        var that = this;
+        element.appendChild = function (newChild) {
+            that.addListenersToElement(newChild);
+            return appendBackup.call(this, newChild);
+        };
     };
     DescListener.prototype.captureEvent = function (element) {
         var _this = this;
@@ -1437,7 +1442,7 @@ var DescProtocol = /** @class */ (function () {
         if (owner === this.participantId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
             var events = this.heldEvents.get(selector);
-            console.log('Triggering some held up events', events);
+            //console.log('Triggering some held up events', events);
             for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
                 var stripped = events_1[_i];
                 var descEvent = this.addEventToLedger(stripped, this.participantId);
