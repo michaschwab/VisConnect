@@ -3,19 +3,17 @@ import {PeerjsConnection, PeerjsConnectionI} from "./peerjs-connection";
 declare var Peer: any;
 
 export interface DescNetwork {
-    init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void): void;
+    init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void): void;
     getId(): string;
-    connect(peerId: string): Promise<PeerjsConnection>;
+    connect(peerId: string): Promise<PeerjsConnection>;  
 }
 
 export class PeerjsNetwork implements DescNetwork {
     private peer: any;
     private onOpen: () => void = () => 0;
-    private onConnection: (connection: PeerjsConnection) => void = () => {};
 
-    init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void) {
+    init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void) {
         this.onOpen = onOpen;
-        this.onConnection = onConnection;
 
         this.peer = new Peer({
             config:  {'iceServers': [
@@ -35,14 +33,29 @@ export class PeerjsNetwork implements DescNetwork {
         }
 
         this.peer.on('connection', (connection: PeerjsConnectionI) => {
-            this.onConnection(new PeerjsConnection(connection));
+            console.log("connection!")
+            onConnection(new PeerjsConnection(connection));
         });
+
+        this.peer.on('disconnected',  () => {
+            onDisconnection();
+        });
+
+        //im sure there is a nicer way to do this
+        var _this = this;
+        window.addEventListener("beforeunload", function(e){
+            //e.preventDefault();
+            _this.peer.disconnect();
+        });
+
+
     }
 
     getId(): string {
         return this.peer.id;
     }
 
+    
     connect(peerId: string): Promise<PeerjsConnection> {
         return new Promise<PeerjsConnection>(async (resolve) => {
             const conn: PeerjsConnectionI = this.peer.connect(peerId);

@@ -21,7 +21,7 @@ export class DescCommunication {
                                           vote: boolean) => void,
                 private onOpenCallback: () => void) {
         this.peer = new PeerjsNetwork();
-        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
+        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
 
     /**
@@ -132,6 +132,10 @@ export class DescCommunication {
         }
     }
 
+    async onDisconnection(){
+        this.sendDisconnectMessage();
+    }
+
     async connectToPeer(id: string) {
         // Outgoing connection: Client connects to leader or other client.
         const connection: DescConnection = await this.peer.connect(id);
@@ -151,6 +155,8 @@ export class DescCommunication {
         connection.messages.subscribe(this.receiveMessage.bind(this));
     }
 
+   
+
     receiveMessage(data: DescMessage) {
         if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data as InitMessage);
@@ -167,7 +173,11 @@ export class DescCommunication {
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
             this.onNewLockOwner(msg.targetSelector, msg.owner);
+        } else if(data.type === DESC_MESSAGE_TYPE.DISCONNECTION) {
+            const msg = data as DisconnectMessage;
+            this.recieveDisconnectMessage(msg);
         }
+
     }
 
     broadcastEvent(e: StrippedEvent) {
@@ -207,6 +217,33 @@ export class DescCommunication {
             this.onEventReceived(data.eventsLedger[i].event, data.sender);
         }
     }
+    
+    sendDisconnectMessage() {
+        const decoratedMessage: DisconnectMessage = {
+            'type': DESC_MESSAGE_TYPE.DISCONNECTION,
+            'sender': this.id
+        }
+
+        for(const conn of this.connections) {
+            conn.send(decoratedMessage);
+        }
+    }
+
+    recieveDisconnectMessage(msg: DisconnectMessage){
+        console.log("peer:", msg.sender, "is disconnecting");
+
+        for(const conn of this.connections) {
+            //console.log('Requesting lock', msg);
+            if (conn.getPeer() === msg.sender){
+                console.log("removing peer and connection");
+                this.peers.splice(this.peers.indexOf(msg.sender), 1);
+                this.connections.splice(this.connections.indexOf(conn),1);
+            }   
+        }
+
+    }
+
+
 }
 
 
@@ -216,6 +253,7 @@ export enum DESC_MESSAGE_TYPE {
     LOCK_REQUESTED,
     LOCK_VOTE,
     LOCK_OWNER_CHANGED,
+    DISCONNECTION
 }
 
 export interface DescMessage {
@@ -234,6 +272,10 @@ export interface InitMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.NEW_CONNECTION,
     peers: string[],
     eventsLedger: DescEvent[]
+}
+
+export interface DisconnectMessage extends DescMessage {
+    type: DESC_MESSAGE_TYPE.DISCONNECTION,
 }
 
 export interface LockRequestMessage extends DescMessage {

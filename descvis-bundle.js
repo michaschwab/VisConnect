@@ -1119,12 +1119,9 @@ var PeerjsConnection = /** @class */ (function () {
 var PeerjsNetwork = /** @class */ (function () {
     function PeerjsNetwork() {
         this.onOpen = function () { return 0; };
-        this.onConnection = function () { };
     }
-    PeerjsNetwork.prototype.init = function (onOpen, onConnection) {
-        var _this = this;
+    PeerjsNetwork.prototype.init = function (onOpen, onConnection, onDisconnection) {
         this.onOpen = onOpen;
-        this.onConnection = onConnection;
         this.peer = new Peer({
             config: { 'iceServers': [
                     //{ url: 'stun:stun.l.google.com:19302' },
@@ -1142,15 +1139,25 @@ var PeerjsNetwork = /** @class */ (function () {
             this.peer.on('open', this.onOpen);
         }
         this.peer.on('connection', function (connection) {
-            _this.onConnection(new PeerjsConnection(connection));
+            console.log("connection!");
+            onConnection(new PeerjsConnection(connection));
+        });
+        this.peer.on('disconnected', function () {
+            onDisconnection();
+        });
+        //im sure there is a nicer way to do this
+        var _this = this;
+        window.addEventListener("beforeunload", function (e) {
+            //e.preventDefault();
+            _this.peer.disconnect();
         });
     };
     PeerjsNetwork.prototype.getId = function () {
         return this.peer.id;
     };
     PeerjsNetwork.prototype.connect = function (peerId) {
-        var _this = this;
-        return new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
+        var _this_1 = this;
+        return new Promise(function (resolve) { return __awaiter(_this_1, void 0, void 0, function () {
             var conn, connection;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1184,7 +1191,7 @@ var DescCommunication = /** @class */ (function () {
         this.onConnectionCallback = function () { };
         this.id = '';
         this.peer = new PeerjsNetwork();
-        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this));
+        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
     /**
      * Requests all clients to vote to agree that this client gets the lock on the element.
@@ -1288,6 +1295,14 @@ var DescCommunication = /** @class */ (function () {
             });
         });
     };
+    DescCommunication.prototype.onDisconnection = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                this.sendDisconnectMessage();
+                return [2 /*return*/];
+            });
+        });
+    };
     DescCommunication.prototype.connectToPeer = function (id) {
         return __awaiter(this, void 0, void 0, function () {
             var connection, peer;
@@ -1331,6 +1346,10 @@ var DescCommunication = /** @class */ (function () {
             var msg = data;
             this.onNewLockOwner(msg.targetSelector, msg.owner);
         }
+        else if (data.type === DESC_MESSAGE_TYPE.DISCONNECTION) {
+            var msg = data;
+            this.recieveDisconnectMessage(msg);
+        }
     };
     DescCommunication.prototype.broadcastEvent = function (e) {
         var msg = {
@@ -1366,6 +1385,28 @@ var DescCommunication = /** @class */ (function () {
             this.onEventReceived(data.eventsLedger[i].event, data.sender);
         }
     };
+    DescCommunication.prototype.sendDisconnectMessage = function () {
+        var decoratedMessage = {
+            'type': DESC_MESSAGE_TYPE.DISCONNECTION,
+            'sender': this.id
+        };
+        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
+            var conn = _a[_i];
+            conn.send(decoratedMessage);
+        }
+    };
+    DescCommunication.prototype.recieveDisconnectMessage = function (msg) {
+        console.log("peer:", msg.sender, "is disconnecting");
+        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
+            var conn = _a[_i];
+            //console.log('Requesting lock', msg);
+            if (conn.getPeer() === msg.sender) {
+                console.log("removing peer and connection");
+                this.peers.splice(this.peers.indexOf(msg.sender), 1);
+                this.connections.splice(this.connections.indexOf(conn), 1);
+            }
+        }
+    };
     return DescCommunication;
 }());
 var DESC_MESSAGE_TYPE;
@@ -1375,6 +1416,7 @@ var DESC_MESSAGE_TYPE;
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_REQUESTED"] = 2] = "LOCK_REQUESTED";
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_VOTE"] = 3] = "LOCK_VOTE";
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_OWNER_CHANGED"] = 4] = "LOCK_OWNER_CHANGED";
+    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["DISCONNECTION"] = 5] = "DISCONNECTION";
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 
 var DescProtocol = /** @class */ (function () {
