@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    .links line {
+        stroke: #999;
+        stroke-opacity: 0.6;
+    }
+
+    .nodes circle {
+        stroke: #fff;
+        stroke-width: 1.5px;
+    }
+</style>
+<svg width="960" height="600"></svg>
+<script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="../descvis-bundle.js"></script>
+<script>
+    var seed = 1;
+    function random() { // Bad but seeded random function
+        var x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+
+    var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+    var simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(function(d) { return d.id; }))
+        .force("charge", d3.forceManyBody())
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+    function createRandomGraph(numberNodes, connectionsPerNode)
+    {
+        var alphabet = 'abcdefghijklmnopqrstuvwxyz';
+        var ids = [];
+
+        for(var i = 0; i < numberNodes; i++)
+        {
+            var id = '';
+            for(let j = 0; j < 10; j++) {
+                id += alphabet[Math.round(random() * (alphabet.length - 1))];
+            }
+            ids.push(id);
+        }
+
+        var nodes = [];
+
+        for(i = 0; i < numberNodes; i++)
+        {
+            nodes.push({id: ids[i], group: Math.round(random() * 9)});
+        }
+
+        var links = []
+
+        for(i = 0; i < numberNodes * connectionsPerNode / 2; i++)
+        {
+            var id1 = ids[Math.round(random()*(numberNodes-1))];
+            var id2 = ids[Math.round(random()*(numberNodes-1))];
+
+            if(id1 !== id2)
+            {
+                links.push({source: id1, target: id2, fromId: id1, toId: id2, value: Math.round(random()*9)})
+            }
+        }
+
+        return { nodes: nodes, links: links };
+    }
+
+    var graph = createRandomGraph(20, 3);
+    setTimeout(function(error) {
+        if (error) throw error;
+
+        var link = svg.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graph.links)
+            .enter().append("line")
+            .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+        var node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graph.nodes)
+            .enter().append("circle")
+            .attr("r", 5)
+            .attr("fill", function(d) { return color(d.group); })
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        node.append("title")
+            .text(function(d) { return d.id; });
+
+        simulation
+            .nodes(graph.nodes)
+            .on("tick", ticked);
+
+        simulation.force("link")
+            .links(graph.links);
+
+        let ticks = 0;
+        function ticked() {
+            ticks++;
+            //if(ticks <= 50) {
+                link
+                    .attr("x1", function(d) { return Math.round(d.source.x); })
+                    .attr("y1", function(d) { return Math.round(d.source.y); })
+                    .attr("x2", function(d) { return Math.round(d.target.x); })
+                    .attr("y2", function(d) { return Math.round(d.target.y); });
+
+                node
+                    .attr("cx", function(d) { return Math.round(d.x); })
+                    .attr("cy", function(d) { return Math.round(d.y); });
+            //}
+        }
+    });
+
+    function dragstarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(d) {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+    }
+
+    function dragended(d) {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+
+</script>
