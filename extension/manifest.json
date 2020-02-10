@@ -1,18 +1,21 @@
 {
-  "name": "DESCVis",
-  "version": "0.1",
-  "description": "Collaborate!",
+  "name": "VisConnect",
+  "version": "0.1.1",
+  "description": "Collaborate on your data visualizations! Synchronize your JavaScript event from connected client to client to explore data together.",
   "manifest_version": 2,
   "background": {
     "scripts": ["background.js"],
     "persistent": true
   },
   "browser_action": {
-    "default_title": "Inject!"
+    "default_title": "VisConnect: Collaborate on this page"
   },
   "permissions": [
     "http://*/",
     "https://*/",
     "activeTab"
-  ]
+  ],
+  "icons": {
+    "128": "icon128.png"
+  }
 }
