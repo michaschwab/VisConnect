@@ -26,8 +26,8 @@ export class DescProtocol {
     }
 
     getPastEvents() {
-        //TODO: Reconstruct the list of events from the ledgers, sorting by time.
-        return [];
+        const events = Array.from(this.ledgers.values()).reduce((a, b) => a.concat(b));
+        return events.sort((a, b) => a.event.timeStamp - b.event.timeStamp);
     }
 
     localEvent(stripped: StrippedEvent) {
@@ -54,8 +54,8 @@ export class DescProtocol {
         }
     }
 
-    receiveRemoteEvent(stripped: StrippedEvent, sender: string) {
-        this.addEventToLedger(stripped, sender);
+    receiveRemoteEvent(stripped: StrippedEvent, sender: string, catchup = false) {
+        this.addEventToLedger(stripped, sender, catchup);
     }
 
     receiveLockRequest(selector: string, electionId: string, requester: string) {
@@ -104,13 +104,15 @@ export class DescProtocol {
         this.communication.requestLock(selector);
     }
 
-    protected addEventToLedger(stripped: StrippedEvent, sender: string) {
+    protected addEventToLedger(stripped: StrippedEvent, sender: string, catchup = false) {
         const selector = stripped.target;
 
-        const lockOwner = this.lockOwners.get(selector);
-        if(!lockOwner || lockOwner !== sender) {
-            console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
-            return false;
+        if(!catchup) {
+            const lockOwner = this.lockOwners.get(selector);
+            if(!lockOwner || lockOwner !== sender) {
+                console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
+                return false;
+            }
         }
 
         this.executeEvent(stripped);
@@ -131,16 +133,6 @@ export class DescProtocol {
         return true;
     }
 }
-
-/*
-export class DescEvent {
-    allow() {
-
-    }
-    forbid() {
-
-    }
-}*/
 
 export interface DescEvent {
     seqNum: number,

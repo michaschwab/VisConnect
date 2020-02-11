@@ -208,7 +208,7 @@ var DescListener = /** @class */ (function () {
         };
     };
     DescListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', touches: [] };
+        var obj = { type: '', target: '', touches: [], timeStamp: -1 };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
@@ -1377,7 +1377,7 @@ var DescCommunication = /** @class */ (function () {
             }
         }
         for (var i = 0; i < data.eventsLedger.length; i++) {
-            this.onEventReceived(data.eventsLedger[i].event, data.sender);
+            this.onEventReceived(data.eventsLedger[i].event, data.sender, true);
         }
     };
     DescCommunication.prototype.sendDisconnectMessage = function () {
@@ -1435,8 +1435,8 @@ var DescProtocol = /** @class */ (function () {
         this.participantId = this.communication.getId();
     };
     DescProtocol.prototype.getPastEvents = function () {
-        //TODO: Reconstruct the list of events from the ledgers, sorting by time.
-        return [];
+        var events = Array.from(this.ledgers.values()).reduce(function (a, b) { return a.concat(b); });
+        return events.sort(function (a, b) { return a.event.timeStamp - b.event.timeStamp; });
     };
     DescProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
@@ -1458,8 +1458,9 @@ var DescProtocol = /** @class */ (function () {
             this.requestLock(selector);
         }
     };
-    DescProtocol.prototype.receiveRemoteEvent = function (stripped, sender) {
-        this.addEventToLedger(stripped, sender);
+    DescProtocol.prototype.receiveRemoteEvent = function (stripped, sender, catchup) {
+        if (catchup === void 0) { catchup = false; }
+        this.addEventToLedger(stripped, sender, catchup);
     };
     DescProtocol.prototype.receiveLockRequest = function (selector, electionId, requester) {
         var vote = false;
@@ -1502,12 +1503,15 @@ var DescProtocol = /** @class */ (function () {
         this.requestedLocks.add(selector);
         this.communication.requestLock(selector);
     };
-    DescProtocol.prototype.addEventToLedger = function (stripped, sender) {
+    DescProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
+        if (catchup === void 0) { catchup = false; }
         var selector = stripped.target;
-        var lockOwner = this.lockOwners.get(selector);
-        if (!lockOwner || lockOwner !== sender) {
-            console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
-            return false;
+        if (!catchup) {
+            var lockOwner = this.lockOwners.get(selector);
+            if (!lockOwner || lockOwner !== sender) {
+                console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
+                return false;
+            }
         }
         this.executeEvent(stripped);
         if (!this.ledgers.has(selector)) {

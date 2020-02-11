@@ -13,7 +13,7 @@ export class DescCommunication {
     public id = '';
 
     constructor(public leaderId: string,
-                private onEventReceived: (e: StrippedEvent, sender: string) => void,
+                private onEventReceived: (e: StrippedEvent, sender: string, catchup?: boolean) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
                 private onLockRequested: (selector: string, electionId: string, requester: string) => void,
@@ -211,7 +211,7 @@ export class DescCommunication {
         }
 
         for (let i = 0; i < data.eventsLedger.length; i++){
-            this.onEventReceived(data.eventsLedger[i].event, data.sender);
+            this.onEventReceived(data.eventsLedger[i].event, data.sender, true);
         }
     }
     

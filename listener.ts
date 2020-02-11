@@ -3,6 +3,7 @@ import {disableStopPropagation} from "./dom";
 export interface StrippedEvent {
     type: string,
     target: string,
+    timeStamp: number,
     touches: {clientX: number, clientY: number}[],
     [key: string]: string|number|{clientX: number, clientY: number}[];
 }
@@ -87,7 +88,7 @@ export class DescListener {
     }
 
     getStrippedEvent(e: MouseEvent|TouchEvent|Event) {
-        let obj: StrippedEvent = {type: '', target: '', touches: []};
+        let obj: StrippedEvent = {type: '', target: '', touches: [], timeStamp: -1};
         for(const key in e) {
             const val = (e as any)[key];
             if(typeof val !== 'object' && typeof val !== 'function') {
