@@ -76,6 +76,7 @@ export class DescUi {
 #desc-logo {
     padding-left: 15px;
     display: block;
+    background: transparent;
 }
 #desc-invite:hover {
     cursor: pointer;
