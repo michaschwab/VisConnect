@@ -28,6 +28,10 @@ export class DescCommunication {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     requestLock(targetSelector: string) {
+        if(!this.connections.length) {
+            return false;
+        }
+
         const msg: LockRequestMessage = {
             type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
             electionId: String(Math.random()).substr(2),
@@ -41,6 +45,7 @@ export class DescCommunication {
             conn.send(msg);
         }
         this.receiveMessage(msg); // Request vote from oneself.
+        return true;
     }
 
     /**

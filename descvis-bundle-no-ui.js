@@ -1198,6 +1198,9 @@ var DescCommunication = /** @class */ (function () {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     DescCommunication.prototype.requestLock = function (targetSelector) {
+        if (!this.connections.length) {
+            return false;
+        }
         var msg = {
             type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
             electionId: String(Math.random()).substr(2),
@@ -1211,6 +1214,7 @@ var DescCommunication = /** @class */ (function () {
             conn.send(msg);
         }
         this.receiveMessage(msg); // Request vote from oneself.
+        return true;
     };
     /**
      * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
@@ -1506,8 +1510,10 @@ var DescProtocol = /** @class */ (function () {
             return;
         }
         //console.log('Requesting lock on ', selector);
-        this.requestedLocks.add(selector);
-        this.communication.requestLock(selector);
+        var success = this.communication.requestLock(selector);
+        if (success) {
+            this.requestedLocks.add(selector);
+        }
     };
     DescProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
         if (catchup === void 0) { catchup = false; }

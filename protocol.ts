@@ -100,8 +100,11 @@ export class DescProtocol {
             return;
         }
         //console.log('Requesting lock on ', selector);
-        this.requestedLocks.add(selector);
-        this.communication.requestLock(selector);
+
+        const success = this.communication.requestLock(selector);
+        if(success) {
+            this.requestedLocks.add(selector);
+        }
     }
 
     protected addEventToLedger(stripped: StrippedEvent, sender: string, catchup = false) {
