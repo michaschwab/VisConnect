@@ -1631,10 +1631,11 @@ var DescVis = /** @class */ (function () {
     return DescVis;
 }());
 
+var descUi;
 disableStopPropagation();
 delayAddEventListener().then(function () {
     var elsWithAttribute = document.querySelectorAll('[collaboration]');
     var el = elsWithAttribute.length ? elsWithAttribute[0] : document.getElementsByTagName('svg')[0];
     var descvis = new DescVis(el);
-    window['descvis-add'] = function () { return new DescUi(descvis); };
+    window['descvis-add'] = function () { descUi = new DescUi(descvis); };
 });
