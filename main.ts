@@ -4,7 +4,8 @@ import {DescVis} from "./descvis";
 var descUi;
 
 disableStopPropagation();
-delayAddEventListener().then(() => {
+//delayAddEventListener().then(() => {
+(function() {
     let el: Element;
 
     const elsWithAttribute = document.querySelectorAll('[collaboration]');
@@ -20,4 +21,5 @@ delayAddEventListener().then(() => {
 
     const descvis = new DescVis(el);
     descUi = new DescUi(descvis);
-});
+})();
+//});
