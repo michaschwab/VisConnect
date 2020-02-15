@@ -1,5 +1,25 @@
 'use strict';
 
+function delayAddEventListener() {
+    // The visualization's event listeners need to be called after DESCVis' event listeners.
+    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+    Element.prototype.addEventListener = function (eventName, callback) {
+        //console.log('doing a delayed execution on ', eventName, this);
+        var that = this;
+        setTimeout(function () {
+            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
+        }, 110);
+    };
+    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
+    // DESCVis.
+    return new Promise(function (resolve) {
+        window.setTimeout(function () {
+            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
+            resolve();
+        }, 100);
+    });
+}
 function disableStopPropagation() {
     // Prevent d3 from blocking DescVis and other code to have access to events.
     Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
@@ -1620,8 +1640,8 @@ var DescVis = /** @class */ (function () {
 
 var descUi;
 disableStopPropagation();
-//delayAddEventListener().then(() => {
-(function () {
+delayAddEventListener().then(function () {
+    //(function() {
     var el;
     var elsWithAttribute = document.querySelectorAll('[collaboration]');
     var svg = document.getElementsByTagName('svg')[0];
@@ -1636,5 +1656,5 @@ disableStopPropagation();
     }
     var descvis = new DescVis(el);
     descUi = new DescUi(descvis);
-})();
-//});
+    //})();
+});

@@ -9,7 +9,7 @@ export function delayAddEventListener() {
         const that = this;
         setTimeout(function() {
             (Element as any).prototype['addEventListenerBackup'].call(that, eventName, callback);
-        }, 100);
+        }, 110);
     } as any;
 
     // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
@@ -18,7 +18,7 @@ export function delayAddEventListener() {
         window.setTimeout(() => {
             Element.prototype.addEventListener = (Element as any).prototype['addEventListenerBackup'];
             resolve();
-        }, 20);
+        }, 100);
     });
 }
 
