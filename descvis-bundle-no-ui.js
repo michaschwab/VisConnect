@@ -165,10 +165,15 @@ var DescListener = /** @class */ (function () {
         element.addEventListener('dragstart', boundCapture);
         // Add listeners to future child elements.
         var appendBackup = element.appendChild;
+        var insertBeforeBackup = element.insertBefore;
         var that = this;
         element.appendChild = function (newChild) {
             that.addListenersToElement(newChild);
             return appendBackup.call(this, newChild);
+        };
+        element.insertBefore = function (newChild, nextChild) {
+            that.addListenersToElement(newChild);
+            return insertBeforeBackup.call(this, newChild, nextChild);
         };
     };
     DescListener.prototype.captureEvent = function (element) {
@@ -189,7 +194,7 @@ var DescListener = /** @class */ (function () {
                 _this.dragElement = null;
             }
             if (e.type === 'mousemove' && _this.dragElement && e.target !== _this.dragElement) {
-                console.log('changing event target');
+                //console.log('changing event target');
                 e.stopImmediatePropagation();
                 e.stopPropagation();
                 e['stopImmediatePropagationBackup']();

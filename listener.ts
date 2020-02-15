@@ -40,12 +40,18 @@ export class DescListener {
 
         // Add listeners to future child elements.
         const appendBackup = element.appendChild;
+        const insertBeforeBackup = element.insertBefore;
         const that = this;
 
         element.appendChild = function<T extends Node>(newChild: T) {
             that.addListenersToElement(newChild as unknown as Element);
             return appendBackup.call(this, newChild) as T;
-        }
+        };
+
+        element.insertBefore = function<T extends Node>(newChild: T, nextChild: Node|null) {
+            that.addListenersToElement(newChild as unknown as Element);
+            return insertBeforeBackup.call(this, newChild, nextChild) as T;
+        };
     }
 
     captureEvent(element: Element) {
@@ -65,7 +71,7 @@ export class DescListener {
                 this.dragElement = null;
             }
             if(e.type === 'mousemove' && this.dragElement && e.target !== this.dragElement) {
-                console.log('changing event target');
+                //console.log('changing event target');
 
                 e.stopImmediatePropagation();
                 e.stopPropagation();
