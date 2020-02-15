@@ -1435,7 +1435,7 @@ var DescProtocol = /** @class */ (function () {
         this.participantId = this.communication.getId();
     };
     DescProtocol.prototype.getPastEvents = function () {
-        var events = Array.from(this.ledgers.values()).reduce(function (a, b) { return a.concat(b); });
+        var events = Array.from(this.ledgers.values()).reduce(function (a, b) { return a.concat(b); }, []);
         return events.sort(function (a, b) { return a.event.timeStamp - b.event.timeStamp; });
     };
     DescProtocol.prototype.localEvent = function (stripped) {
@@ -1518,8 +1518,13 @@ var DescProtocol = /** @class */ (function () {
             this.ledgers.set(selector, []);
         }
         var ledger = this.ledgers.get(selector);
+        var seqNum = 0;
+        if (ledger.length) {
+            var lastEvent = ledger[ledger.length - 1];
+            seqNum = lastEvent.seqNum + 1;
+        }
         var newEvent = {
-            'seqNum': -1,
+            seqNum: seqNum,
             'event': stripped,
             'sender': this.participantId
         };
@@ -1621,10 +1626,11 @@ var DescVis = /** @class */ (function () {
     return DescVis;
 }());
 
+var descUi;
 disableStopPropagation();
 delayAddEventListener().then(function () {
     var elsWithAttribute = document.querySelectorAll('[collaboration]');
     var el = elsWithAttribute.length ? elsWithAttribute[0] : document.getElementsByTagName('svg')[0];
     var descvis = new DescVis(el);
-    new DescUi(descvis);
+    descUi = new DescUi(descvis);
 });

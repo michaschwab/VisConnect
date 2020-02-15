@@ -1,6 +1,7 @@
 import {delayAddEventListener, disableStopPropagation} from "./dom";
 import {DescUi} from "./ui";
 import {DescVis} from "./descvis";
+var descUi;
 
 disableStopPropagation();
 delayAddEventListener().then(() => {
@@ -8,5 +9,5 @@ delayAddEventListener().then(() => {
     const el = elsWithAttribute.length ? elsWithAttribute[0] : document.getElementsByTagName('svg')[0];
     const descvis = new DescVis(el);
 
-    new DescUi(descvis);
+    descUi = new DescUi(descvis);
 });

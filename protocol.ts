@@ -26,7 +26,7 @@ export class DescProtocol {
     }
 
     getPastEvents() {
-        const events = Array.from(this.ledgers.values()).reduce((a, b) => a.concat(b));
+        const events = Array.from(this.ledgers.values()).reduce((a, b) => a.concat(b), []);
         return events.sort((a, b) => a.event.timeStamp - b.event.timeStamp);
     }
 
@@ -121,9 +121,14 @@ export class DescProtocol {
             this.ledgers.set(selector, []);
         }
         const ledger = this.ledgers.get(selector)!;
+        let seqNum = 0;
+        if(ledger.length) {
+            const lastEvent = ledger[ledger.length - 1];
+            seqNum = lastEvent.seqNum + 1;
+        }
 
         const newEvent: DescEvent = {
-            'seqNum': -1,
+            seqNum,
             'event': stripped,
             'sender': this.participantId
         };
