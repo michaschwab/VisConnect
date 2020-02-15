@@ -1634,8 +1634,18 @@ var DescVis = /** @class */ (function () {
 var descUi;
 disableStopPropagation();
 delayAddEventListener().then(function () {
+    var el;
     var elsWithAttribute = document.querySelectorAll('[collaboration]');
-    var el = elsWithAttribute.length ? elsWithAttribute[0] : document.getElementsByTagName('svg')[0];
+    var svg = document.getElementsByTagName('svg')[0];
+    if (elsWithAttribute.length) {
+        el = elsWithAttribute[0];
+    }
+    else if (svg) {
+        el = svg;
+    }
+    else {
+        el = document.body;
+    }
     var descvis = new DescVis(el);
     window['descvis-add'] = function () { descUi = new DescUi(descvis); };
 });
