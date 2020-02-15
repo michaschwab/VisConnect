@@ -58,7 +58,8 @@ function recreateEvent(eventObject, target) {
         var newTarget = document.querySelector(targetSelector);
         if (!newTarget) {
             console.error('element not found', targetSelector);
-            throw new Error('element not found');
+            //throw new Error('element not found');
+            newTarget = document.body;
         }
         target = newTarget;
     }
