@@ -91,6 +91,8 @@ export class DescUi {
     font-size: 11pt;
     position: relative;
     top: 5px;
+    display: inline-block;
+    width: 100px;
 }
 </style>`;
         document.body.appendChild(container);
