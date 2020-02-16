@@ -253,6 +253,7 @@ function restart() {
 
 function mousedown() {
   // because :active only works in WebKit?
+  console.log(d3.event);
   svg.classed('active', true);
 
   if (d3.event.ctrlKey || mousedownNode || mousedownLink) return;

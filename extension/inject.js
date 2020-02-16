@@ -5,12 +5,12 @@
 		for(const source of sources) {
 			const script = document.createElement('script');
 			script.src = source;
-			document.head.appendChild(script);
+			document.body ? document.body.appendChild(script) : document.head.appendChild(script);
 		}
 	};
 
 	const checkIfReady = () => {
-		if(document.head) {
+		if(document.head || document.body) {
 			inject();
 		} else {
 			setTimeout(checkIfReady);
