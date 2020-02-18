@@ -1,6 +1,6 @@
 {
   "name": "VisConnect",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Collaborate on your data visualizations! Synchronize your JavaScript event from connected client to client to explore data together.",
   "manifest_version": 2,
   "background": {
