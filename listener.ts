@@ -32,6 +32,8 @@ export class DescListener {
         element.addEventListener('touchmove', boundCapture);
         element.addEventListener('mouseenter', boundCapture);
         element.addEventListener('mouseout', boundCapture);
+        element.addEventListener('mouseover', boundCapture);
+        element.addEventListener('mouseleave', boundCapture);
         element.addEventListener('click', boundCapture);
         element.addEventListener('touchstart', boundCapture);
         element.addEventListener('touchend', boundCapture);

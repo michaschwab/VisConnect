@@ -72,6 +72,7 @@ export class DescUi {
     padding: 10px;
     transition: height 500ms;
     color: #fff;
+    font-family: 'Times New Roman',Times;
 }
 #desc-logo {
     padding-left: 15px;
