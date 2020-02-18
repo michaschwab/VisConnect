@@ -11,8 +11,6 @@
     "default_title": "VisConnect: Collaborate on this page"
   },
   "permissions": [
-    "http://*/",
-    "https://*/",
     "activeTab"
   ],
   "content_scripts": [
