@@ -1,5 +1,4 @@
 chrome.browserAction.onClicked.addListener(function (tab) {
-	chrome.tabs.executeScript(tab.id, {
-		file: 'enable-ui.js'
-	});
+	const newUrl = tab.url + '?visconnect';
+	chrome.tabs.update(tab.id, {url: newUrl, active: true});
 });

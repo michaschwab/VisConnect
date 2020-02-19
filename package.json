@@ -15,7 +15,7 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.js",
+    "compile": "rollup -c rollup.config.js && cp descvis-bundle.js extension/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

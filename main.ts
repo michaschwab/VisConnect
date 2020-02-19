@@ -1,19 +1,18 @@
-import {delayAddEventListener, disableStopPropagation} from "./dom";
 import {DescUi} from "./ui";
 import {DescVis} from "./descvis";
+import {delayAddEventListener, disableStopPropagation} from "./dom";
 var descUi;
 
 disableStopPropagation();
-//delayAddEventListener().then(() => {
-(function() {
+delayAddEventListener().then(() => {
     let el: Element;
 
     const elsWithAttribute = document.querySelectorAll('[collaboration]');
     const svg = document.getElementsByTagName('svg')[0];
 
-    if(elsWithAttribute.length) {
+    if (elsWithAttribute.length) {
         el = elsWithAttribute[0];
-    } else if(svg) {
+    } else if (svg) {
         el = svg;
     } else {
         el = document.body;
@@ -22,5 +21,4 @@ disableStopPropagation();
     console.log('start descvis');
     const descvis = new DescVis(el);
     descUi = new DescUi(descvis);
-})();
-//});
+});

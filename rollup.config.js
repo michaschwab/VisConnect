@@ -2,7 +2,7 @@ import typescript from 'rollup-plugin-typescript';
 import resolve from 'rollup-plugin-node-resolve';
 import commonJS from 'rollup-plugin-commonjs'
 
-export default ['', '-no-ui'].map((name, index) => ({
+export default [''].map((name, index) => ({
     input: `./main${name}.ts`,
     plugins: [
         resolve(),

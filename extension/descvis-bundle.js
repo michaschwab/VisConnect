@@ -1,79 +1,5 @@
 'use strict';
 
-function delayAddEventListener() {
-    // The visualization's event listeners need to be called after DESCVis' event listeners.
-    // For this reason, we delay calling event listeners that are added before DESCVis is started.
-    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
-    Element.prototype.addEventListener = function (eventName, callback) {
-        //console.log('doing a delayed execution on ', eventName, this);
-        var that = this;
-        setTimeout(function () {
-            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
-        }, 110);
-    };
-    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
-    // DESCVis.
-    return new Promise(function (resolve) {
-        window.setTimeout(function () {
-            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
-            resolve();
-        }, 100);
-    });
-}
-function disableStopPropagation() {
-    // Prevent d3 from blocking DescVis and other code to have access to events.
-    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
-    Event.prototype.stopImmediatePropagation = function () { };
-}
-function stopPropagation(event) {
-    event['stopImmediatePropagationBackup']();
-    event.stopPropagation();
-}
-function recreateEvent(eventObject, target) {
-    var targetSelector = eventObject.target;
-    var e;
-    if (eventObject.type.substr(0, 5) === 'touch') {
-        e = document.createEvent('TouchEvent');
-        e.initEvent(eventObject.type, true, false);
-        for (var prop in eventObject) {
-            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                Object.defineProperty(e, prop, {
-                    writable: true,
-                    value: eventObject[prop],
-                });
-            }
-        }
-        //e = new TouchEvent(eventObject.type, eventObject as any);
-    }
-    else if (eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
-        e = new MouseEvent(eventObject.type, eventObject);
-    }
-    else if (eventObject.type.substr(0, 4) === 'drag') {
-        e = new DragEvent(eventObject.type, eventObject);
-    }
-    else {
-        e = new Event(eventObject.type, eventObject);
-    }
-    if (targetSelector) {
-        var newTarget = document.querySelector(targetSelector);
-        if (!newTarget) {
-            console.error('element not found', targetSelector);
-            //throw new Error('element not found');
-            newTarget = document.body;
-        }
-        target = newTarget;
-    }
-    Object.defineProperty(e, 'target', {
-        writable: true,
-        value: target,
-    });
-    Object.defineProperty(e, 'view', {
-        writable: true,
-        value: window,
-    });
-    return e;
-}
-
 var DescUi = /** @class */ (function () {
     function DescUi(descvis) {
         this.descvis = descvis;
@@ -252,6 +178,80 @@ var DescListener = /** @class */ (function () {
     };
     return DescListener;
 }());
+
+function delayAddEventListener() {
+    // The visualization's event listeners need to be called after DESCVis' event listeners.
+    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
+    Element.prototype.addEventListener = function (eventName, callback) {
+        //console.log('doing a delayed execution on ', eventName, this);
+        var that = this;
+        setTimeout(function () {
+            Element.prototype['addEventListenerBackup'].call(that, eventName, callback);
+        }, 110);
+    };
+    // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
+    // DESCVis.
+    return new Promise(function (resolve) {
+        window.setTimeout(function () {
+            Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
+            resolve();
+        }, 100);
+    });
+}
+function disableStopPropagation() {
+    // Prevent d3 from blocking DescVis and other code to have access to events.
+    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
+    Event.prototype.stopImmediatePropagation = function () { };
+}
+function stopPropagation(event) {
+    event['stopImmediatePropagationBackup']();
+    event.stopPropagation();
+}
+function recreateEvent(eventObject, target) {
+    var targetSelector = eventObject.target;
+    var e;
+    if (eventObject.type.substr(0, 5) === 'touch') {
+        e = document.createEvent('TouchEvent');
+        e.initEvent(eventObject.type, true, false);
+        for (var prop in eventObject) {
+            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                Object.defineProperty(e, prop, {
+                    writable: true,
+                    value: eventObject[prop],
+                });
+            }
+        }
+        //e = new TouchEvent(eventObject.type, eventObject as any);
+    }
+    else if (eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
+        e = new MouseEvent(eventObject.type, eventObject);
+    }
+    else if (eventObject.type.substr(0, 4) === 'drag') {
+        e = new DragEvent(eventObject.type, eventObject);
+    }
+    else {
+        e = new Event(eventObject.type, eventObject);
+    }
+    if (targetSelector) {
+        var newTarget = document.querySelector(targetSelector);
+        if (!newTarget) {
+            console.error('element not found', targetSelector);
+            //throw new Error('element not found');
+            newTarget = document.body;
+        }
+        target = newTarget;
+    }
+    Object.defineProperty(e, 'target', {
+        writable: true,
+        value: target,
+    });
+    Object.defineProperty(e, 'view', {
+        writable: true,
+        value: window,
+    });
+    return e;
+}
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -1643,7 +1643,6 @@ var DescVis = /** @class */ (function () {
 var descUi;
 disableStopPropagation();
 delayAddEventListener().then(function () {
-    //(function() {
     var el;
     var elsWithAttribute = document.querySelectorAll('[collaboration]');
     var svg = document.getElementsByTagName('svg')[0];
@@ -1658,6 +1657,5 @@ delayAddEventListener().then(function () {
     }
     console.log('start descvis');
     var descvis = new DescVis(el);
-    window['descvis-add'] = function () { descUi = new DescUi(descvis); };
-    //})();
+    descUi = new DescUi(descvis);
 });
