@@ -23,7 +23,7 @@ var DescUi = /** @class */ (function () {
     DescUi.prototype.invite = function () {
         var communication = this.descvis.protocol.communication;
         var leaderId = communication.leaderId;
-        var url = leaderId === communication.id ? location.href + '?id=' + leaderId : location.href;
+        var url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
         copyToClipboard(url);
         var logo = document.getElementById('desc-logo');
         var inviteLinkCopied = document.getElementById('desc-link-copied');
@@ -1618,7 +1618,7 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
         this.svg = svg;
-        var parts = window.location.href.match(/\?id=([a-z0-9]+)/);
+        var parts = window.location.href.match(/\?visconnectid=([a-z0-9]+)/);
         var leaderId = parts ? parts[1] : '';
         var isLeader = !leaderId;
         var Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
@@ -1641,6 +1641,7 @@ var DescVis = /** @class */ (function () {
 }());
 
 var descUi;
+console.log('init vislink');
 disableStopPropagation();
 delayAddEventListener().then(function () {
     var el;

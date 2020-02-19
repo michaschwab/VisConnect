@@ -3,6 +3,7 @@ import {DescVis} from "./descvis";
 import {delayAddEventListener, disableStopPropagation} from "./dom";
 var descUi;
 
+console.log('init vislink');
 disableStopPropagation();
 delayAddEventListener().then(() => {
     let el: Element;

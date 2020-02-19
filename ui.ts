@@ -25,7 +25,7 @@ export class DescUi {
     invite() {
         const communication = this.descvis.protocol.communication;
         const leaderId = communication.leaderId;
-        const url = leaderId === communication.id ? location.href + '?id=' + leaderId : location.href;
+        const url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
         copyToClipboard(url);
 
         const logo = document.getElementById('desc-logo')!;
