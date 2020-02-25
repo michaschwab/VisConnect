@@ -1,0 +1,45 @@
+#canvas {
+  background: oldlace;
+}
+#ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+.swatch {
+  pointer-events: all;
+}
+.swatch.active {
+  stroke-width: 2px;
+  stroke: black;
+}
+.swatch {
+  cursor: pointer;
+}
+.btn {
+  pointer-events: all;
+  
+  font-family: FontAwesome;
+  fill: #333;
+  font-size: 32px;
+  text-anchor: middle;
+  
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.btn:hover {
+  fill: black;
+  cursor: pointer;
+}
+
+.line {
+  fill: none;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
