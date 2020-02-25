@@ -25,10 +25,23 @@ export class DescUi {
     invite() {
         const communication = this.descvis.protocol.communication;
         const leaderId = communication.leaderId;
+        const logo = document.getElementById('desc-logo')!;
+
+        if(!leaderId) {
+            const errorElement = document.getElementById('desc-not-ready')!;
+            logo.style.display = 'none';
+            errorElement.style.display = 'inline';
+
+            setTimeout(() => {
+                logo.style.display = 'block';
+                errorElement.style.display = 'none';
+            }, 1000);
+            return;
+        }
+
         const url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
         copyToClipboard(url);
 
-        const logo = document.getElementById('desc-logo')!;
         const inviteLinkCopied = document.getElementById('desc-link-copied')!;
 
         logo.style.display = 'none';
@@ -57,6 +70,7 @@ export class DescUi {
     </svg>
 </a>
 <span id="desc-link-copied">Invite Link Copied.</span>
+<span id="desc-not-ready">Not yet ready...</span>
 <span id="desc-collab-notice"><span id="desc-collab-count"></span> connected</span>
 
 <style>
@@ -85,7 +99,7 @@ export class DescUi {
 #desc-invite:hover #desc-logo path {
     stroke: #000;
 } 
-#desc-link-copied, #desc-collab-notice {
+#desc-link-copied, #desc-collab-notice, #desc-not-ready {
     display: none;
 }
 #desc-collab-notice {
