@@ -1,6 +1,9 @@
 import {DescVis} from "./descvis";
+import {StrippedEvent} from "./listener";
 
 export class DescUi {
+    private cursorResetTimeout = 0;
+
     constructor(private descvis: DescVis, private element: Element) {
         this.addTemplate();
         this.initiateCursors();
@@ -44,6 +47,14 @@ export class DescUi {
         const cursor = this.getCursor(participant);
         cursor.style.left = `${event.clientX-2}px`;
         cursor.style.top = `${event.clientY-2}px`;
+    }
+
+    eventCancelled(event: StrippedEvent) {
+        clearTimeout(this.cursorResetTimeout);
+        document.body.style.cursor = 'not-allowed';
+        this.cursorResetTimeout = window.setTimeout(() => {
+            document.body.style.cursor = '';
+        }, 50);
     }
 
     updateConnections() {

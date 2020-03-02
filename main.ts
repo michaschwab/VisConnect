@@ -22,4 +22,5 @@ delayAddEventListener().then(() => {
     console.log('start descvis');
     const descvis = new DescVis(el);
     descUi = new DescUi(descvis, el);
+    descvis.onEventCancelled = descUi.eventCancelled.bind(descUi);
 });

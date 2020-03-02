@@ -12,6 +12,7 @@ export interface DescEvent {
 export class DescVis {
     private listener: DescListener;
     protocol: DescProtocol;
+    onEventCancelled: (event: StrippedEvent) => void = () => {};
 
     constructor(private svg: Element) {
         let parts = window.location.href.match(/\?visconnectid=([a-z0-9]+)/);
@@ -19,13 +20,17 @@ export class DescVis {
         const isLeader = !leaderId;
         const Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
 
-        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this));
+        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this));
         this.listener = new DescListener(this.svg, this.localEvent.bind(this));
     }
 
     localEvent(stripped: StrippedEvent, event: Event) {
         stopPropagation(event);
         this.protocol.localEvent(stripped);
+    }
+
+    cancelEvent(event: StrippedEvent) {
+        this.onEventCancelled(event);
     }
 
     executeEvent(stripped: StrippedEvent) {

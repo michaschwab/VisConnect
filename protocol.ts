@@ -11,6 +11,7 @@ export class DescProtocol {
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
+                protected cancelEvent: (e: StrippedEvent) => void,
                 mockCommunication?: DescCommunication) {
         if(mockCommunication) {
             this.communication = mockCommunication;
@@ -44,6 +45,7 @@ export class DescProtocol {
             }
         } else if(lockOwner && lockOwner !== this.participantId) {
             // Do nothing - do not execute the event.
+            this.cancelEvent(stripped);
         } else {
             if(!this.heldEvents.has(selector)) {
                 this.heldEvents.set(selector, []);

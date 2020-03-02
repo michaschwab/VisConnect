@@ -4,6 +4,7 @@ var DescUi = /** @class */ (function () {
     function DescUi(descvis, element) {
         this.descvis = descvis;
         this.element = element;
+        this.cursorResetTimeout = 0;
         this.addTemplate();
         this.initiateCursors();
         this.descvis.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
@@ -41,6 +42,13 @@ var DescUi = /** @class */ (function () {
         var cursor = this.getCursor(participant);
         cursor.style.left = event.clientX - 2 + "px";
         cursor.style.top = event.clientY - 2 + "px";
+    };
+    DescUi.prototype.eventCancelled = function (event) {
+        clearTimeout(this.cursorResetTimeout);
+        document.body.style.cursor = 'not-allowed';
+        this.cursorResetTimeout = window.setTimeout(function () {
+            document.body.style.cursor = '';
+        }, 50);
     };
     DescUi.prototype.updateConnections = function () {
         var connections = this.descvis.protocol.communication.getNumberOfConnections();
@@ -1489,9 +1497,10 @@ var DESC_MESSAGE_TYPE;
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 
 var DescProtocol = /** @class */ (function () {
-    function DescProtocol(leaderId, executeEvent, mockCommunication) {
+    function DescProtocol(leaderId, executeEvent, cancelEvent, mockCommunication) {
         this.leaderId = leaderId;
         this.executeEvent = executeEvent;
+        this.cancelEvent = cancelEvent;
         this.ledgers = new Map();
         this.lockOwners = new Map();
         this.requestedLocks = new Set();
@@ -1522,7 +1531,10 @@ var DescProtocol = /** @class */ (function () {
                 this.communication.broadcastEvent(stripped);
             }
         }
-        else if (lockOwner && lockOwner !== this.participantId) ;
+        else if (lockOwner && lockOwner !== this.participantId) {
+            // Do nothing - do not execute the event.
+            this.cancelEvent(stripped);
+        }
         else {
             if (!this.heldEvents.has(selector)) {
                 this.heldEvents.set(selector, []);
@@ -1680,16 +1692,20 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
 var DescVis = /** @class */ (function () {
     function DescVis(svg) {
         this.svg = svg;
+        this.onEventCancelled = function () { };
         var parts = window.location.href.match(/\?visconnectid=([a-z0-9]+)/);
         var leaderId = parts ? parts[1] : '';
         var isLeader = !leaderId;
         var Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
-        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this));
+        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this));
         this.listener = new DescListener(this.svg, this.localEvent.bind(this));
     }
     DescVis.prototype.localEvent = function (stripped, event) {
         stopPropagation(event);
         this.protocol.localEvent(stripped);
+    };
+    DescVis.prototype.cancelEvent = function (event) {
+        this.onEventCancelled(event);
     };
     DescVis.prototype.executeEvent = function (stripped) {
         var event = recreateEvent(stripped, this.svg);
@@ -1722,4 +1738,5 @@ delayAddEventListener().then(function () {
     console.log('start descvis');
     var descvis = new DescVis(el);
     descUi = new DescUi(descvis, el);
+    descvis.onEventCancelled = descUi.eventCancelled.bind(descUi);
 });
