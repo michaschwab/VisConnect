@@ -32,6 +32,7 @@ export class DescProtocol {
 
     localEvent(stripped: StrippedEvent) {
         const selector = stripped.target;
+        stripped.participantId = this.participantId;
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
 
         const lockOwner = this.lockOwners.get(selector);

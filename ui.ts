@@ -1,11 +1,49 @@
 import {DescVis} from "./descvis";
 
 export class DescUi {
-    constructor(private descvis: DescVis) {
+    constructor(private descvis: DescVis, private element: Element) {
         this.addTemplate();
+        this.initiateCursors();
 
         this.descvis.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
         this.updateConnections();
+    }
+
+    initiateCursors() {
+        this.element.addEventListener('mousemove', this.mouseMoved.bind(this));
+
+        const container = document.createElement('div');
+        container.id = 'desc-cursors';
+        document.body.appendChild(container);
+    }
+
+    getCursor(participant: string) {
+        const elementId = `desc-cursor-${participant}`;
+        let cursor = document.getElementById(elementId);
+        if(!cursor) {
+            const cursors = document.getElementById('desc-cursors')!;
+            cursor = document.createElement('div');
+            cursor.style.background = stringToHex(participant);
+            cursor.style.width = '5px';
+            cursor.style.height = '5px';
+            cursor.style.position = 'absolute';
+            cursor.style.borderRadius = '3px';
+            cursor.style.pointerEvents = 'none';
+            cursor.id = elementId;
+            cursors.appendChild(cursor);
+        }
+        return cursor;
+    }
+
+    mouseMoved(originalEvent: Event) {
+        const event = originalEvent as MouseEvent & {participantId: string};
+        const participant = event['participantId'];
+        if(!participant || this.descvis.protocol.communication.id === participant) {
+            return;
+        }
+        const cursor = this.getCursor(participant);
+        cursor.style.left = `${event.clientX-2}px`;
+        cursor.style.top = `${event.clientY-2}px`;
     }
 
     updateConnections() {
@@ -119,4 +157,20 @@ const copyToClipboard = (str: string) => {
         selection.removeAllRanges();
         selection.addRange(selected);
     }
+};
+
+// From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
+const stringToHex = (string: string) => {
+    var hash = 0;
+    if (string.length === 0) return '#000000';
+    for (let i = 0; i < string.length; i++) {
+        hash = string.charCodeAt(i) + ((hash << 5) - hash);
+        hash = hash & hash;
+    }
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 255;
+        color += ('00' + value.toString(16)).substr(-2);
+    }
+    return color;
 };

@@ -1,12 +1,47 @@
 'use strict';
 
 var DescUi = /** @class */ (function () {
-    function DescUi(descvis) {
+    function DescUi(descvis, element) {
         this.descvis = descvis;
+        this.element = element;
         this.addTemplate();
+        this.initiateCursors();
         this.descvis.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
         this.updateConnections();
     }
+    DescUi.prototype.initiateCursors = function () {
+        this.element.addEventListener('mousemove', this.mouseMoved.bind(this));
+        var container = document.createElement('div');
+        container.id = 'desc-cursors';
+        document.body.appendChild(container);
+    };
+    DescUi.prototype.getCursor = function (participant) {
+        var elementId = "desc-cursor-" + participant;
+        var cursor = document.getElementById(elementId);
+        if (!cursor) {
+            var cursors = document.getElementById('desc-cursors');
+            cursor = document.createElement('div');
+            cursor.style.background = stringToHex(participant);
+            cursor.style.width = '5px';
+            cursor.style.height = '5px';
+            cursor.style.position = 'absolute';
+            cursor.style.borderRadius = '3px';
+            cursor.style.pointerEvents = 'none';
+            cursor.id = elementId;
+            cursors.appendChild(cursor);
+        }
+        return cursor;
+    };
+    DescUi.prototype.mouseMoved = function (originalEvent) {
+        var event = originalEvent;
+        var participant = event['participantId'];
+        if (!participant || this.descvis.protocol.communication.id === participant) {
+            return;
+        }
+        var cursor = this.getCursor(participant);
+        cursor.style.left = event.clientX - 2 + "px";
+        cursor.style.top = event.clientY - 2 + "px";
+    };
     DescUi.prototype.updateConnections = function () {
         var connections = this.descvis.protocol.communication.getNumberOfConnections();
         var collaborators = connections - 1;
@@ -61,6 +96,22 @@ var copyToClipboard = function (str) {
         selection.removeAllRanges();
         selection.addRange(selected);
     }
+};
+// From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
+var stringToHex = function (string) {
+    var hash = 0;
+    if (string.length === 0)
+        return '#000000';
+    for (var i = 0; i < string.length; i++) {
+        hash = string.charCodeAt(i) + ((hash << 5) - hash);
+        hash = hash & hash;
+    }
+    var color = '#';
+    for (var i = 0; i < 3; i++) {
+        var value = (hash >> (i * 8)) & 255;
+        color += ('00' + value.toString(16)).substr(-2);
+    }
+    return color;
 };
 
 var DescListener = /** @class */ (function () {
@@ -142,7 +193,7 @@ var DescListener = /** @class */ (function () {
         };
     };
     DescListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', touches: [], timeStamp: -1 };
+        var obj = { type: '', target: '', touches: [], timeStamp: -1, participantId: '' };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
@@ -1452,6 +1503,7 @@ var DescProtocol = /** @class */ (function () {
     };
     DescProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
+        stripped.participantId = this.participantId;
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
         var lockOwner = this.lockOwners.get(selector);
         if (lockOwner && lockOwner === this.participantId) {
@@ -1633,6 +1685,7 @@ var DescVis = /** @class */ (function () {
         var event = recreateEvent(stripped, this.svg);
         //console.log('executing event', stripped, event);
         event['desc-received'] = true;
+        event['participantId'] = stripped.participantId;
         if (event.target) {
             event.target.dispatchEvent(event);
         }
@@ -1658,5 +1711,5 @@ delayAddEventListener().then(function () {
     }
     console.log('start descvis');
     var descvis = new DescVis(el);
-    descUi = new DescUi(descvis);
+    descUi = new DescUi(descvis, el);
 });
