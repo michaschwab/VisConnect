@@ -60,6 +60,7 @@
     });
 
     var drag = vc.drag(); // = d3.drag();
+    var rafRequest = 0;
 
     drag.on('start', function () {
         active_line[d3.event.sourceEvent.collaboratorId] = {
@@ -73,7 +74,9 @@
     drag.on('drag', function () {
         if (active_line[d3.event.sourceEvent.collaboratorId]) {
             active_line[d3.event.sourceEvent.collaboratorId].points.push(d3.mouse(this));
-            requestAnimationFrame(redraw.bind(this));
+            if(!rafRequest) {
+                rafRequest = requestAnimationFrame(redraw.bind(this));
+            }
         }
     });
 
@@ -88,6 +91,7 @@
     canvas.call(drag);
 
     redraw = function () {
+        rafRequest = 0;
         const lines = lines_layer.selectAll('.line').data(drawing_data.lines);
         const enter = lines.enter();
 
