@@ -1,6 +1,8 @@
 import {StrippedEvent} from "./listener";
 import {DescCommunication} from "./communication";
 
+const MULTIPLE_OWNERS_ALLOWED = ['svg', 'body', 'g'];
+
 export class DescProtocol {
     protected ledgers = new Map<string, DescEvent[]>();
     protected lockOwners = new Map<string, string>();
@@ -36,9 +38,11 @@ export class DescProtocol {
         stripped.participantId = this.participantId;
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
 
+        // Allow all clients to interact with the backgrounds.
+        const isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
         const lockOwner = this.lockOwners.get(selector);
 
-        if(lockOwner && lockOwner === this.participantId) {
+        if(isOnBackground || (lockOwner && lockOwner === this.participantId)) {
             const descEvent = this.addEventToLedger(stripped, this.participantId);
             if(descEvent) {
                 this.communication.broadcastEvent(stripped);
@@ -112,8 +116,10 @@ export class DescProtocol {
 
     protected addEventToLedger(stripped: StrippedEvent, sender: string, catchup = false) {
         const selector = stripped.target;
+        const isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
 
-        if(!catchup) {
+        // Skip ownership check for catchup events, and for background events.
+        if(!catchup && !isOnBackground) {
             const lockOwner = this.lockOwners.get(selector);
             if(!lockOwner || lockOwner !== sender) {
                 console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);

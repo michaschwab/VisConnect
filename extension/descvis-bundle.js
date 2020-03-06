@@ -190,7 +190,7 @@ var DescListener = /** @class */ (function () {
         };
     };
     DescListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', touches: [], timeStamp: -1, participantId: '' };
+        var obj = { type: '', target: '', targetType: '', touches: [], timeStamp: -1, participantId: '' };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
@@ -206,6 +206,7 @@ var DescListener = /** @class */ (function () {
         var target = this.getElementSelector(e.target);
         if (target) {
             obj.target = target;
+            obj.targetType = e.target.tagName.toLowerCase();
         }
         return obj;
     };
@@ -1475,6 +1476,7 @@ var DESC_MESSAGE_TYPE;
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["DISCONNECTION"] = 5] = "DISCONNECTION";
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 
+var MULTIPLE_OWNERS_ALLOWED = ['svg', 'body', 'g'];
 var DescProtocol = /** @class */ (function () {
     function DescProtocol(leaderId, executeEvent, cancelEvent, mockCommunication) {
         this.leaderId = leaderId;
@@ -1503,8 +1505,10 @@ var DescProtocol = /** @class */ (function () {
         var selector = stripped.target;
         stripped.participantId = this.participantId;
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
+        // Allow all clients to interact with the backgrounds.
+        var isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
         var lockOwner = this.lockOwners.get(selector);
-        if (lockOwner && lockOwner === this.participantId) {
+        if (isOnBackground || (lockOwner && lockOwner === this.participantId)) {
             var descEvent = this.addEventToLedger(stripped, this.participantId);
             if (descEvent) {
                 this.communication.broadcastEvent(stripped);
@@ -1512,6 +1516,7 @@ var DescProtocol = /** @class */ (function () {
         }
         else if (lockOwner && lockOwner !== this.participantId) {
             // Do nothing - do not execute the event.
+            console.log('cancel', stripped, lockOwner, this.participantId);
             this.cancelEvent(stripped);
         }
         else {
@@ -1573,7 +1578,9 @@ var DescProtocol = /** @class */ (function () {
     DescProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         var selector = stripped.target;
-        if (!catchup) {
+        var isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
+        // Skip ownership check for catchup events, and for background events.
+        if (!catchup && !isOnBackground) {
             var lockOwner = this.lockOwners.get(selector);
             if (!lockOwner || lockOwner !== sender) {
                 console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
