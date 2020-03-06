@@ -1228,7 +1228,6 @@ var PeerjsNetwork = /** @class */ (function () {
     return PeerjsNetwork;
 }());
 
-var MESSAGE_THROTTLE = 17;
 // This file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
     function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote, onOpenCallback) {
@@ -1438,14 +1437,7 @@ var DescCommunication = /** @class */ (function () {
             _this.eventsMsg = undefined;
             _this.throttleTimeout = -1;
         };
-        if (Date.now() - this.lastEventsMessageTime >= MESSAGE_THROTTLE) {
-            onSend();
-        }
-        else if (this.throttleTimeout === -1) {
-            var executionTime = this.lastEventsMessageTime + MESSAGE_THROTTLE;
-            var timeDifference = executionTime - Date.now();
-            this.throttleTimeout = window.setTimeout(onSend, timeDifference);
-        }
+        window.requestAnimationFrame(onSend);
     };
     DescCommunication.prototype.sendNewConnection = function (conn) {
         //console.log("Sending new connection message");

@@ -83,14 +83,15 @@
   });
 
   drag.on('drag', function() {
-    if(active_line[d3.event.sourceEvent.collaboratorId]){
+    if(active_line[d3.event.sourceEvent.collaboratorId]) {
       active_line[d3.event.sourceEvent.collaboratorId].points.push(d3.mouse(this));
       redraw(active_line[d3.event.sourceEvent.collaboratorId]);
     }
   });
 
   drag.on('dragend', function() {
-    if (active_line[d3.event.sourceEvent.collaboratorId].points.length === 0) {
+    if (active_line[d3.event.sourceEvent.collaboratorId] &&
+        active_line[d3.event.sourceEvent.collaboratorId].points.length === 0) {
       drawing_data.lines.pop();
     }
     active_line[d3.event.sourceEvent.collaboratorId] = null;
@@ -110,11 +111,15 @@
       return d.elem = d3.select(this);
     });
     if (specific_line != null) {
-      specific_line.elem.attr({
-        d: function(d) {
-          return render_line(d.points);
-        }
-      });
+      if(specific_line.elem) {
+        specific_line.elem.attr({
+          d: function (d) {
+            return render_line(d.points);
+          }
+        });
+      } else {
+        console.log('could not draw line because the element was not found', specific_line, drawing_data.lines)
+      }
     } else {
       lines.attr({
         d: function(d) {

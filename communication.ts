@@ -3,8 +3,6 @@ import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
 import {DescConnection} from "./peerjs-connection";
 import {StrippedEvent} from "./listener";
 
-const MESSAGE_THROTTLE = 17;
-
 // This file should know all the message types and create the messages
 export class DescCommunication {
     private peer: DescNetwork;
@@ -218,13 +216,7 @@ export class DescCommunication {
             this.throttleTimeout = -1;
         };
 
-        if(Date.now() - this.lastEventsMessageTime >= MESSAGE_THROTTLE) {
-            onSend();
-        } else if(this.throttleTimeout === -1) {
-            const executionTime = this.lastEventsMessageTime + MESSAGE_THROTTLE;
-            const timeDifference = executionTime - Date.now();
-            this.throttleTimeout = window.setTimeout(onSend, timeDifference);
-        }
+        window.requestAnimationFrame(onSend);
     }
 
     sendNewConnection(conn: DescConnection) {
