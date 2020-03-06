@@ -1494,12 +1494,12 @@ var DESC_MESSAGE_TYPE;
     DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["DISCONNECTION"] = 5] = "DISCONNECTION";
 })(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
 
-var MULTIPLE_OWNERS_ALLOWED = ['svg', 'body', 'g'];
 var DescProtocol = /** @class */ (function () {
-    function DescProtocol(leaderId, executeEvent, cancelEvent, mockCommunication) {
+    function DescProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
         this.leaderId = leaderId;
         this.executeEvent = executeEvent;
         this.cancelEvent = cancelEvent;
+        this.unsafeElements = unsafeElements;
         this.ledgers = new Map();
         this.lockOwners = new Map();
         this.requestedLocks = new Set();
@@ -1523,10 +1523,10 @@ var DescProtocol = /** @class */ (function () {
         var selector = stripped.target;
         stripped.collaboratorId = this.collaboratorId;
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
-        // Allow all clients to interact with the backgrounds.
-        var isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
+        // All clients are allowed to interact with the unsafe elements.
+        var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
         var lockOwner = this.lockOwners.get(selector);
-        if (isOnBackground || (lockOwner && lockOwner === this.collaboratorId)) {
+        if (allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
             var descEvent = this.addEventToLedger(stripped, this.collaboratorId);
             if (descEvent) {
                 this.communication.broadcastEvent(stripped);
@@ -1598,9 +1598,9 @@ var DescProtocol = /** @class */ (function () {
     DescProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         var selector = stripped.target;
-        var isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
+        var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
         // Skip ownership check for catchup events, and for background events.
-        if (!catchup && !isOnBackground) {
+        if (!catchup && !allAllowed) {
             var lockOwner = this.lockOwners.get(selector);
             if (!lockOwner || lockOwner !== sender) {
                 console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
@@ -1696,14 +1696,17 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
 }(DescProtocol));
 
 var DescVis = /** @class */ (function () {
-    function DescVis(svg) {
+    function DescVis(svg, safeMode) {
+        if (safeMode === void 0) { safeMode = true; }
         this.svg = svg;
+        this.safeMode = safeMode;
         this.onEventCancelled = function () { };
         var parts = window.location.href.match(/\?visconnectid=([a-z0-9]+)/);
         var leaderId = parts ? parts[1] : '';
         var isLeader = !leaderId;
         var Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
-        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this));
+        var unsafeElements = safeMode ? ['body', 'svg', 'g'] : ['*'];
+        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this), unsafeElements);
         this.listener = new DescListener(this.svg, this.localEvent.bind(this));
     }
     DescVis.prototype.localEvent = function (stripped, event) {
@@ -1733,8 +1736,13 @@ delayAddEventListener().then(function () {
     var el;
     var elsWithAttribute = document.querySelectorAll('[collaboration]');
     var svg = document.getElementsByTagName('svg')[0];
+    var safeMode = true;
     if (elsWithAttribute.length) {
         el = elsWithAttribute[0];
+        var val = el.getAttribute('collaboration');
+        if (val && val === 'live') {
+            safeMode = false;
+        }
     }
     else if (svg) {
         el = svg;
@@ -1743,7 +1751,7 @@ delayAddEventListener().then(function () {
         el = document.body;
     }
     console.log('start descvis');
-    var descvis = new DescVis(el);
+    var descvis = new DescVis(el, safeMode);
     descUi = new DescUi(descvis, el);
     descvis.onEventCancelled = descUi.eventCancelled.bind(descUi);
 });

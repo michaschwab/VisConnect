@@ -1,8 +1,6 @@
 import {StrippedEvent} from "./listener";
 import {DescCommunication} from "./communication";
 
-const MULTIPLE_OWNERS_ALLOWED = ['svg', 'body', 'g'];
-
 export class DescProtocol {
     protected ledgers = new Map<string, DescEvent[]>();
     protected lockOwners = new Map<string, string>();
@@ -14,6 +12,7 @@ export class DescProtocol {
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
+                protected unsafeElements: string[],
                 mockCommunication?: DescCommunication) {
         if(mockCommunication) {
             this.communication = mockCommunication;
@@ -38,11 +37,11 @@ export class DescProtocol {
         stripped.collaboratorId = this.collaboratorId;
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
 
-        // Allow all clients to interact with the backgrounds.
-        const isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
+        // All clients are allowed to interact with the unsafe elements.
+        const allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
         const lockOwner = this.lockOwners.get(selector);
 
-        if(isOnBackground || (lockOwner && lockOwner === this.collaboratorId)) {
+        if(allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
             const descEvent = this.addEventToLedger(stripped, this.collaboratorId);
             if(descEvent) {
                 this.communication.broadcastEvent(stripped);
@@ -118,10 +117,10 @@ export class DescProtocol {
 
     protected addEventToLedger(stripped: StrippedEvent, sender: string, catchup = false) {
         const selector = stripped.target;
-        const isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
+        const allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
 
         // Skip ownership check for catchup events, and for background events.
-        if(!catchup && !isOnBackground) {
+        if(!catchup && !allAllowed) {
             const lockOwner = this.lockOwners.get(selector);
             if(!lockOwner || lockOwner !== sender) {
                 console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
