@@ -79,7 +79,7 @@ export class DescListener {
                 obj[key] = val;
             }
         }
-        if(e instanceof TouchEvent && e.touches && e.touches.length) {
+        if(window.TouchEvent && e instanceof TouchEvent && e.touches && e.touches.length) {
             for(const touch of e.touches) {
                 obj.touches.push({clientX: touch.clientX, clientY: touch.clientY});
             }

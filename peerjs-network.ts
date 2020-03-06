@@ -17,7 +17,7 @@ export class PeerjsNetwork implements DescNetwork {
 
         this.peer = new Peer({
             config:  {'iceServers': [
-                //{ url: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.l.google.com:19302' },
                 {
                     'urls': 'turn:numb.viagenie.ca',
                     'credential': "a/j'/9CmxTCa",

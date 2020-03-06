@@ -197,7 +197,7 @@ var DescListener = /** @class */ (function () {
                 obj[key] = val;
             }
         }
-        if (e instanceof TouchEvent && e.touches && e.touches.length) {
+        if (window.TouchEvent && e instanceof TouchEvent && e.touches && e.touches.length) {
             for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
                 var touch = _a[_i];
                 obj.touches.push({ clientX: touch.clientX, clientY: touch.clientY });
@@ -1181,7 +1181,7 @@ var PeerjsNetwork = /** @class */ (function () {
         this.onOpen = onOpen;
         this.peer = new Peer({
             config: { 'iceServers': [
-                    //{ url: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun.l.google.com:19302' },
                     {
                         'urls': 'turn:numb.viagenie.ca',
                         'credential': "a/j'/9CmxTCa",
