@@ -82,8 +82,10 @@
   });
 
   drag.on('drag', function() {
-    active_line[d3.event.sourceEvent.collaboratorId].points.push(d3.mouse(this));
-    return redraw(active_line[d3.event.sourceEvent.collaboratorId]);
+    if(active_line[d3.event.sourceEvent.collaboratorId]){
+      active_line[d3.event.sourceEvent.collaboratorId].points.push(d3.mouse(this));
+      redraw(active_line[d3.event.sourceEvent.collaboratorId]);
+    }
   });
 
   drag.on('dragend', function() {
