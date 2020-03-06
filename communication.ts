@@ -16,6 +16,7 @@ export class DescCommunication {
 
     private eventsMsg?: DescEventsMessage;
     private lastEventsMessageTime = -1;
+    private throttleTimeout = -1;
 
     constructor(public leaderId: string,
                 private onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
@@ -204,15 +205,26 @@ export class DescCommunication {
         if(!this.eventsMsg) {
             return;
         }
-        if(Date.now() - this.lastEventsMessageTime < MESSAGE_THROTTLE) {
-            return;
-        }
 
-        for(const conn of this.connections) {
-            conn.send(this.eventsMsg);
+        const onSend = () => {
+            if(!this.eventsMsg) {
+                return;
+            }
+            for(const conn of this.connections) {
+                conn.send(this.eventsMsg);
+            }
+            this.lastEventsMessageTime = Date.now();
+            this.eventsMsg = undefined;
+            this.throttleTimeout = -1;
+        };
+
+        if(Date.now() - this.lastEventsMessageTime >= MESSAGE_THROTTLE) {
+            onSend();
+        } else if(this.throttleTimeout === -1) {
+            const executionTime = this.lastEventsMessageTime + MESSAGE_THROTTLE;
+            const timeDifference = executionTime - Date.now();
+            this.throttleTimeout = window.setTimeout(onSend, timeDifference);
         }
-        this.lastEventsMessageTime = Date.now();
-        this.eventsMsg = undefined;
     }
 
     sendNewConnection(conn: DescConnection) {

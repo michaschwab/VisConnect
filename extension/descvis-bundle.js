@@ -1244,6 +1244,7 @@ var DescCommunication = /** @class */ (function () {
         this.onConnectionCallback = function () { };
         this.id = '';
         this.lastEventsMessageTime = -1;
+        this.throttleTimeout = -1;
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
@@ -1421,18 +1422,30 @@ var DescCommunication = /** @class */ (function () {
         this.throttledSendEvents();
     };
     DescCommunication.prototype.throttledSendEvents = function () {
+        var _this = this;
         if (!this.eventsMsg) {
             return;
         }
-        if (Date.now() - this.lastEventsMessageTime < MESSAGE_THROTTLE) {
-            return;
+        var onSend = function () {
+            if (!_this.eventsMsg) {
+                return;
+            }
+            for (var _i = 0, _a = _this.connections; _i < _a.length; _i++) {
+                var conn = _a[_i];
+                conn.send(_this.eventsMsg);
+            }
+            _this.lastEventsMessageTime = Date.now();
+            _this.eventsMsg = undefined;
+            _this.throttleTimeout = -1;
+        };
+        if (Date.now() - this.lastEventsMessageTime >= MESSAGE_THROTTLE) {
+            onSend();
         }
-        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
-            var conn = _a[_i];
-            conn.send(this.eventsMsg);
+        else if (this.throttleTimeout === -1) {
+            var executionTime = this.lastEventsMessageTime + MESSAGE_THROTTLE;
+            var timeDifference = executionTime - Date.now();
+            this.throttleTimeout = window.setTimeout(onSend, timeDifference);
         }
-        this.lastEventsMessageTime = Date.now();
-        this.eventsMsg = undefined;
     };
     DescCommunication.prototype.sendNewConnection = function (conn) {
         //console.log("Sending new connection message");
