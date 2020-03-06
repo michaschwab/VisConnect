@@ -18,7 +18,7 @@ export class DescProtocol {
         if(mockCommunication) {
             this.communication = mockCommunication;
         } else {
-            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this),
+            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this),
                 this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
                 this.receiveLockVote.bind(this), this.init.bind(this));
         }
@@ -61,8 +61,10 @@ export class DescProtocol {
         }
     }
 
-    receiveRemoteEvent(stripped: StrippedEvent, sender: string, catchup = false) {
-        this.addEventToLedger(stripped, sender, catchup);
+    receiveRemoteEvents(events: StrippedEvent[], sender: string, catchup = false) {
+        for(const stripped of events) {
+            this.addEventToLedger(stripped, sender, catchup);
+        }
     }
 
     receiveLockRequest(selector: string, electionId: string, requester: string) {

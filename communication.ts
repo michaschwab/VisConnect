@@ -3,6 +3,8 @@ import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
 import {DescConnection} from "./peerjs-connection";
 import {StrippedEvent} from "./listener";
 
+const MESSAGE_THROTTLE = 17;
+
 // This file should know all the message types and create the messages
 export class DescCommunication {
     private peer: DescNetwork;
@@ -12,8 +14,11 @@ export class DescCommunication {
     onConnectionCallback = () => {};
     public id = '';
 
+    private eventsMsg?: DescEventsMessage;
+    private lastEventsMessageTime = -1;
+
     constructor(public leaderId: string,
-                private onEventReceived: (e: StrippedEvent, sender: string, catchup?: boolean) => void,
+                private onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
                 private onLockRequested: (selector: string, electionId: string, requester: string) => void,
@@ -164,7 +169,7 @@ export class DescCommunication {
         if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data as InitMessage);
         } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
-            const msg = data as DescEventMessage;
+            const msg = data as DescEventsMessage;
             this.onEventReceived(msg.data, msg.sender);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
             const msg = data as LockRequestMessage;
@@ -183,15 +188,31 @@ export class DescCommunication {
     }
 
     broadcastEvent(e: StrippedEvent) {
-        const msg: DescEventMessage = {
-            'type': DESC_MESSAGE_TYPE.EVENT,
-            'sender': this.id,
-            data: e,
-        };
-        for(const conn of this.connections) {
-            conn.send(msg);
+        if(!this.eventsMsg) {
+            this.eventsMsg = {
+                'type': DESC_MESSAGE_TYPE.EVENT,
+                'sender': this.id,
+                data: [],
+            };
         }
-        //this.receiveMessage(msg);
+        this.eventsMsg.data.push(e);
+
+        this.throttledSendEvents();
+    }
+
+    throttledSendEvents() {
+        if(!this.eventsMsg) {
+            return;
+        }
+        if(Date.now() - this.lastEventsMessageTime < MESSAGE_THROTTLE) {
+            return;
+        }
+
+        for(const conn of this.connections) {
+            conn.send(this.eventsMsg);
+        }
+        this.lastEventsMessageTime = Date.now();
+        this.eventsMsg = undefined;
     }
 
     sendNewConnection(conn: DescConnection) {
@@ -215,9 +236,7 @@ export class DescCommunication {
             }
         }
 
-        for (let i = 0; i < data.eventsLedger.length; i++){
-            this.onEventReceived(data.eventsLedger[i].event, data.sender, true);
-        }
+        this.onEventReceived(data.eventsLedger.map(descEvent => descEvent.event), data.sender, true);
     }
     
     sendDisconnectMessage() {
@@ -262,9 +281,9 @@ export interface DescMessage {
     data?: any,
 }
 
-export interface DescEventMessage extends DescMessage {
+export interface DescEventsMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.EVENT,
-    data: StrippedEvent
+    data: StrippedEvent[]
 }
 
 export interface InitMessage extends DescMessage {

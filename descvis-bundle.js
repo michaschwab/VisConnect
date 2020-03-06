@@ -1228,6 +1228,7 @@ var PeerjsNetwork = /** @class */ (function () {
     return PeerjsNetwork;
 }());
 
+var MESSAGE_THROTTLE = 17;
 // This file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
     function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote, onOpenCallback) {
@@ -1242,6 +1243,7 @@ var DescCommunication = /** @class */ (function () {
         this.peers = [];
         this.onConnectionCallback = function () { };
         this.id = '';
+        this.lastEventsMessageTime = -1;
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
@@ -1408,16 +1410,29 @@ var DescCommunication = /** @class */ (function () {
         }
     };
     DescCommunication.prototype.broadcastEvent = function (e) {
-        var msg = {
-            'type': DESC_MESSAGE_TYPE.EVENT,
-            'sender': this.id,
-            data: e,
-        };
+        if (!this.eventsMsg) {
+            this.eventsMsg = {
+                'type': DESC_MESSAGE_TYPE.EVENT,
+                'sender': this.id,
+                data: [],
+            };
+        }
+        this.eventsMsg.data.push(e);
+        this.throttledSendEvents();
+    };
+    DescCommunication.prototype.throttledSendEvents = function () {
+        if (!this.eventsMsg) {
+            return;
+        }
+        if (Date.now() - this.lastEventsMessageTime < MESSAGE_THROTTLE) {
+            return;
+        }
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
-            conn.send(msg);
+            conn.send(this.eventsMsg);
         }
-        //this.receiveMessage(msg);
+        this.lastEventsMessageTime = Date.now();
+        this.eventsMsg = undefined;
     };
     DescCommunication.prototype.sendNewConnection = function (conn) {
         //console.log("Sending new connection message");
@@ -1437,9 +1452,7 @@ var DescCommunication = /** @class */ (function () {
                 this.connectToPeer(data.peers[i]);
             }
         }
-        for (var i = 0; i < data.eventsLedger.length; i++) {
-            this.onEventReceived(data.eventsLedger[i].event, data.sender, true);
-        }
+        this.onEventReceived(data.eventsLedger.map(function (descEvent) { return descEvent.event; }), data.sender, true);
     };
     DescCommunication.prototype.sendDisconnectMessage = function () {
         var decoratedMessage = {
@@ -1491,7 +1504,7 @@ var DescProtocol = /** @class */ (function () {
             this.communication = mockCommunication;
         }
         else {
-            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvent.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this), this.init.bind(this));
+            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this), this.init.bind(this));
         }
     }
     DescProtocol.prototype.init = function () {
@@ -1527,9 +1540,12 @@ var DescProtocol = /** @class */ (function () {
             this.requestLock(selector);
         }
     };
-    DescProtocol.prototype.receiveRemoteEvent = function (stripped, sender, catchup) {
+    DescProtocol.prototype.receiveRemoteEvents = function (events, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
-        this.addEventToLedger(stripped, sender, catchup);
+        for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
+            var stripped = events_1[_i];
+            this.addEventToLedger(stripped, sender, catchup);
+        }
     };
     DescProtocol.prototype.receiveLockRequest = function (selector, electionId, requester) {
         var vote = false;
@@ -1551,8 +1567,8 @@ var DescProtocol = /** @class */ (function () {
             // Finally, trigger these held up events.
             var events = this.heldEvents.get(selector);
             //console.log('Triggering some held up events', events);
-            for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
-                var stripped = events_1[_i];
+            for (var _i = 0, events_2 = events; _i < events_2.length; _i++) {
+                var stripped = events_2[_i];
                 var descEvent = this.addEventToLedger(stripped, this.collaboratorId);
                 if (descEvent) {
                     this.communication.broadcastEvent(stripped);
