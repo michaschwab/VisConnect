@@ -1,7 +1,10 @@
 import {DescUi} from "./ui";
 import {DescVis} from "./descvis";
+import {VisConnectUtil} from "./util";
 import {delayAddEventListener, disableStopPropagation} from "./dom";
-var descUi;
+var visconnect;
+var visconnectUi;
+(window as any).vc = {drag: VisConnectUtil.drag};
 
 console.log('init vislink');
 disableStopPropagation();
@@ -24,8 +27,9 @@ delayAddEventListener().then(() => {
         el = document.body;
     }
 
-    console.log('start descvis');
-    const descvis = new DescVis(el, safeMode);
-    descUi = new DescUi(descvis, el);
-    descvis.onEventCancelled = descUi.eventCancelled.bind(descUi);
+    console.log('start visconnect');
+    visconnect = new DescVis(el, safeMode);
+
+    visconnectUi = new DescUi(visconnect, el);
+    visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
 });

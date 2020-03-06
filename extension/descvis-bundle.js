@@ -1729,7 +1729,56 @@ var DescVis = /** @class */ (function () {
     return DescVis;
 }());
 
-var descUi;
+var VisConnectUtil = /** @class */ (function () {
+    function VisConnectUtil() {
+    }
+    VisConnectUtil.drag = function () {
+        var data = {
+            element: null,
+            onStart: function () { },
+            onEnd: function () { },
+            onDrag: function () { }
+        };
+        var drag = function (selection) {
+            data.element = selection._groups[0][0];
+            data.element.addEventListener('mousedown', function (e) {
+                var event = e;
+                window['d3'].event = { sourceEvent: event };
+                data.onStart.call(data.element);
+            });
+            window.addEventListener('mousemove', function (e) {
+                var event = e;
+                window['d3'].event = { sourceEvent: event };
+                data.onDrag.call(data.element);
+            });
+            window.addEventListener('mouseup', function (e) {
+                var event = e;
+                window['d3'].event = { sourceEvent: event };
+                data.onEnd.call(data.element);
+            });
+        };
+        drag.on = function (type, callback) {
+            if (type === 'start') {
+                data.onStart = callback;
+            }
+            else if (type === 'drag') {
+                data.onDrag = callback;
+            }
+            else if (type === 'end') {
+                data.onEnd = callback;
+            }
+            else {
+                console.error('Drag type ', type, ' not defined.');
+            }
+        };
+        return drag;
+    };
+    return VisConnectUtil;
+}());
+
+var visconnect;
+var visconnectUi;
+window.vc = { drag: VisConnectUtil.drag };
 console.log('init vislink');
 disableStopPropagation();
 delayAddEventListener().then(function () {
@@ -1750,8 +1799,8 @@ delayAddEventListener().then(function () {
     else {
         el = document.body;
     }
-    console.log('start descvis');
-    var descvis = new DescVis(el, safeMode);
-    descUi = new DescUi(descvis, el);
-    descvis.onEventCancelled = descUi.eventCancelled.bind(descUi);
+    console.log('start visconnect');
+    visconnect = new DescVis(el, safeMode);
+    visconnectUi = new DescUi(visconnect, el);
+    visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
 });

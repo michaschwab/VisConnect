@@ -59,7 +59,7 @@
         }
     });
 
-    drag = d3.drag();
+    var drag = vc.drag(); // = d3.drag();
 
     drag.on('start', function () {
         active_line[d3.event.sourceEvent.collaboratorId] = {
