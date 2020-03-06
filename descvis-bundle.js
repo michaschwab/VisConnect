@@ -136,7 +136,6 @@ var DescListener = /** @class */ (function () {
     function DescListener(svg, hearEvent) {
         this.svg = svg;
         this.hearEvent = hearEvent;
-        this.dragElement = null;
         this.addListenersToElementAndChildren(this.svg);
     }
     DescListener.prototype.addListenersToElementAndChildren = function (element) {
@@ -184,26 +183,6 @@ var DescListener = /** @class */ (function () {
             if (e['desc-received']) {
                 // Don't broadcast events that have been received from other clients.
                 return;
-            }
-            if (e.type === 'mousedown') {
-                _this.dragElement = e.target;
-            }
-            if (e.type === 'mouseup') {
-                _this.dragElement = null;
-            }
-            if (e.type === 'mousemove' && _this.dragElement && e.target !== _this.dragElement) {
-                //console.log('changing event target');
-                e.stopImmediatePropagation();
-                e.stopPropagation();
-                e['stopImmediatePropagationBackup']();
-                e.preventDefault();
-                Object.defineProperty(e, 'target', {
-                    enumerable: false,
-                    writable: true,
-                    value: _this.dragElement,
-                });
-                var eventCopy = new MouseEvent(e.type, e);
-                _this.dragElement.dispatchEvent(eventCopy);
             }
             var eventObj = _this.getStrippedEvent(e);
             //this.connection.broadcastEvent(eventObj);
