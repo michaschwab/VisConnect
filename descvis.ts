@@ -38,7 +38,8 @@ export class DescVis {
         //console.log('executing event', stripped, event);
 
         (event as any)['desc-received'] = true;
-        (event as any)['participantId'] = stripped.participantId;
+        (event as any)['collaboratorId'] = stripped.collaboratorId;
+        (event as any)['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
         if(event.target) {
             event.target.dispatchEvent(event);
         }

@@ -35,11 +35,11 @@ var DescUi = /** @class */ (function () {
     };
     DescUi.prototype.mouseMoved = function (originalEvent) {
         var event = originalEvent;
-        var participant = event['participantId'];
-        if (!participant || this.descvis.protocol.communication.id === participant) {
+        var collaborator = event['collaboratorId'];
+        if (!collaborator || this.descvis.protocol.communication.id === collaborator) {
             return;
         }
-        var cursor = this.getCursor(participant);
+        var cursor = this.getCursor(collaborator);
         cursor.style.left = event.clientX - 2 + "px";
         cursor.style.top = event.clientY - 2 + "px";
     };
@@ -190,7 +190,7 @@ var DescListener = /** @class */ (function () {
         };
     };
     DescListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', targetType: '', touches: [], timeStamp: -1, participantId: '' };
+        var obj = { type: '', target: '', targetType: '', touches: [], timeStamp: -1, collaboratorId: '' };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
@@ -1486,7 +1486,7 @@ var DescProtocol = /** @class */ (function () {
         this.lockOwners = new Map();
         this.requestedLocks = new Set();
         this.heldEvents = new Map();
-        this.participantId = '';
+        this.collaboratorId = '';
         if (mockCommunication) {
             this.communication = mockCommunication;
         }
@@ -1495,7 +1495,7 @@ var DescProtocol = /** @class */ (function () {
         }
     }
     DescProtocol.prototype.init = function () {
-        this.participantId = this.communication.getId();
+        this.collaboratorId = this.communication.getId();
     };
     DescProtocol.prototype.getPastEvents = function () {
         var events = Array.from(this.ledgers.values()).reduce(function (a, b) { return a.concat(b); }, []);
@@ -1503,20 +1503,19 @@ var DescProtocol = /** @class */ (function () {
     };
     DescProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
-        stripped.participantId = this.participantId;
-        //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
+        stripped.collaboratorId = this.collaboratorId;
+        //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
         // Allow all clients to interact with the backgrounds.
         var isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
         var lockOwner = this.lockOwners.get(selector);
-        if (isOnBackground || (lockOwner && lockOwner === this.participantId)) {
-            var descEvent = this.addEventToLedger(stripped, this.participantId);
+        if (isOnBackground || (lockOwner && lockOwner === this.collaboratorId)) {
+            var descEvent = this.addEventToLedger(stripped, this.collaboratorId);
             if (descEvent) {
                 this.communication.broadcastEvent(stripped);
             }
         }
-        else if (lockOwner && lockOwner !== this.participantId) {
+        else if (lockOwner && lockOwner !== this.collaboratorId) {
             // Do nothing - do not execute the event.
-            console.log('cancel', stripped, lockOwner, this.participantId);
             this.cancelEvent(stripped);
         }
         else {
@@ -1541,20 +1540,20 @@ var DescProtocol = /** @class */ (function () {
         this.communication.sendLockVote(selector, electionId, requester, vote);
     };
     DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
-        //console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
+        //console.log('Lock owner changed', selector, owner, this.collaboratorId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
         if (!owner) {
             this.lockOwners.delete(selector);
             return;
         }
         this.lockOwners.set(selector, owner);
-        if (owner === this.participantId && this.heldEvents.has(selector)) {
+        if (owner === this.collaboratorId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
             var events = this.heldEvents.get(selector);
             //console.log('Triggering some held up events', events);
             for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
                 var stripped = events_1[_i];
-                var descEvent = this.addEventToLedger(stripped, this.participantId);
+                var descEvent = this.addEventToLedger(stripped, this.collaboratorId);
                 if (descEvent) {
                     this.communication.broadcastEvent(stripped);
                 }
@@ -1600,7 +1599,7 @@ var DescProtocol = /** @class */ (function () {
         var newEvent = {
             seqNum: seqNum,
             'event': stripped,
-            'sender': this.participantId
+            'sender': this.collaboratorId
         };
         ledger.push(newEvent);
         return true;
@@ -1697,7 +1696,8 @@ var DescVis = /** @class */ (function () {
         var event = recreateEvent(stripped, this.svg);
         //console.log('executing event', stripped, event);
         event['desc-received'] = true;
-        event['participantId'] = stripped.participantId;
+        event['collaboratorId'] = stripped.collaboratorId;
+        event['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
         if (event.target) {
             event.target.dispatchEvent(event);
         }

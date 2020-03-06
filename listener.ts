@@ -6,7 +6,7 @@ export interface StrippedEvent {
     targetType: string,
     timeStamp: number,
     touches: {clientX: number, clientY: number}[],
-    participantId: string,
+    collaboratorId: string,
     [key: string]: string|number|{clientX: number, clientY: number}[];
 }
 
@@ -72,7 +72,7 @@ export class DescListener {
     }
 
     getStrippedEvent(e: MouseEvent|TouchEvent|Event) {
-        let obj: StrippedEvent = {type: '', target: '', targetType: '', touches: [], timeStamp: -1, participantId: ''};
+        let obj: StrippedEvent = {type: '', target: '', targetType: '', touches: [], timeStamp: -1, collaboratorId: ''};
         for(const key in e) {
             const val = (e as any)[key];
             if(typeof val !== 'object' && typeof val !== 'function') {

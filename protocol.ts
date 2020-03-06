@@ -9,7 +9,7 @@ export class DescProtocol {
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
     communication: DescCommunication;
-    protected participantId = '';
+    protected collaboratorId = '';
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
@@ -25,7 +25,7 @@ export class DescProtocol {
     }
 
     init() {
-        this.participantId = this.communication.getId();
+        this.collaboratorId = this.communication.getId();
     }
 
     getPastEvents() {
@@ -35,19 +35,19 @@ export class DescProtocol {
 
     localEvent(stripped: StrippedEvent) {
         const selector = stripped.target;
-        stripped.participantId = this.participantId;
-        //console.log('local event on ', selector, this.lockOwners.get(selector), this.participantId);
+        stripped.collaboratorId = this.collaboratorId;
+        //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
 
         // Allow all clients to interact with the backgrounds.
         const isOnBackground = MULTIPLE_OWNERS_ALLOWED.includes(stripped.targetType);
         const lockOwner = this.lockOwners.get(selector);
 
-        if(isOnBackground || (lockOwner && lockOwner === this.participantId)) {
-            const descEvent = this.addEventToLedger(stripped, this.participantId);
+        if(isOnBackground || (lockOwner && lockOwner === this.collaboratorId)) {
+            const descEvent = this.addEventToLedger(stripped, this.collaboratorId);
             if(descEvent) {
                 this.communication.broadcastEvent(stripped);
             }
-        } else if(lockOwner && lockOwner !== this.participantId) {
+        } else if(lockOwner && lockOwner !== this.collaboratorId) {
             // Do nothing - do not execute the event.
             this.cancelEvent(stripped);
         } else {
@@ -75,7 +75,7 @@ export class DescProtocol {
     }
 
     lockOwnerChanged(selector: string, owner: string) {
-        //console.log('Lock owner changed', selector, owner, this.participantId, this.heldEvents.has(selector), this.heldEvents.get(selector));
+        //console.log('Lock owner changed', selector, owner, this.collaboratorId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
 
         if(!owner) {
@@ -84,12 +84,12 @@ export class DescProtocol {
         }
         this.lockOwners.set(selector, owner);
 
-        if(owner === this.participantId && this.heldEvents.has(selector)) {
+        if(owner === this.collaboratorId && this.heldEvents.has(selector)) {
             // Finally, trigger these held up events.
             const events = this.heldEvents.get(selector)!;
             //console.log('Triggering some held up events', events);
             for(const stripped of events) {
-                const descEvent = this.addEventToLedger(stripped, this.participantId);
+                const descEvent = this.addEventToLedger(stripped, this.collaboratorId);
                 if(descEvent) {
                     this.communication.broadcastEvent(stripped);
                 }
@@ -142,7 +142,7 @@ export class DescProtocol {
         const newEvent: DescEvent = {
             seqNum,
             'event': stripped,
-            'sender': this.participantId
+            'sender': this.collaboratorId
         };
 
         ledger.push(newEvent);

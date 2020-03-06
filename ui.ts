@@ -39,12 +39,12 @@ export class DescUi {
     }
 
     mouseMoved(originalEvent: Event) {
-        const event = originalEvent as MouseEvent & {participantId: string};
-        const participant = event['participantId'];
-        if(!participant || this.descvis.protocol.communication.id === participant) {
+        const event = originalEvent as MouseEvent & {collaboratorId: string};
+        const collaborator = event['collaboratorId'];
+        if(!collaborator || this.descvis.protocol.communication.id === collaborator) {
             return;
         }
-        const cursor = this.getCursor(participant);
+        const cursor = this.getCursor(collaborator);
         cursor.style.left = `${event.clientX-2}px`;
         cursor.style.top = `${event.clientY-2}px`;
     }
