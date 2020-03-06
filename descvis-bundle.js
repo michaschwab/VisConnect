@@ -156,6 +156,7 @@ var DescListener = /** @class */ (function () {
         element.addEventListener('mouseover', boundCapture);
         element.addEventListener('mouseleave', boundCapture);
         element.addEventListener('click', boundCapture);
+        element.addEventListener('dblclick', boundCapture);
         element.addEventListener('touchstart', boundCapture);
         element.addEventListener('touchend', boundCapture);
         element.addEventListener('selectstart', boundCapture);
