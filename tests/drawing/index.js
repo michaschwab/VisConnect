@@ -16,7 +16,8 @@
   active_line = {};
 
   active_color = {};
-  active_local_color = '#333333';
+  var default_color = '#333333';
+  var active_local_color = default_color;
 
   canvas = d3.select('#canvas');
 
@@ -75,7 +76,7 @@
   drag.on('dragstart', function() {
     active_line[d3.event.sourceEvent.collaboratorId] = {
       points: [],
-      color: active_color[d3.event.sourceEvent.collaboratorId] || active_local_color
+      color: active_color[d3.event.sourceEvent.collaboratorId] || default_color
     };
     drawing_data.lines.push(active_line[d3.event.sourceEvent.collaboratorId]);
     return redraw(active_line[d3.event.sourceEvent.collaboratorId]);
