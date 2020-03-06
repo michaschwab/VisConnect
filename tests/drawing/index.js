@@ -3,29 +3,20 @@
         swatches, trash_btn, ui;
 
     SWATCH_D = 22;
-
-    render_line = d3.line().x(function (d) {
-        return d[0];
-    }).y(function (d) {
-        return d[1];
-    }).curve(d3.curveBasis);
+    render_line = d3.line().x((d) => d[0]).y((d) => d[1]).curve(d3.curveBasis);
 
     drawing_data = {
         lines: []
     };
 
     active_line = {};
-
     active_color = {};
-    var default_color = '#333333';
-    var active_local_color = default_color;
+    const default_color = '#333333';
+    let active_local_color = default_color;
 
     canvas = d3.select('#canvas');
-
     lines_layer = canvas.append('g');
-
     ui = d3.select('#ui');
-
     palette = ui.append('g').attr('transform', "translate(" + (4 + SWATCH_D / 2) + "," + (4 + SWATCH_D / 2) + ")");
 
     swatches = palette.selectAll('swatch').data(["#333333", "#ffffff", "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#666666"]);
@@ -52,16 +43,15 @@
             }
         })
         .attr('r', SWATCH_D / 2)
-        .attr('fill', function (d) {
-            return d;
-        }).on('click', function (d) {
-        active_color[d3.event.collaboratorId] = d;
-        if (d3.event.isLocalEvent) {
-            active_local_color = d;
-            swatches.classed('active', false);
-            return d3.select(this).classed('active', true);
-        }
-    });
+        .attr('fill', d => d)
+        .on('click', function (d) {
+            active_color[d3.event.collaboratorId] = d;
+            if (d3.event.isLocalEvent) {
+                active_local_color = d;
+                swatches.classed('active', false);
+                return d3.select(this).classed('active', true);
+            }
+        });
 
     swatches.each(function (d) {
         if (d === active_local_color) {
@@ -98,7 +88,7 @@
     canvas.call(drag);
 
     redraw = function () {
-        var lines = lines_layer.selectAll('.line').data(drawing_data.lines);
+        const lines = lines_layer.selectAll('.line').data(drawing_data.lines);
         const enter = lines.enter();
 
         enter.append('path')
