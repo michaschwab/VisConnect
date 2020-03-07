@@ -1522,7 +1522,7 @@ var DescProtocol = /** @class */ (function () {
     };
     DescProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
-        stripped.collaboratorId = this.collaboratorId;
+        stripped.collaboratorId = this.communication.getId();
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
         // All clients are allowed to interact with the unsafe elements.
         var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');

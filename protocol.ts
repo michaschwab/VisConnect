@@ -34,7 +34,7 @@ export class DescProtocol {
 
     localEvent(stripped: StrippedEvent) {
         const selector = stripped.target;
-        stripped.collaboratorId = this.collaboratorId;
+        stripped.collaboratorId = this.communication.getId();
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
 
         // All clients are allowed to interact with the unsafe elements.
