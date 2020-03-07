@@ -19,7 +19,7 @@
     ui = d3.select('#ui');
     palette = ui.append('g').attr('transform', "translate(" + (4 + SWATCH_D / 2) + "," + (4 + SWATCH_D / 2) + ")");
 
-    swatches = palette.selectAll('swatch').data(["#333333", "#ffffff", "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#666666"]);
+    swatches = palette.selectAll('.swatch').data(["#333333", "#ffffff", "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#666666"]);
 
     trash_btn = ui.append('text').html('&#xf1f8;')
         .attr("class", 'btn')
@@ -30,7 +30,9 @@
             return redraw();
         });
 
-    swatches.enter().append('circle')
+    const swatchEnter = swatches.enter().append('circle');
+
+    swatchEnter
         .attr("class", 'swatch')
         .attr('cx', function (d, i) {
             return i * (SWATCH_D + 4) / 2;
@@ -48,18 +50,18 @@
             active_color[d3.event.collaboratorId] = d;
             if (d3.event.isLocalEvent) {
                 active_local_color = d;
-                swatches.classed('active', false);
+                palette.selectAll('.swatch').classed('active', false);
                 return d3.select(this).classed('active', true);
             }
         });
 
-    swatches.each(function (d) {
+    swatchEnter.each(function (d) {
         if (d === active_local_color) {
             return d3.select(this).classed('active', true);
         }
     });
 
-    var drag = vc.drag(); // = d3.drag();
+    drag = vc.drag(); // = d3.drag();
     var rafRequest = 0;
 
     drag.on('start', function () {
