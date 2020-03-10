@@ -45,9 +45,11 @@ var DescUi = /** @class */ (function () {
     };
     DescUi.prototype.eventCancelled = function (event) {
         clearTimeout(this.cursorResetTimeout);
-        document.body.style.cursor = 'not-allowed';
+        var target = document.querySelector(event.target) || document.body;
+        //console.log(target);
+        target.style.setProperty('cursor', 'not-allowed', 'important');
         this.cursorResetTimeout = window.setTimeout(function () {
-            document.body.style.cursor = '';
+            target.style.removeProperty('cursor');
         }, 50);
     };
     DescUi.prototype.updateConnections = function () {
