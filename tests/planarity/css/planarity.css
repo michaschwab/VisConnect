@@ -38,3 +38,8 @@ line {
 line.intersection {
   stroke: #000;
 }
+
+#vis svg {
+  border: 2px solid #ccc;
+  border-radius: 7px;
+}
