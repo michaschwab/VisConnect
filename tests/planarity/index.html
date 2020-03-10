@@ -2,23 +2,20 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-    <title>Planarity - Jason Davies</title>
+    <title>Planarity Party</title>
     <link href="css/planarity.css" rel="stylesheet">
-    <!--<script src="js/d3.min.js"></script>-->
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
     <script src="../../descvis-bundle.js"></script>
   </head>
-  <body>
-    <h1>Planarity</h1>
+  <body collaboration>
+    <h1>Planarity Party</h1>
     <p>Can you untangle the graph?  See if you can position the vertices so that no two lines cross.
-    <p>Number of line crossings detected: <span id="count">0</span>
+    <p><b>Level <span id="levelindicator"></span></b>. Number of line crossings detected: <span id="count">0</span>
     <div id="vis"><img src="planarity.png"></div>
     <p style="font-style: italic"><span id="move-count">0 moves</span>.
-        <button onclick="newGraph()">New Graph</button>
+        <button onclick="generate()" id="nextlevel" disabled="disabled">Next Level</button>
     </p>
-
-      <input type="hidden" value="8" id="nodes" min="4">
 
       <!--<input type="hidden" value="8" id="nodes" min="4">-->
     <!--<p><label for="nodes">Number of vertices:</label>
@@ -36,7 +33,7 @@
     <p><a href="http://mbostock.github.com/d3/">Built with D3</a>.-->
   </body>
 </html>
-<p class="copyright">Adapted from <a href="http://www.jasondavies.com/">Jason Davies</a> 2012.
+<p class="copyright">Adapted from <a href="https://www.jasondavies.com/planarity/">Jason Davies</a>.
 
 
 <script src="js/planarity.js"></script>

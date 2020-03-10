@@ -10,21 +10,8 @@ var w = 960,
     count = 0, // intersections
     graph;
 
-var seed = Math.round(Math.random() * 1000);
-
-if(location.href.includes('seed')) {
-  console.log(location.href);
-  let match = location.href.match(/seed\=([0-9]+)/g);
-  if(match && match.length) {
-    seed = match[0].substr(5);
-  }
-} else {
-  location.href = location.href + '?seed=' + seed;
-}
-
-function newGraph() {
-  location.href = location.protocol + '//' + location.host + location.pathname;
-}
+var level = 0;
+var seed = level;
 
 function random() { // Bad but seeded random function
   var x = Math.sin(seed++) * 10000;
@@ -60,16 +47,25 @@ d3.timer(function() {
 });
 
 function generate() {
+  if(intersections(graph.links) !== 0 && level !== 0) {
+    return;
+  }
+  level++;
+  seed = level;
+  document.getElementById('levelindicator').innerText = level;
   moves = 0;
   start = +new Date;
   lastCount = null;
-  graph = scramble(planarGraph(+d3.select("#nodes").property("value")));
+  graph = scramble(planarGraph(level + 4));
   update();
 }
+
 
 function update() {
   count = intersections(graph.links);
   counter.text(count ? count + "." : "0! Well done!");
+  const nextLevelButton = document.getElementById('nextlevel');
+  count !== 0 ? nextLevelButton.setAttribute('disabled', '') : nextLevelButton.removeAttribute('disabled');
 
   var line = lines.selectAll("line")
       .data(graph.links);
