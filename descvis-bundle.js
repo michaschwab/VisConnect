@@ -264,15 +264,33 @@ function recreateEvent(eventObject, target) {
     var targetSelector = eventObject.target;
     var e;
     if (eventObject.type.substr(0, 5) === 'touch') {
-        e = document.createEvent('TouchEvent');
-        e.initEvent(eventObject.type, true, false);
-        for (var prop in eventObject) {
-            if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                Object.defineProperty(e, prop, {
-                    writable: true,
-                    value: eventObject[prop],
-                });
+        try {
+            e = document.createEvent('TouchEvent');
+            e.initEvent(eventObject.type, true, false);
+            for (var prop in eventObject) {
+                if (prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                    Object.defineProperty(e, prop, {
+                        writable: true,
+                        value: eventObject[prop],
+                    });
+                }
             }
+        }
+        catch (error) {
+            // Touch probably not supported.
+            var newType = 'mousemove';
+            if (eventObject.type === 'touchstart') {
+                newType = 'mousedown';
+            }
+            else if (eventObject.type === 'touchend') {
+                newType = 'mouseup';
+            }
+            eventObject.type = newType;
+            if (eventObject.touches[0]) {
+                eventObject.clientX = eventObject.touches[0].clientX;
+                eventObject.clientY = eventObject.touches[0].clientY;
+            }
+            e = new MouseEvent(eventObject.type, eventObject);
         }
         //e = new TouchEvent(eventObject.type, eventObject as any);
     }
@@ -1714,6 +1732,7 @@ var DescVis = /** @class */ (function () {
     }
     DescVis.prototype.localEvent = function (stripped, event) {
         stopPropagation(event);
+        event.preventDefault();
         this.protocol.localEvent(stripped);
     };
     DescVis.prototype.cancelEvent = function (event) {
@@ -1825,9 +1844,9 @@ var VisConnectUtil = /** @class */ (function () {
 function point(event) {
     var node = event.target;
     var svg = node.ownerSVGElement || node;
-    var position = event instanceof MouseEvent ? event : event.changedTouches[0];
+    var position = event instanceof MouseEvent ? event : event.touches[0];
     if (!position) {
-        //console.warn(event.changedTouches);
+        console.warn(event);
         return null;
     }
     if (svg.createSVGPoint) {

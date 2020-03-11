@@ -1,34 +1,30 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+  <title>VisConnect Demo</title>
   <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
   <script src="https://d3js.org/d3.v4.min.js"></script>
 </head>
 <body>
 
-<!--<script src="network.js"></script>
-<script src="listener.js"></script>-->
 <script src="descvis-bundle.js"></script>
 
 <svg width="960" height="600"></svg>
 
 <script>
-
-
-
 var svg = d3.select("svg");
 
 var color = d3.scaleOrdinal(d3.schemeCategory20);
 var nodes = [{group: 'A', x: 100, y: 100}, {group: 'B', x: 140, y: 200}, {group: 'C', x: 300, y: 150}];
-
-/*const clientColor = randomColor();
-
-var colorMarker = svg.append("g")
-        .append("rect")
-        .attr('width', 50)
-        .attr('height', 50)
-        .attr('fill', clientColor)*/
-
+var drag = vc.drag()
+        .on('drag', function(d) {
+            d.x = d3.event.x;
+            d.y = d3.event.y;
+            const circle = d3.select(this);
+            circle.attr("cx", d.x);
+            circle.attr("cy", d.y);
+            d3.event.sourceEvent.preventDefault(); // Disable scrolling
+        });
 
 var node = svg.append("g")
         .attr("class", "nodes")
@@ -42,23 +38,7 @@ var node = svg.append("g")
         .attr("fill", function(d) { return color(d.group); })
         .on('mouseenter', function() { d3.select(this).attr('stroke', stringToHex(d3.event.collaboratorId))})
         .on('mouseout', function() { d3.select(this).attr('stroke', '')})
-        .on('mousedown', function() { this['dragPos'] = {x: d3.event.x, y: d3.event.y}; })
-        .on('touchstart', function() { this['dragPos'] = {x: d3.event.touches[0].clientX, y: d3.event.touches[0].clientY}; })
-        .on('mouseup', function() { this['dragPos'] = null; })
-        .on('touchend', function() { this['dragPos'] = null; })
-        .on('mousemove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.x, d3.event.y);}})
-        .on('touchmove', function(d) { if(this['dragPos']) { dragged.call(this, d, d3.event.touches[0].clientX, d3.event.touches[0].clientY);}})
-        //.on('click', function(d){d3.select(this).attr('fill', clientColor)})
-
-function dragged(d, eventX, eventY) {
-  let circle = d3.select(this);
-  d.x += eventX - this['dragPos'].x;
-  d.y += eventY - this['dragPos'].y;
-  this['dragPos'] = {x: eventX, y: eventY};
-  circle.attr("cx", d.x);
-  circle.attr("cy", d.y);
-  d3.event.preventDefault(); // Disable scrolling
-}
+        .call(drag);
 
 // From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
 if(stringToHex === undefined) {
@@ -77,7 +57,6 @@ if(stringToHex === undefined) {
     return color;
   };
 }
-
 
 </script>
 </body>
