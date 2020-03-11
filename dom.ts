@@ -37,15 +37,32 @@ export function recreateEvent(eventObject: StrippedEvent, target: Element): Even
     const targetSelector = eventObject.target;
     let e: Event;
     if(eventObject.type.substr(0, 5) === 'touch') {
-        e = document.createEvent('TouchEvent');
-        e.initEvent(eventObject.type, true, false);
-        for(const prop in eventObject) {
-            if(prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
-                Object.defineProperty(e, prop, {
-                    writable: true,
-                    value: eventObject[prop],
-                });
+        try {
+            e = document.createEvent('TouchEvent');
+            e.initEvent(eventObject.type, true, false);
+            for(const prop in eventObject) {
+                if(prop !== 'isTrusted' && eventObject.hasOwnProperty(prop)) {
+                    Object.defineProperty(e, prop, {
+                        writable: true,
+                        value: eventObject[prop],
+                    });
+                }
             }
+        } catch(error) {
+            // Touch probably not supported.
+            let newType = 'mousemove';
+            if(eventObject.type === 'touchstart') {
+                newType = 'mousedown';
+            } else if(eventObject.type === 'touchend') {
+                newType = 'mouseup';
+            }
+            eventObject.type = newType;
+            if(eventObject.touches[0]) {
+                eventObject.clientX = eventObject.touches[0].clientX;
+                eventObject.clientY = eventObject.touches[0].clientY;
+            }
+
+            e = new MouseEvent(eventObject.type, eventObject as any);
         }
         //e = new TouchEvent(eventObject.type, eventObject as any);
     } else if(eventObject.type.substr(0, 5) === 'mouse' || eventObject.type === 'click') {
