@@ -69,33 +69,36 @@ function generate() {
   }
   level++;
   seed = level;
+  moveCounter.text("0 moves");
   document.getElementById('levelindicator').innerText = level;
   moves = 0;
   start = +new Date;
   lastCount = null;
-  forceLines.selectAll("line").remove()
-  forceNodes.selectAll("circle").remove()
+  forceLines.selectAll("line").remove();
+  forceNodes.selectAll("circle").remove();
   graph = scramble(planarGraph(level + 4));
   simulation.restart();
   simulation.alpha(1);
   update();
 }
 
-
-
-
-
 function update() {
   count = intersections(graph.links);
   counter.text(count ? count + "." : "0! Well done!");
   const nextLevelButton = document.getElementById('nextlevel');
   const forceDiv = document.getElementById('force');
-  count !== 0 ? nextLevelButton.setAttribute('disabled', '') : nextLevelButton.removeAttribute('disabled');
-  count !== 0 ? forceDiv.style.display = 'none' : forceDiv.style.display = 'inline'; 
-  
-  var line = lines.selectAll("line")
+
+  if(count === 0) {
+    nextLevelButton.removeAttribute('disabled');
+    forceDiv.style.display = 'inline';
+  } else {
+    nextLevelButton.setAttribute('disabled', '');
+    forceDiv.style.display = 'none';
+  }
+
+  const line = lines.selectAll("line")
       .data(graph.links);
-  var lineEnter = line.enter().append("line");
+  const lineEnter = line.enter().append("line");
   line.exit().remove();
   lineEnter.merge(line).attr("x1", function(d) { return x(d[0][0]); })
       .attr("y1", function(d) { return y(d[0][1]); })
@@ -103,42 +106,41 @@ function update() {
       .attr("y2", function(d) { return y(d[1][1]); })
       .classed("intersection", highlightIntersections ? function(d) { return d.intersection; } : true);
 
-  var node = nodes.selectAll("circle")
+  const node = nodes.selectAll("circle")
       .data(graph.nodes);
-  var nodeEnter = node.enter().append("circle");
+  const nodeEnter = node.enter().append("circle");
 
   nodeEnter
       .attr("r", p - 1)
       .call(vc.drag()
-        //.origin(function(d) { return {x: x(d[0]), y: y(d[1])}; })
-        .on("drag", function(d) {
-          // Jitter to prevent coincident nodes.
-          d[0] = Math.max(0, Math.min(1, x.invert(d3.event.x))) + random() * 1e-4;
-          d[1] = Math.max(0, Math.min(1, y.invert(d3.event.y))) + random() * 1e-4;
-          update();
-        })
-        .on("end", function() {
-          moveCounter.text(++moves + " move" + (moves !== 1 ? "s" : ""));
-        }));
+          .on("drag", function(d) {
+              // Jitter to prevent coincident nodes.
+              d[0] = Math.max(0, Math.min(1, x.invert(d3.event.x))) + random() * 1e-4;
+              d[1] = Math.max(0, Math.min(1, y.invert(d3.event.y))) + random() * 1e-4;
+              update();
+          })
+          .on("end", function() {
+              moveCounter.text(++moves + " move" + (moves !== 1 ? "s" : ""));
+          }));
   node.exit().remove();
 
   nodeEnter.merge(node).attr("cx", function(d) { return x(d[0]); })
       .attr("cy", function(d) { return y(d[1]); })
       .classed("intersection", highlightIntersections ?
           function(d) { return d.intersection; } : count);
-  
-  
-  var forceLine = forceLines.selectAll("line")
-                .data(graph.links)
-                .enter().append("line");
-  
-  var forceNode = forceNodes.attr("class", "nodes")
-  .selectAll("circle")
-            .data(graph.nodes)
-  .enter().append("circle")
-          .attr("r", 2)
 
-  
+
+  const forceLine = forceLines.selectAll("line")
+      .data(graph.links)
+      .enter().append("line");
+
+  const forceNode = forceNodes.attr("class", "nodes")
+  .selectAll("circle")
+      .data(graph.nodes)
+      .enter()
+      .append("circle")
+      .attr("r", 2);
+
   simulation
       .nodes(graph.nodes)
       .on("tick", ticked);
@@ -161,12 +163,7 @@ function update() {
          .attr("cx", function (d) { return d.x+5; })
          .attr("cy", function(d) { return d.y-3; });
   }
-  
-  
-
 }
-
- 
 
 // Scramble the node positions.
 function scramble(graph) {
