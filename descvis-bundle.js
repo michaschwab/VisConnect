@@ -1743,49 +1743,64 @@ var VisConnectUtil = /** @class */ (function () {
             onEnd: function (data) { },
             onDrag: function (data) { }
         };
+        var dragStart = function (element) {
+            return function (e) {
+                var event = e;
+                if (!setCustomEvent(event)) {
+                    return;
+                }
+                data.draggingElements[event.collaboratorId] = element;
+                data.onStart.call(element, element['__data__']);
+            };
+        };
+        var dragMove = function (e) {
+            var event = e;
+            if (!setCustomEvent(event)) {
+                return;
+            }
+            var element = data.draggingElements[event.collaboratorId];
+            if (element) {
+                data.onDrag.call(element, element['__data__']);
+            }
+        };
+        var dragEnd = function (e) {
+            var event = e;
+            if (!setCustomEvent(event)) {
+                return;
+            }
+            var element = data.draggingElements[event.collaboratorId];
+            if (element) {
+                delete data.draggingElements[event.collaboratorId];
+                data.onEnd.call(element, element['__data__']);
+            }
+        };
         var drag = function (selection) {
             var elements = selection._groups[0].filter(function (element) { return element; });
             if (!elements.length) {
                 return;
             }
             data.elements = elements;
-            var _loop_1 = function (element) {
-                element.addEventListener('mousedown', function (e) {
-                    var event = e;
-                    setCustomEvent(event);
-                    data.draggingElements[event.collaboratorId] = element;
-                    data.onStart.call(element, element['__data__']);
-                });
-            };
             for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
                 var element = _a[_i];
-                _loop_1(element);
+                element.addEventListener('mousedown', dragStart(element));
+                element.addEventListener('touchstart', dragStart(element));
             }
-            window.addEventListener('mousemove', function (e) {
-                var event = e;
-                setCustomEvent(event);
-                var element = data.draggingElements[event.collaboratorId];
-                if (element) {
-                    data.onDrag.call(element, element['__data__']);
-                }
-            });
-            window.addEventListener('mouseup', function (e) {
-                var event = e;
-                setCustomEvent(event);
-                var element = data.draggingElements[event.collaboratorId];
-                if (element) {
-                    delete data.draggingElements[event.collaboratorId];
-                    data.onEnd.call(element, element['__data__']);
-                }
-            });
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('touchmove', dragMove);
+            window.addEventListener('mouseup', dragEnd);
+            window.addEventListener('touchend', dragEnd);
         };
         var setCustomEvent = function (event) {
             var pos = point(event);
+            if (!pos) {
+                return false;
+            }
             window['d3'].event = {
                 sourceEvent: event,
                 x: pos.x,
                 y: pos.y,
             };
+            return true;
         };
         drag.on = function (type, callback) {
             if (type === 'start') {
@@ -1806,19 +1821,24 @@ var VisConnectUtil = /** @class */ (function () {
     };
     return VisConnectUtil;
 }());
-// from D3.js
+// Adapted from D3.js
 function point(event) {
     var node = event.target;
     var svg = node.ownerSVGElement || node;
+    var position = event instanceof MouseEvent ? event : event.changedTouches[0];
+    if (!position) {
+        //console.warn(event.changedTouches);
+        return null;
+    }
     if (svg.createSVGPoint) {
         var point_1 = svg.createSVGPoint();
-        point_1.x = event.clientX;
-        point_1.y = event.clientY;
+        point_1.x = position.clientX;
+        point_1.y = position.clientY;
         point_1 = point_1.matrixTransform(node.getScreenCTM().inverse());
         return { x: point_1.x, y: point_1.y };
     }
     var rect = node.getBoundingClientRect();
-    return { x: event.clientX - rect.left - node.clientLeft, y: event.clientY - rect.top - node.clientTop };
+    return { x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop };
 }
 
 var visconnect;
