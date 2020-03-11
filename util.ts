@@ -97,9 +97,9 @@ function point(event: MouseEvent|TouchEvent) {
     const node = event.target as SVGElement;
     const svg = node.ownerSVGElement || node;
 
-    const position = event instanceof MouseEvent ? event : event.changedTouches[0];
+    const position = event instanceof MouseEvent ? event : event.touches[0];
     if(!position) {
-        //console.warn(event.changedTouches);
+        console.warn(event);
         return null;
     }
 

@@ -1825,9 +1825,9 @@ var VisConnectUtil = /** @class */ (function () {
 function point(event) {
     var node = event.target;
     var svg = node.ownerSVGElement || node;
-    var position = event instanceof MouseEvent ? event : event.changedTouches[0];
+    var position = event instanceof MouseEvent ? event : event.touches[0];
     if (!position) {
-        //console.warn(event.changedTouches);
+        console.warn(event);
         return null;
     }
     if (svg.createSVGPoint) {
