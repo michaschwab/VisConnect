@@ -46,8 +46,8 @@ export class DescUi {
             return;
         }
         const cursor = this.getCursor(collaborator);
-        cursor.style.left = `${event.clientX-2}px`;
-        cursor.style.top = `${event.clientY-2}px`;
+        cursor.style.left = `${event.clientX - 2}px`;
+        cursor.style.top = `${event.clientY - 2}px`;
     }
 
     eventCancelled(event: StrippedEvent) {

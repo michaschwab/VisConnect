@@ -80,9 +80,22 @@ export class DescListener {
                 obj[key] = val;
             }
         }
+        if(obj.clientX) {
+            obj.clientX = obj.clientX as number + window.scrollX;
+        }
+        if(obj.x) {
+            obj.x = obj.x as number + window.scrollX;
+        }
+        if(obj.clientY) {
+            obj.clientY = obj.clientY as number + window.scrollY;
+        }
+        if(obj.y) {
+            obj.y = obj.y as number + window.scrollY;
+        }
+
         if(window.TouchEvent && e instanceof TouchEvent && e.touches && e.touches.length) {
             for(const touch of e.touches) {
-                obj.touches.push({clientX: touch.clientX, clientY: touch.clientY});
+                obj.touches.push({clientX: touch.clientX + window.scrollX, clientY: touch.clientY + window.scrollX});
             }
         }
         const target = this.getElementSelector(e.target as Element);

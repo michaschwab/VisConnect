@@ -10,11 +10,11 @@ var w = 960,
     count = 0, // intersections
     graph;
 
-var level = 0;
-var seed = level;
+let level = 0;
+let seed = level;
 
 function random() { // Bad but seeded random function
-  var x = Math.sin(seed++) * 10000;
+  const x = Math.sin(seed++) * 10000;
   return x - Math.floor(x);
 }
 
@@ -28,28 +28,25 @@ var vis = d3.select("#vis").append("svg")
   .append("g")
     .attr("transform", "translate(" + [p, p] + ")");
 
-var lines = vis.append("g"),
-    nodes = vis.append("g"),
-    counter = d3.select("#count"),
-    moveCounter = d3.select("#move-count"),
-    timer = d3.select("#timer");
+const lines = vis.append("g");
+const nodes = vis.append("g");
+const counter = d3.select("#count");
+const moveCounter = d3.select("#move-count");
+const timer = d3.select("#timer");
 
-var force = d3.select("#force").append("svg")
+const force = d3.select("#force").append("svg")
     .attr("width", w + p * 2)
     .attr("height", h + p * 2)
   .append("g")
     .attr("transform", "translate(" + [p, p] + ")");
 
-var forceLines = force.append("g"),
-    forceNodes = force.append("g");
+const forceLines = force.append("g");
+const forceNodes = force.append("g");
 
-
-var simulation = d3.forceSimulation()
-  
-.force("link", d3.forceLink().id(d => d.id))
-      .force("charge", d3.forceManyBody())
+const simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(d => d.id))
+    .force("charge", d3.forceManyBody())
     .force("center", d3.forceCenter( (w + p * 2)/2, (h + p * 2)/2));
-
 
 d3.select("#generate").on("click", generate);
 d3.select("#intersections").on("change", function() {
@@ -115,8 +112,9 @@ function update() {
       .call(vc.drag()
           .on("drag", function(d) {
               // Jitter to prevent coincident nodes.
-              d[0] = Math.max(0, Math.min(1, x.invert(d3.event.x))) + random() * 1e-4;
-              d[1] = Math.max(0, Math.min(1, y.invert(d3.event.y))) + random() * 1e-4;
+              const pos = vc.mouse(this);
+              d[0] = Math.max(0, Math.min(1, x.invert(pos[0]))) + random() * 1e-4;
+              d[1] = Math.max(0, Math.min(1, y.invert(pos[1]))) + random() * 1e-4;
               update();
           })
           .on("end", function() {
@@ -128,7 +126,6 @@ function update() {
       .attr("cy", function(d) { return y(d[1]); })
       .classed("intersection", highlightIntersections ?
           function(d) { return d.intersection; } : count);
-
 
   const forceLine = forceLines.selectAll("line")
       .data(graph.links)

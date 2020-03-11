@@ -4,7 +4,7 @@ import {VisConnectUtil} from "./util";
 import {delayAddEventListener, disableStopPropagation} from "./dom";
 var visconnect;
 var visconnectUi;
-(window as any).vc = {drag: VisConnectUtil.drag};
+(window as any).vc = {drag: VisConnectUtil.drag, mouse: VisConnectUtil.mouse};
 
 console.log('init vislink');
 disableStopPropagation();

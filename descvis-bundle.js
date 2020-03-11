@@ -200,10 +200,22 @@ var DescListener = /** @class */ (function () {
                 obj[key] = val;
             }
         }
+        if (obj.clientX) {
+            obj.clientX = obj.clientX + window.scrollX;
+        }
+        if (obj.x) {
+            obj.x = obj.x + window.scrollX;
+        }
+        if (obj.clientY) {
+            obj.clientY = obj.clientY + window.scrollY;
+        }
+        if (obj.y) {
+            obj.y = obj.y + window.scrollY;
+        }
         if (window.TouchEvent && e instanceof TouchEvent && e.touches && e.touches.length) {
             for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
                 var touch = _a[_i];
-                obj.touches.push({ clientX: touch.clientX, clientY: touch.clientY });
+                obj.touches.push({ clientX: touch.clientX + window.scrollX, clientY: touch.clientY + window.scrollX });
             }
         }
         var target = this.getElementSelector(e.target);
@@ -1842,6 +1854,10 @@ var VisConnectUtil = /** @class */ (function () {
         };
         return drag;
     };
+    VisConnectUtil.mouse = function (node) {
+        var coords = window['d3'].mouse(node);
+        return [coords[0] - window.scrollX, coords[1] - window.scrollY];
+    };
     return VisConnectUtil;
 }());
 // Adapted from D3.js
@@ -1866,7 +1882,7 @@ function point(event) {
 
 var visconnect;
 var visconnectUi;
-window.vc = { drag: VisConnectUtil.drag };
+window.vc = { drag: VisConnectUtil.drag, mouse: VisConnectUtil.mouse };
 console.log('init vislink');
 disableStopPropagation();
 delayAddEventListener().then(function () {

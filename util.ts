@@ -90,6 +90,11 @@ export class VisConnectUtil {
 
         return drag;
     }
+
+    static mouse(node: HTMLElement) {
+        const coords = (window as any)['d3'].mouse(node);
+        return [coords[0] - window.scrollX, coords[1] - window.scrollY];
+    }
 }
 
 // Adapted from D3.js
