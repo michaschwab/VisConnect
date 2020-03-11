@@ -52,9 +52,10 @@ export class DescUi {
 
     eventCancelled(event: StrippedEvent) {
         clearTimeout(this.cursorResetTimeout);
-        document.body.style.cursor = 'not-allowed';
+        let target: HTMLElement = document.querySelector(event.target) || document.body;
+        target.style.setProperty('cursor','not-allowed', 'important');
         this.cursorResetTimeout = window.setTimeout(() => {
-            document.body.style.cursor = '';
+            target.style.removeProperty('cursor');
         }, 50);
     }
 

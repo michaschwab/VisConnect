@@ -46,9 +46,10 @@ var DescUi = /** @class */ (function () {
     };
     DescUi.prototype.eventCancelled = function (event) {
         clearTimeout(this.cursorResetTimeout);
-        document.body.style.cursor = 'not-allowed';
+        var target = document.querySelector(event.target) || document.body;
+        target.style.setProperty('cursor', 'not-allowed', 'important');
         this.cursorResetTimeout = window.setTimeout(function () {
-            document.body.style.cursor = '';
+            target.style.removeProperty('cursor');
         }, 50);
     };
     DescUi.prototype.updateConnections = function () {
@@ -1736,28 +1737,55 @@ var VisConnectUtil = /** @class */ (function () {
     }
     VisConnectUtil.drag = function () {
         var data = {
-            element: null,
-            onStart: function () { },
-            onEnd: function () { },
-            onDrag: function () { }
+            elements: null,
+            draggingElements: {},
+            onStart: function (data) { },
+            onEnd: function (data) { },
+            onDrag: function (data) { }
         };
         var drag = function (selection) {
-            data.element = selection._groups[0][0];
-            data.element.addEventListener('mousedown', function (e) {
-                var event = e;
-                window['d3'].event = { sourceEvent: event };
-                data.onStart.call(data.element);
-            });
+            var elements = selection._groups[0].filter(function (element) { return element; });
+            if (!elements.length) {
+                return;
+            }
+            data.elements = elements;
+            var _loop_1 = function (element) {
+                element.addEventListener('mousedown', function (e) {
+                    var event = e;
+                    setCustomEvent(event);
+                    data.draggingElements[event.collaboratorId] = element;
+                    data.onStart.call(element, element['__data__']);
+                });
+            };
+            for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
+                var element = _a[_i];
+                _loop_1(element);
+            }
             window.addEventListener('mousemove', function (e) {
                 var event = e;
-                window['d3'].event = { sourceEvent: event };
-                data.onDrag.call(data.element);
+                setCustomEvent(event);
+                var element = data.draggingElements[event.collaboratorId];
+                if (element) {
+                    data.onDrag.call(element, element['__data__']);
+                }
             });
             window.addEventListener('mouseup', function (e) {
                 var event = e;
-                window['d3'].event = { sourceEvent: event };
-                data.onEnd.call(data.element);
+                setCustomEvent(event);
+                var element = data.draggingElements[event.collaboratorId];
+                if (element) {
+                    delete data.draggingElements[event.collaboratorId];
+                    data.onEnd.call(element, element['__data__']);
+                }
             });
+        };
+        var setCustomEvent = function (event) {
+            var pos = point(event);
+            window['d3'].event = {
+                sourceEvent: event,
+                x: pos.x,
+                y: pos.y,
+            };
         };
         drag.on = function (type, callback) {
             if (type === 'start') {
@@ -1772,11 +1800,26 @@ var VisConnectUtil = /** @class */ (function () {
             else {
                 console.error('Drag type ', type, ' not defined.');
             }
+            return drag;
         };
         return drag;
     };
     return VisConnectUtil;
 }());
+// from D3.js
+function point(event) {
+    var node = event.target;
+    var svg = node.ownerSVGElement || node;
+    if (svg.createSVGPoint) {
+        var point_1 = svg.createSVGPoint();
+        point_1.x = event.clientX;
+        point_1.y = event.clientY;
+        point_1 = point_1.matrixTransform(node.getScreenCTM().inverse());
+        return { x: point_1.x, y: point_1.y };
+    }
+    var rect = node.getBoundingClientRect();
+    return { x: event.clientX - rect.left - node.clientLeft, y: event.clientY - rect.top - node.clientTop };
+}
 
 var visconnect;
 var visconnectUi;

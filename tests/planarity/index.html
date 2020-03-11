@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>Planarity Party</title>
+    <link href="css/planarity.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+    <script src="../../descvis-bundle.js"></script>
+  </head>
+  <body collaboration>
+    <h1>Planarity Party</h1>
+    <p>Can you untangle the graph?  See if you can position the vertices so that no two lines cross.
+    <p><b>Level <span id="levelindicator"></span></b>. Number of line crossings detected: <span id="count">0</span>
+    <div id="vis"><img src="planarity.png"></div>
+    <p style="font-style: italic"><span id="move-count">0 moves</span>.
+        <button onclick="generate()" id="nextlevel" disabled="disabled">Next Level</button>
+    </p>
+
+      <!--<input type="hidden" value="8" id="nodes" min="4">-->
+    <!--<p><label for="nodes">Number of vertices:</label>
+      <input type="number" value="8" id="nodes" min="4">
+      <button id="generate" class="first last">Generate new, random graph</button>-->
+    <!--<p><label for="intersections"><input type="checkbox" id="intersections"> Highlight non-intersecting lines</label>.
+    <p>Don't worry, the game only generates solvable graphs!  These are known as <a href="http://en.wikipedia.org/wiki/Planar_graph">planar graphs</a>.
+
+    <h2>Further Reading</h2>
+    <ul>
+      <li><a href="http://www.planarity.net/">John Tantalo's original version</a> of the puzzle.
+      <li>Information about the <a href="http://en.wikipedia.org/wiki/Planarity">Planarity</a> game on Wikipedia.
+      <li><a href="http://en.wikipedia.org/wiki/Planar_graph">Planar graph</a> on Wikipedia.
+    </ul>
+    <p><a href="http://mbostock.github.com/d3/">Built with D3</a>.-->
+  </body>
+</html>
+<p class="copyright">Adapted from <a href="https://www.jasondavies.com/planarity/">Jason Davies</a>.
+
+
+<script src="js/planarity.js"></script>

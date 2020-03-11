@@ -1,0 +1,45 @@
+body {
+  font-size: 1em;
+  font-weight: 400;
+  word-spacing: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  font-family: Verdana, Myriad Web, Syntax, sans-serif;
+  font-size-adjust: .58;
+  color: #000;
+  background: #FFF;
+  line-height: 1.58em;
+  border-top: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-right: 0;
+  width: auto;
+  margin: 1.58em 5% 1.58em 8%;
+  padding: 0
+}
+
+
+circle {
+  fill: #fc0;
+  cursor: move;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+circle.intersection {
+  fill: #0cf;
+}
+
+line {
+  stroke: #fc0;
+  stroke-width: 1.5px;
+}
+
+line.intersection {
+  stroke: #000;
+}
+
+#vis svg {
+  border: 2px solid #ccc;
+  border-radius: 7px;
+}
