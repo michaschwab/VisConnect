@@ -18,6 +18,7 @@ export class PeerjsNetwork implements DescNetwork {
         this.peer = new Peer({
             host: 'michaschwab.de',
             port: 9000,
+            secure: false,
             path: '/visconnect',
             config:  {'iceServers': [
                 { urls: 'stun:stun.l.google.com:19302' },
