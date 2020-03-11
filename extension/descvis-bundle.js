@@ -35,8 +35,9 @@ var DescUi = /** @class */ (function () {
     };
     DescUi.prototype.mouseMoved = function (originalEvent) {
         var event = originalEvent;
+        var ownId = this.descvis.protocol.communication.id;
         var collaborator = event['collaboratorId'];
-        if (!collaborator || this.descvis.protocol.communication.id === collaborator) {
+        if (!collaborator || !ownId || ownId === collaborator) {
             return;
         }
         var cursor = this.getCursor(collaborator);

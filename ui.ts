@@ -40,8 +40,9 @@ export class DescUi {
 
     mouseMoved(originalEvent: Event) {
         const event = originalEvent as MouseEvent & {collaboratorId: string};
+        const ownId = this.descvis.protocol.communication.id;
         const collaborator = event['collaboratorId'];
-        if(!collaborator || this.descvis.protocol.communication.id === collaborator) {
+        if(!collaborator || !ownId || ownId === collaborator) {
             return;
         }
         const cursor = this.getCursor(collaborator);
