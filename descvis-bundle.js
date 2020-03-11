@@ -1732,6 +1732,7 @@ var DescVis = /** @class */ (function () {
     }
     DescVis.prototype.localEvent = function (stripped, event) {
         stopPropagation(event);
+        event.preventDefault();
         this.protocol.localEvent(stripped);
     };
     DescVis.prototype.cancelEvent = function (event) {

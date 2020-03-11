@@ -29,6 +29,7 @@ export class DescVis {
 
     localEvent(stripped: StrippedEvent, event: Event) {
         stopPropagation(event);
+        event.preventDefault();
         this.protocol.localEvent(stripped);
     }
 
