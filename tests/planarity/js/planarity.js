@@ -34,6 +34,23 @@ var lines = vis.append("g"),
     moveCounter = d3.select("#move-count"),
     timer = d3.select("#timer");
 
+var force = d3.select("#force").append("svg")
+    .attr("width", w + p * 2)
+    .attr("height", h + p * 2)
+  .append("g")
+    .attr("transform", "translate(" + [p, p] + ")");
+
+var forceLines = force.append("g"),
+    forceNodes = force.append("g");
+
+
+var simulation = d3.forceSimulation()
+  
+.force("link", d3.forceLink().id(d => d.id))
+      .force("charge", d3.forceManyBody())
+    .force("center", d3.forceCenter( (w + p * 2)/2, (h + p * 2)/2));
+
+
 d3.select("#generate").on("click", generate);
 d3.select("#intersections").on("change", function() {
   highlightIntersections = this.checked;
@@ -56,17 +73,26 @@ function generate() {
   moves = 0;
   start = +new Date;
   lastCount = null;
+  forceLines.selectAll("line").remove()
+  forceNodes.selectAll("circle").remove()
   graph = scramble(planarGraph(level + 4));
+  simulation.restart();
+  simulation.alpha(1);
   update();
 }
+
+
+
 
 
 function update() {
   count = intersections(graph.links);
   counter.text(count ? count + "." : "0! Well done!");
   const nextLevelButton = document.getElementById('nextlevel');
+  const forceDiv = document.getElementById('force');
   count !== 0 ? nextLevelButton.setAttribute('disabled', '') : nextLevelButton.removeAttribute('disabled');
-
+  count !== 0 ? forceDiv.style.display = 'none' : forceDiv.style.display = 'inline'; 
+  
   var line = lines.selectAll("line")
       .data(graph.links);
   var lineEnter = line.enter().append("line");
@@ -100,7 +126,47 @@ function update() {
       .attr("cy", function(d) { return y(d[1]); })
       .classed("intersection", highlightIntersections ?
           function(d) { return d.intersection; } : count);
+  
+  
+  var forceLine = forceLines.selectAll("line")
+                .data(graph.links)
+                .enter().append("line");
+  
+  var forceNode = forceNodes.attr("class", "nodes")
+  .selectAll("circle")
+            .data(graph.nodes)
+  .enter().append("circle")
+          .attr("r", 2)
+
+  
+  simulation
+      .nodes(graph.nodes)
+      .on("tick", ticked);
+
+  simulation.force("link")
+      .links(graph.links);
+
+  function ticked() {
+    forceLine
+        .attr("x1", function(d) { return d[0].x; })
+        .attr("y1", function(d) { return d[0].y; })
+        .attr("x2", function(d) { return d[1].x; })
+        .attr("y2", function(d) { return d[1].y; });
+
+    forceNode
+         .attr("r", 16)
+         .style("fill", "#efefef")
+         .style("stroke", "#424242")
+         .style("stroke-width", "1px")
+         .attr("cx", function (d) { return d.x+5; })
+         .attr("cy", function(d) { return d.y-3; });
+  }
+  
+  
+
 }
+
+ 
 
 // Scramble the node positions.
 function scramble(graph) {
@@ -127,6 +193,8 @@ function planarGraph(n) {
   i = -1; while (++i < n) {
     j = i; while (++j < n) addPlanarLink([points[i], points[j]], links);
   }
+  
+  //console.log(links)
   return {nodes: points, links: links};
 }
 

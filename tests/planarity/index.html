@@ -12,10 +12,12 @@
     <h1>Planarity Party</h1>
     <p>Can you untangle the graph?  See if you can position the vertices so that no two lines cross.
     <p><b>Level <span id="levelindicator"></span></b>. Number of line crossings detected: <span id="count">0</span>
-    <div id="vis"><img src="planarity.png"></div>
     <p style="font-style: italic"><span id="move-count">0 moves</span>.
         <button onclick="generate()" id="nextlevel" disabled="disabled">Next Level</button>
     </p>
+    <div id="vis"></div>
+    <div id="force"></div>
+   
 
       <!--<input type="hidden" value="8" id="nodes" min="4">-->
     <!--<p><label for="nodes">Number of vertices:</label>
