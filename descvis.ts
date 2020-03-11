@@ -15,7 +15,7 @@ export class DescVis {
     onEventCancelled: (event: StrippedEvent) => void = () => {};
 
     constructor(private svg: Element, private safeMode = true) {
-        let parts = window.location.href.match(/\?visconnectid=([a-z0-9]+)/);
+        let parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
         const leaderId = parts ? parts[1] : '';
         const isLeader = !leaderId;
         const Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
