@@ -1213,9 +1213,8 @@ var PeerjsNetwork = /** @class */ (function () {
     PeerjsNetwork.prototype.init = function (onOpen, onConnection, onDisconnection) {
         this.onOpen = onOpen;
         this.peer = new Peer({
-            host: '9000-e95bdd3b-cb1f-4b19-a692-0dd22205655b.ws-us02.gitpod.io',
-            port: 443,
-            secure: true,
+            host: 'michaschwab.de',
+            port: 9000,
             path: '/visconnect',
             config: { 'iceServers': [
                     { urls: 'stun:stun.l.google.com:19302' },
