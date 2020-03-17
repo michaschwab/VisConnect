@@ -3,7 +3,7 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonJS from 'rollup-plugin-commonjs'
 
 export default [''].map((name, index) => ({
-    input: `./main${name}.ts`,
+    input: `./src/main${name}.ts`,
     plugins: [
         resolve(),
         commonJS({
