@@ -37,7 +37,7 @@ export class PeerjsNetwork implements DescNetwork {
         }
 
         this.peer.on('connection', (connection: PeerjsConnectionI) => {
-            console.log("connection!")
+            console.log("connection!");
             onConnection(new PeerjsConnection(connection));
         });
 

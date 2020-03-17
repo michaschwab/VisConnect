@@ -1267,13 +1267,12 @@ var PeerjsNetwork = /** @class */ (function () {
 
 // This file should know all the message types and create the messages
 var DescCommunication = /** @class */ (function () {
-    function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, receiveLockVote, onOpenCallback) {
+    function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, onOpenCallback) {
         this.leaderId = leaderId;
         this.onEventReceived = onEventReceived;
         this.onNewLockOwner = onNewLockOwner;
         this.getPastEvents = getPastEvents;
         this.onLockRequested = onLockRequested;
-        this.receiveLockVote = receiveLockVote;
         this.onOpenCallback = onOpenCallback;
         this.connections = [];
         this.peers = [];
@@ -1288,44 +1287,24 @@ var DescCommunication = /** @class */ (function () {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     DescCommunication.prototype.requestLock = function (targetSelector) {
-        if (!this.connections.length) {
+        if (!this.leaderConnection && this.id !== this.leaderId) {
             return false;
         }
         var msg = {
             type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
-            electionId: String(Math.random()).substr(2),
             targetSelector: targetSelector,
             requester: this.id,
             sender: this.id,
         };
-        for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
-            var conn = _a[_i];
-            //console.log('Requesting lock', msg);
-            conn.send(msg);
+        if (this.id === this.leaderId) {
+            // Ask itself, the leader, for permission.
+            this.receiveMessage(msg);
         }
-        this.receiveMessage(msg); // Request vote from oneself.
+        else {
+            // Ask the leader for permission.
+            this.leaderConnection.send(msg);
+        }
         return true;
-    };
-    /**
-     * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
-     */
-    DescCommunication.prototype.sendLockVote = function (targetSelector, electionId, requester, agree) {
-        var msg = {
-            type: DESC_MESSAGE_TYPE.LOCK_VOTE,
-            electionId: electionId,
-            sender: this.id,
-            targetSelector: targetSelector,
-            requester: requester,
-            agree: agree
-        };
-        //console.log('Sending lock vote', msg);
-        if (!this.leaderConnection) {
-            return console.error('Can not send lock vote because no leader connection exists.');
-        }
-        this.leaderConnection.send(msg);
-        if (this.leaderId === this.id) {
-            this.receiveLockVote(targetSelector, electionId, requester, this.id, agree);
-        }
     };
     /**
      * This message is sent by the leader to inform clients that an element's lock owner has changed.
@@ -1430,12 +1409,7 @@ var DescCommunication = /** @class */ (function () {
         }
         else if (data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
             var msg = data;
-            this.onLockRequested(msg.targetSelector, msg.electionId, msg.requester);
-        }
-        else if (data.type === DESC_MESSAGE_TYPE.LOCK_VOTE) {
-            var msg = data;
-            this.receiveLockVote(msg.targetSelector, msg.electionId, msg.requester, msg.sender, msg.agree);
-            //receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean)
+            this.onLockRequested(msg.targetSelector, msg.requester);
         }
         else if (data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             var msg = data;
@@ -1546,7 +1520,7 @@ var DescProtocol = /** @class */ (function () {
             this.communication = mockCommunication;
         }
         else {
-            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.receiveLockVote.bind(this), this.init.bind(this));
+            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.init.bind(this));
         }
     }
     DescProtocol.prototype.init = function () {
@@ -1589,13 +1563,8 @@ var DescProtocol = /** @class */ (function () {
             this.addEventToLedger(stripped, sender, catchup);
         }
     };
-    DescProtocol.prototype.receiveLockRequest = function (selector, electionId, requester) {
-        var vote = false;
-        if (!this.lockOwners.has(selector) || this.lockOwners.get(selector) === requester) {
-            // Vote yes
-            vote = true;
-        }
-        this.communication.sendLockVote(selector, electionId, requester, vote);
+    DescProtocol.prototype.receiveLockRequest = function (selector, requester) {
+        console.error('Clients are not supposed to receive lock requests.');
     };
     DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
         //console.log('Lock owner changed', selector, owner, this.collaboratorId, this.heldEvents.has(selector), this.heldEvents.get(selector));
@@ -1618,9 +1587,6 @@ var DescProtocol = /** @class */ (function () {
             }
         }
         this.heldEvents.delete(selector);
-    };
-    DescProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
-        console.error('Clients are not supposed to receive lock votes.');
     };
     DescProtocol.prototype.requestLock = function (selector) {
         if (this.requestedLocks.has(selector)) {
@@ -1665,47 +1631,20 @@ var DescProtocol = /** @class */ (function () {
     return DescProtocol;
 }());
 
-var VOTE_DECISION_THRESHHOLD = 0.5001;
-var DescLeaderProtocol = /** @class */ (function (_super) {
-    __extends(DescLeaderProtocol, _super);
-    function DescLeaderProtocol() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.lockVotes = new Map();
-        _this.lockTimeouts = new Map();
-        return _this;
+var LockService = /** @class */ (function () {
+    function LockService(communication) {
+        this.communication = communication;
+        this.lockOwners = new Map();
+        this.lockTimeouts = new Map();
     }
-    DescLeaderProtocol.prototype.receiveLockVote = function (selector, electionId, requester, voter, vote) {
-        if (!this.lockVotes.has(electionId)) {
-            this.lockVotes.set(electionId, []);
-        }
-        var votes = this.lockVotes.get(electionId);
-        if (votes.filter(function (v) { return v.voter === voter; }).length > 0) {
-            console.log('Not counting a lock vote because the voter has already voted on this element.');
+    LockService.prototype.requestLock = function (selector, client) {
+        if (this.lockOwners.has(selector)) {
             return;
         }
-        votes.push({ selector: selector, requester: requester, voter: voter, vote: vote });
-        var minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
-        var countYes = votes.filter(function (v) { return v.vote; }).length;
-        var countNo = votes.filter(function (v) { return !v.vote; }).length;
-        //console.log('Election:', electionId, minVotes, countYes, countNo);
-        if (countYes < minVotes && countNo < minVotes) {
-            return;
-        }
-        if (countYes >= minVotes) {
-            // Decide yes
-            this.lockOwners.set(selector, requester);
-            this.communication.changeLockOwner(selector, requester);
-            //console.log('Changing lock owner', selector, requester);
-            this.extendLock(selector);
-        }
-        else if (countNo >= minVotes) {
-            // Decide no - inform everyone that the previous lock owner is still the owner.
-            var oldOwner = this.lockOwners.get(selector) || '';
-            this.communication.changeLockOwner(selector, oldOwner);
-        }
-        this.lockVotes.delete(selector);
+        this.lockOwners.set(selector, client);
+        this.communication.changeLockOwner(selector, client);
     };
-    DescLeaderProtocol.prototype.extendLock = function (selector) {
+    LockService.prototype.extendLock = function (selector) {
         // Delete any previous timeouts
         var prevTimeout = this.lockTimeouts.get(selector);
         if (prevTimeout) {
@@ -1714,18 +1653,34 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         var timeout = window.setTimeout(this.expireLock(selector), 1000);
         this.lockTimeouts.set(selector, timeout);
     };
-    DescLeaderProtocol.prototype.expireLock = function (selector) {
+    LockService.prototype.expireLock = function (selector) {
         var _this = this;
         return function () {
             _this.lockOwners.delete(selector);
             _this.communication.changeLockOwner(selector, '');
-            //console.log('Expiring lock owner', selector);
         };
+    };
+    return LockService;
+}());
+
+var DescLeaderProtocol = /** @class */ (function (_super) {
+    __extends(DescLeaderProtocol, _super);
+    function DescLeaderProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
+        var _this = _super.call(this, leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) || this;
+        _this.leaderId = leaderId;
+        _this.executeEvent = executeEvent;
+        _this.cancelEvent = cancelEvent;
+        _this.unsafeElements = unsafeElements;
+        _this.lockService = new LockService(_this.communication);
+        return _this;
+    }
+    DescLeaderProtocol.prototype.receiveLockRequest = function (selector, requester) {
+        this.lockService.requestLock(selector, requester);
     };
     DescLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
         var success = _super.prototype.addEventToLedger.call(this, stripped, sender);
         if (success) {
-            this.extendLock(stripped.target);
+            this.lockService.extendLock(stripped.target);
         }
         return success;
     };

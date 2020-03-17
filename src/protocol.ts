@@ -19,7 +19,7 @@ export class DescProtocol {
         } else {
             this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this),
                 this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
-                this.receiveLockVote.bind(this), this.init.bind(this));
+                this.init.bind(this));
         }
     }
 
@@ -66,13 +66,8 @@ export class DescProtocol {
         }
     }
 
-    receiveLockRequest(selector: string, electionId: string, requester: string) {
-        let vote = false;
-        if(!this.lockOwners.has(selector) || this.lockOwners.get(selector) === requester) {
-            // Vote yes
-            vote = true;
-        }
-        this.communication.sendLockVote(selector, electionId, requester, vote);
+    receiveLockRequest(selector: string, requester: string) {
+        console.error('Clients are not supposed to receive lock requests.');
     }
 
     lockOwnerChanged(selector: string, owner: string) {
@@ -97,10 +92,6 @@ export class DescProtocol {
             }
         }
         this.heldEvents.delete(selector);
-    }
-
-    receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean) {
-        console.error('Clients are not supposed to receive lock votes.');
     }
 
     protected requestLock(selector: string) {

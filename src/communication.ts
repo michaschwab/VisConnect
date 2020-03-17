@@ -20,9 +20,7 @@ export class DescCommunication {
                 private onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
                 private getPastEvents: () => DescEvent[],
-                private onLockRequested: (selector: string, electionId: string, requester: string) => void,
-                private receiveLockVote: (selector: string, electionId: string, requester: string, voter: string,
-                                          vote: boolean) => void,
+                private onLockRequested: (selector: string, requester: string) => void,
                 private onOpenCallback: () => void) {
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
@@ -32,46 +30,25 @@ export class DescCommunication {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     requestLock(targetSelector: string) {
-        if(!this.connections.length) {
+        if(!this.leaderConnection && this.id !== this.leaderId) {
             return false;
         }
 
         const msg: LockRequestMessage = {
             type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
-            electionId: String(Math.random()).substr(2),
             targetSelector,
             requester: this.id,
             sender: this.id,
         };
 
-        for(const conn of this.connections) {
-            //console.log('Requesting lock', msg);
-            conn.send(msg);
+        if(this.id === this.leaderId) {
+            // Ask itself, the leader, for permission.
+            this.receiveMessage(msg);
+        } else {
+            // Ask the leader for permission.
+            this.leaderConnection!.send(msg);
         }
-        this.receiveMessage(msg); // Request vote from oneself.
         return true;
-    }
-
-    /**
-     * Sends a vote to the leader indicating whether the client agrees to give a requesting client a lock.
-     */
-    sendLockVote(targetSelector: string, electionId: string, requester: string, agree: boolean) {
-        const msg: LockVoteMessage = {
-            type: DESC_MESSAGE_TYPE.LOCK_VOTE,
-            electionId,
-            sender: this.id,
-            targetSelector,
-            requester,
-            agree
-        };
-        //console.log('Sending lock vote', msg);
-        if(!this.leaderConnection) {
-            return console.error('Can not send lock vote because no leader connection exists.');
-        }
-        this.leaderConnection.send(msg);
-        if(this.leaderId === this.id) {
-            this.receiveLockVote(targetSelector, electionId, requester, this.id, agree);
-        }
     }
 
     /**
@@ -172,11 +149,7 @@ export class DescCommunication {
             this.onEventReceived(msg.data, msg.sender);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
             const msg = data as LockRequestMessage;
-            this.onLockRequested(msg.targetSelector, msg.electionId, msg.requester);
-        } else if(data.type === DESC_MESSAGE_TYPE.LOCK_VOTE) {
-            const msg = data as LockVoteMessage;
-            this.receiveLockVote(msg.targetSelector, msg.electionId, msg.requester, msg.sender, msg.agree);
-            //receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean)
+            this.onLockRequested(msg.targetSelector, msg.requester);
         } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
             this.onNewLockOwner(msg.targetSelector, msg.owner);
@@ -302,17 +275,8 @@ export interface DisconnectMessage extends DescMessage {
 
 export interface LockRequestMessage extends DescMessage {
     type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
-    electionId: string,
     targetSelector: string,
     requester: string,
-}
-
-export interface LockVoteMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.LOCK_VOTE,
-    electionId: string,
-    targetSelector: string,
-    requester: string,
-    agree: boolean
 }
 
 export interface LockOwnerChangedMessage extends DescMessage {

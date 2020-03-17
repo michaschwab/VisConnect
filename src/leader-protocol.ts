@@ -1,82 +1,33 @@
 import {DescProtocol} from "./protocol";
 import {StrippedEvent} from "./listener";
-
-const VOTE_DECISION_THRESHHOLD = 0.5001;
+import {DescCommunication} from "./communication";
+import {LockService} from "./lock-service";
 
 export class DescLeaderProtocol extends DescProtocol {
-    private lockVotes = new Map<string, LockVote[]>();
-    private lockTimeouts = new Map<string, number>();
 
-    receiveLockVote(selector: string, electionId: string, requester: string, voter: string, vote: boolean) {
-        if(!this.lockVotes.has(electionId)) {
-            this.lockVotes.set(electionId, []);
-        }
-        const votes = this.lockVotes.get(electionId)!;
+    private lockService: LockService;
 
-        if(votes.filter(v => v.voter === voter).length > 0) {
-            console.log('Not counting a lock vote because the voter has already voted on this element.');
-            return;
-        }
-        votes.push({selector, requester, voter, vote});
+    constructor(protected leaderId: string,
+                protected executeEvent: (e: StrippedEvent) => void,
+                protected cancelEvent: (e: StrippedEvent) => void,
+                protected unsafeElements: string[],
+                mockCommunication?: DescCommunication) {
+        super(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication);
 
-        const minVotes = Math.ceil(VOTE_DECISION_THRESHHOLD * this.communication.getNumberOfConnections());
-        const countYes = votes.filter(v => v.vote).length;
-        const countNo = votes.filter(v => !v.vote).length;
-
-        //console.log('Election:', electionId, minVotes, countYes, countNo);
-
-        if(countYes < minVotes && countNo < minVotes) {
-            return;
-        }
-
-        if(countYes >= minVotes) {
-            // Decide yes
-            this.lockOwners.set(selector, requester);
-            this.communication.changeLockOwner(selector, requester);
-            //console.log('Changing lock owner', selector, requester);
-
-            this.extendLock(selector);
-        } else if(countNo >= minVotes) {
-            // Decide no - inform everyone that the previous lock owner is still the owner.
-            const oldOwner = this.lockOwners.get(selector) || '';
-            this.communication.changeLockOwner(selector, oldOwner);
-        }
-        this.lockVotes.delete(selector);
-
+        this.lockService = new LockService(this.communication);
     }
 
-    protected extendLock(selector: string) {
-        // Delete any previous timeouts
-        const prevTimeout = this.lockTimeouts.get(selector);
-        if(prevTimeout) {
-            clearTimeout(prevTimeout);
-        }
-        const timeout = window.setTimeout(this.expireLock(selector), 1000);
-        this.lockTimeouts.set(selector, timeout);
-    }
-
-    private expireLock(selector: string) {
-        return () => {
-            this.lockOwners.delete(selector);
-            this.communication.changeLockOwner(selector, '');
-            //console.log('Expiring lock owner', selector);
-        };
+    receiveLockRequest(selector: string, requester: string) {
+        this.lockService.requestLock(selector, requester);
     }
 
     protected addEventToLedger(stripped: StrippedEvent, sender: string) {
         const success = super.addEventToLedger(stripped, sender);
 
         if(success) {
-            this.extendLock(stripped.target);
+            this.lockService.extendLock(stripped.target);
         }
 
         return success;
     }
-}
-
-interface LockVote {
-    selector: string,
-    requester: string,
-    voter: string,
-    vote: boolean
 }
