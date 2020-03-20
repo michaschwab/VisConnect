@@ -1287,6 +1287,9 @@ var DescCommunication = /** @class */ (function () {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     DescCommunication.prototype.requestLock = function (targetSelector) {
+        if (!this.id) {
+            return false;
+        }
         if (!this.leaderConnection && this.id !== this.leaderId) {
             return false;
         }

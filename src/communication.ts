@@ -30,6 +30,9 @@ export class DescCommunication {
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     requestLock(targetSelector: string) {
+        if(!this.id) {
+            return false;
+        }
         if(!this.leaderConnection && this.id !== this.leaderId) {
             return false;
         }
