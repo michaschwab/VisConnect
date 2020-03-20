@@ -1,6 +1,10 @@
 body {
     margin: 0;
 }
+h2 {
+    font-size: 22pt;
+    margin: 15px 20px;
+}
 p {
     font-size: 16pt;
     margin-left: 20px;

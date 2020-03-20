@@ -10,6 +10,7 @@ interface FallingObject {
 }
 
 const svg = d3.select('svg');
+const svgPos = svg.node().getBoundingClientRect();
 const width = 1000;
 const height = 600;
 const groundHeight = 100;
@@ -39,8 +40,8 @@ svg.on('mousemove', () => {
     if(!index) {
         return;
     }
-    net.attr('x' + String(index), d3.event.x);
-    net.attr('y' + String(index), d3.event.y);
+    net.attr('x' + String(index), d3.event.x - svgPos.left);
+    net.attr('y' + String(index), d3.event.y - svgPos.top);
 
     if(!started && (index === 2 || location.search.includes('single'))) {
         started = true;
@@ -85,7 +86,7 @@ const continueFalling = () => {
             falling.position.y += falling.speed * (Date.now() - lastFrame)
         } else {
             if(falling.timeSinceLanding === 0) {
-                // Just fell.
+                // Just landed.
                 if(falling.type === 'person' && !falling.intersected) {
                     fallen++;
                 }
