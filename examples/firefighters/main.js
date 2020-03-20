@@ -26,7 +26,7 @@ svg.on('mousemove', function () {
     }
     net.attr('x' + String(index), d3.event.x);
     net.attr('y' + String(index), d3.event.y);
-    if (!started) {
+    if (!started && index === 2) {
         started = true;
         start();
     }
