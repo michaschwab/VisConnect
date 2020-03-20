@@ -64,7 +64,7 @@ var continueFalling = function () {
         else {
             if (falling.timeSinceLanding === 0) {
                 // Just fell.
-                if (falling.type === 'person') {
+                if (falling.type === 'person' && !falling.intersected) {
                     fallen++;
                 }
             }
@@ -131,7 +131,9 @@ var raf = function () {
         .attr('fill', '#000')
         .attr('cx', 80)
         .attr('cy', 150);*/
-    fallingEnter.merge(falling).attr('transform', function (d) { return "translate(" + (d.position.x - 40) + ", " + (d.position.y - 75) + ")scale(0.5)"; });
+    fallingEnter.merge(falling)
+        .attr('transform', function (d) { return "translate(" + (d.position.x - 40) + ", " + (d.position.y - 75) + ")scale(0.5)"; })
+        .attr('opacity', function (d) { return d.intersected ? 0 : 1; });
     lastFrame = Date.now();
     requestAnimationFrame(raf);
 };

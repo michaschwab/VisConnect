@@ -87,7 +87,7 @@ const continueFalling = () => {
         } else {
             if(falling.timeSinceLanding === 0) {
                 // Just fell.
-                if(falling.type === 'person') {
+                if(falling.type === 'person' && !falling.intersected) {
                     fallen++;
                 }
             }
@@ -166,9 +166,11 @@ const raf = () => {
         .attr('cx', 80)
         .attr('cy', 150);*/
 
-    fallingEnter.merge(falling).attr('transform', (d) => `translate(${d.position.x-40}, ${d.position.y - 75})scale(0.5)`);
-    lastFrame = Date.now();
+    fallingEnter.merge(falling)
+        .attr('transform', (d) => `translate(${d.position.x-40}, ${d.position.y - 75})scale(0.5)`)
+        .attr('opacity', (d) => d.intersected ? 0 : 1);
 
+    lastFrame = Date.now();
     requestAnimationFrame(raf);
 };
 

@@ -1,3 +1,21 @@
 body {
     margin: 0;
 }
+p {
+    font-size: 16pt;
+    margin-left: 20px;
+}
+#restart {
+    background: #fff;
+    border: 1px solid #875131;
+    border-radius: 5px;
+    font-size: 16px;
+    padding: 10px 20px;
+
+    position: relative;
+    top: -100px;
+    left: 890px;
+}
+#restart:hover {
+    background: #eee;
+}
