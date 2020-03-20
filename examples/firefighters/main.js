@@ -26,6 +26,9 @@ svg.on('mousemove', function () {
     }
     net.attr('x' + String(index), d3.event.x - svgPos.left);
     net.attr('y' + String(index), d3.event.y - svgPos.top);
+    var length = Math.sqrt(Math.pow(parseFloat(net.attr('x2')) - parseFloat(net.attr('x1')), 2) +
+        Math.pow(parseFloat(net.attr('y2')) - parseFloat(net.attr('y1')), 2));
+    net.attr('opacity', length > 20 ? 1 : 0);
     if (!started && (index === 2 || location.search.includes('single'))) {
         started = true;
         start();
@@ -76,6 +79,10 @@ var continueFalling = function () {
 var checkIntersect = function () {
     var start = { x: parseFloat(net.attr('x1')) || 0, y: parseFloat(net.attr('y1')) || 0 };
     var end = { x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0 };
+    var length = dist(start, end);
+    if (length <= 20) {
+        return;
+    }
     fallingObjects.forEach(function (falling) {
         if (falling.intersected || falling.timeSinceLanding > 0) {
             return;
