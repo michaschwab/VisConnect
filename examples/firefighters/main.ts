@@ -102,7 +102,7 @@ const checkIntersect = () => {
     const end = {x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0};
 
     fallingObjects.forEach(falling => {
-        if(falling.intersected) {
+        if(falling.intersected || falling.timeSinceLanding > 0) {
             return;
         }
         const d = distToSegment(start, end, falling.position);

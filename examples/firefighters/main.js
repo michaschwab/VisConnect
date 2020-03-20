@@ -77,7 +77,7 @@ var checkIntersect = function () {
     var start = { x: parseFloat(net.attr('x1')) || 0, y: parseFloat(net.attr('y1')) || 0 };
     var end = { x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0 };
     fallingObjects.forEach(function (falling) {
-        if (falling.intersected) {
+        if (falling.intersected || falling.timeSinceLanding > 0) {
             return;
         }
         var d = distToSegment(start, end, falling.position);
