@@ -18,11 +18,10 @@ let fallingObjects: FallingObject[] = [];
 svg.attr('width', width)
     .attr('height', height);
 
-// Add background
-svg.append('rect')
+// Size background
+svg.select('#background')
     .attr('width', width)
-    .attr('height', height)
-    .attr('fill', '#ccc');
+    .attr('height', height);
 
 // Add ground
 svg.append('rect')
@@ -43,7 +42,7 @@ svg.on('mousemove', () => {
     net.attr('x' + String(index), d3.event.x);
     net.attr('y' + String(index), d3.event.y);
 
-    if(!started && index === 2) {
+    if(!started && (index === 2 || location.search.includes('single'))) {
         started = true;
         start();
     }
@@ -94,7 +93,7 @@ const continueFalling = () => {
             falling.timeSinceLanding += Date.now() - lastFrame;
         }
     });
-    fallingObjects = fallingObjects.filter(falling => falling.timeSinceLanding < 4000);
+    fallingObjects = fallingObjects.filter(falling => falling.timeSinceLanding < 3000);
 };
 
 const checkIntersect = () => {

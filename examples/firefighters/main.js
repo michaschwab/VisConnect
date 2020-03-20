@@ -5,11 +5,10 @@ var groundHeight = 100;
 var fallingObjects = [];
 svg.attr('width', width)
     .attr('height', height);
-// Add background
-svg.append('rect')
+// Size background
+svg.select('#background')
     .attr('width', width)
-    .attr('height', height)
-    .attr('fill', '#ccc');
+    .attr('height', height);
 // Add ground
 svg.append('rect')
     .attr('fill', '#875131')
@@ -26,7 +25,7 @@ svg.on('mousemove', function () {
     }
     net.attr('x' + String(index), d3.event.x);
     net.attr('y' + String(index), d3.event.y);
-    if (!started && index === 2) {
+    if (!started && (index === 2 || location.search.includes('single'))) {
         started = true;
         start();
     }
@@ -71,7 +70,7 @@ var continueFalling = function () {
             falling.timeSinceLanding += Date.now() - lastFrame;
         }
     });
-    fallingObjects = fallingObjects.filter(function (falling) { return falling.timeSinceLanding < 4000; });
+    fallingObjects = fallingObjects.filter(function (falling) { return falling.timeSinceLanding < 3000; });
 };
 var checkIntersect = function () {
     var start = { x: parseFloat(net.attr('x1')) || 0, y: parseFloat(net.attr('y1')) || 0 };
