@@ -3,6 +3,7 @@ var svgPos = svg.node().getBoundingClientRect();
 var width = 1000;
 var height = 600;
 var groundHeight = 100;
+var minLength = 100;
 var fallingObjects = [];
 svg.attr('width', width)
     .attr('height', height);
@@ -26,9 +27,10 @@ svg.on('mousemove', function () {
     }
     net.attr('x' + String(index), d3.event.x - svgPos.left);
     net.attr('y' + String(index), d3.event.y - svgPos.top);
-    var length = Math.sqrt(Math.pow(parseFloat(net.attr('x2')) - parseFloat(net.attr('x1')), 2) +
-        Math.pow(parseFloat(net.attr('y2')) - parseFloat(net.attr('y1')), 2));
-    net.attr('opacity', length > 20 ? 1 : 0);
+    var startPos = { x: parseFloat(net.attr('x1')) || 0, y: parseFloat(net.attr('y1')) || 0 };
+    var end = { x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0 };
+    var length = dist(startPos, end);
+    net.attr('opacity', length > minLength ? 1 : 0);
     if (!started && (index === 2 || location.search.includes('single'))) {
         started = true;
         start();
@@ -80,7 +82,7 @@ var checkIntersect = function () {
     var start = { x: parseFloat(net.attr('x1')) || 0, y: parseFloat(net.attr('y1')) || 0 };
     var end = { x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0 };
     var length = dist(start, end);
-    if (length <= 20) {
+    if (length <= minLength) {
         return;
     }
     fallingObjects.forEach(function (falling) {

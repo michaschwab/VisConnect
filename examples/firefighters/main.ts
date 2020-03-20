@@ -14,6 +14,7 @@ const svgPos = svg.node().getBoundingClientRect();
 const width = 1000;
 const height = 600;
 const groundHeight = 100;
+const minLength = 100;
 let fallingObjects: FallingObject[] = [];
 
 svg.attr('width', width)
@@ -43,9 +44,11 @@ svg.on('mousemove', () => {
     net.attr('x' + String(index), d3.event.x - svgPos.left);
     net.attr('y' + String(index), d3.event.y - svgPos.top);
 
-    const length = Math.sqrt(Math.pow(parseFloat(net.attr('x2')) - parseFloat(net.attr('x1')), 2) +
-        Math.pow(parseFloat(net.attr('y2')) - parseFloat(net.attr('y1')), 2));
-    net.attr('opacity', length > 20 ? 1 : 0);
+    const startPos = {x: parseFloat(net.attr('x1')) || 0, y: parseFloat(net.attr('y1')) || 0};
+    const end = {x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0};
+    const length = dist(startPos, end);
+
+    net.attr('opacity', length > minLength ? 1 : 0);
 
     if(!started && (index === 2 || location.search.includes('single'))) {
         started = true;
@@ -106,7 +109,7 @@ const checkIntersect = () => {
     const end = {x: parseFloat(net.attr('x2')) || 0, y: parseFloat(net.attr('y2')) || 0};
     const length = dist(start, end);
 
-    if(length <= 20) {
+    if(length <= minLength) {
         return;
     }
 
