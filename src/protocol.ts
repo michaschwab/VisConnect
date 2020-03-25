@@ -1,19 +1,19 @@
 import {StrippedEvent} from "./listener";
-import {VcCommunication} from "./communication";
+import {VcCommunication, VcCommunicationI} from "./communication";
 
 export class VcProtocol {
     protected ledgers = new Map<string, VcEvent[]>();
     protected lockOwners = new Map<string, string>();
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
-    communication: VcCommunication;
+    communication: VcCommunicationI;
     protected collaboratorId = '';
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
-                mockCommunication?: VcCommunication) {
+                mockCommunication?: VcCommunicationI) {
         if(mockCommunication) {
             this.communication = mockCommunication;
         } else {

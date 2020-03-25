@@ -4,7 +4,13 @@ import {VcConnection} from "./peerjs-connection";
 import {StrippedEvent} from "./listener";
 
 // This file should know all the message types and create the messages
-export class VcCommunication {
+export interface VcCommunicationI {
+    getId: () => string;
+    broadcastEvent: (e: StrippedEvent) => void;
+    requestLock: (selector: string) => boolean;
+}
+
+export class VcCommunication implements VcCommunicationI {
     private peer: VcNetwork;
     private connections: VcConnection[] = [];
     private leaderConnection?: VcConnection;
