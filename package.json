@@ -1,8 +1,8 @@
 {
   "name": "descvis",
   "version": "1.0.0",
-  "description": "Demo at https://dsaffo.github.io/DESCVis/index.html",
-  "main": "descvis-bundle.js",
+  "description": "Demo at https://michaschwab.github.io/VisConnect/",
+  "main": "visconnect-bundle.js",
   "dependencies": {
     "rxjs": "^6.5.4"
   },
@@ -15,17 +15,17 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.js && cp descvis-bundle.js extension/",
+    "compile": "rollup -c rollup.config.js && cp visconnect-bundle.js extension/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dsaffo/DESCVis.git"
+    "url": "git+https://github.com/michaschwab/VisConnect.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/dsaffo/DESCVis/issues"
+    "url": "https://github.com/michaschwab/VisConnect/issues"
   },
-  "homepage": "https://github.com/dsaffo/DESCVis#readme"
+  "homepage": "https://github.com/michaschwab/VisConnect#readme"
 }

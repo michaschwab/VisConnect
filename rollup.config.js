@@ -12,7 +12,7 @@ export default [''].map((name, index) => ({
         typescript({lib: ["es5", "es6", "dom"], target: "es5"})
     ],
     output: {
-        file: `descvis-bundle${name}.js`,
+        file: `visconnect-bundle${name}.js`,
         format: 'cjs'
     }
 }));

@@ -1,5 +1,3 @@
-import {disableStopPropagation} from "./dom";
-
 export interface StrippedEvent {
     type: string,
     target: string,
@@ -10,7 +8,7 @@ export interface StrippedEvent {
     [key: string]: string|number|{clientX: number, clientY: number}[];
 }
 
-export class DescListener {
+export class VcListener {
     constructor(private svg: Element, private hearEvent: (e: StrippedEvent, event: Event) => void) {
         this.addListenersToElementAndChildren(this.svg);
     }
@@ -62,7 +60,7 @@ export class DescListener {
                 // Only capture for the correct target.
                 return;
             }
-            if((e as any)['desc-received']) {
+            if((e as any)['visconnect-received']) {
                 // Don't broadcast events that have been received from other clients.
                 return;
             }

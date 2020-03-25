@@ -1,17 +1,16 @@
-import {DescProtocol} from "./protocol";
+import {VcProtocol} from "./protocol";
 import {StrippedEvent} from "./listener";
-import {DescCommunication} from "./communication";
+import {VcCommunication} from "./communication";
 import {LockService} from "./lock-service";
 
-export class DescLeaderProtocol extends DescProtocol {
-
+export class VcLeaderProtocol extends VcProtocol {
     private lockService: LockService;
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
-                mockCommunication?: DescCommunication) {
+                mockCommunication?: VcCommunication) {
         super(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication);
 
         this.lockService = new LockService(this.communication);

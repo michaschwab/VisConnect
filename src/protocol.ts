@@ -1,23 +1,23 @@
 import {StrippedEvent} from "./listener";
-import {DescCommunication} from "./communication";
+import {VcCommunication} from "./communication";
 
-export class DescProtocol {
-    protected ledgers = new Map<string, DescEvent[]>();
+export class VcProtocol {
+    protected ledgers = new Map<string, VcEvent[]>();
     protected lockOwners = new Map<string, string>();
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
-    communication: DescCommunication;
+    communication: VcCommunication;
     protected collaboratorId = '';
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
-                mockCommunication?: DescCommunication) {
+                mockCommunication?: VcCommunication) {
         if(mockCommunication) {
             this.communication = mockCommunication;
         } else {
-            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this),
+            this.communication = new VcCommunication(leaderId, this.receiveRemoteEvents.bind(this),
                 this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
                 this.init.bind(this));
         }
@@ -42,8 +42,8 @@ export class DescProtocol {
         const lockOwner = this.lockOwners.get(selector);
 
         if(allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
-            const descEvent = this.addEventToLedger(stripped, this.collaboratorId);
-            if(descEvent) {
+            const vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
+            if(vcEvent) {
                 this.communication.broadcastEvent(stripped);
             }
         } else if(lockOwner && lockOwner !== this.collaboratorId) {
@@ -85,8 +85,8 @@ export class DescProtocol {
             const events = this.heldEvents.get(selector)!;
             //console.log('Triggering some held up events', events);
             for(const stripped of events) {
-                const descEvent = this.addEventToLedger(stripped, this.collaboratorId);
-                if(descEvent) {
+                const vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
+                if(vcEvent) {
                     this.communication.broadcastEvent(stripped);
                 }
             }
@@ -131,7 +131,7 @@ export class DescProtocol {
             seqNum = lastEvent.seqNum + 1;
         }
 
-        const newEvent: DescEvent = {
+        const newEvent: VcEvent = {
             seqNum,
             'event': stripped,
             'sender': this.collaboratorId
@@ -143,7 +143,7 @@ export class DescProtocol {
     }
 }
 
-export interface DescEvent {
+export interface VcEvent {
     seqNum: number,
     event: StrippedEvent,
     sender: string

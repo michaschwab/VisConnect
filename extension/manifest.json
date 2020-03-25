@@ -25,6 +25,6 @@
   },
   "web_accessible_resources": [
     "peerjs.1.0.4.min.js",
-    "descvis-bundle.js"
+    "visconnect-bundle.js"
   ]
 }

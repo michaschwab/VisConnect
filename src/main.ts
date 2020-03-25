@@ -1,5 +1,5 @@
-import {DescUi} from "./ui";
-import {DescVis} from "./descvis";
+import {VisConnectUi} from "./ui";
+import {Visconnect} from "./visconnect";
 import {VisConnectUtil} from "./util";
 import {delayAddEventListener, disableStopPropagation} from "./dom";
 var visconnect;
@@ -28,8 +28,8 @@ delayAddEventListener().then(() => {
     }
 
     console.log('start visconnect');
-    visconnect = new DescVis(el, safeMode);
+    visconnect = new Visconnect(el, safeMode);
 
-    visconnectUi = new DescUi(visconnect, el);
+    visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
 });

@@ -1,10 +1,10 @@
-import {DescCommunication} from "./communication";
+import {VcCommunication} from "./communication";
 
 export class LockService {
     protected lockOwners = new Map<string, string>();
     protected lockTimeouts = new Map<string, number>();
 
-    constructor(protected communication: DescCommunication) {
+    constructor(protected communication: VcCommunication) {
 
     }
 

@@ -1,26 +1,26 @@
 'use strict';
 
-var DescUi = /** @class */ (function () {
-    function DescUi(descvis, element) {
-        this.descvis = descvis;
+var VisConnectUi = /** @class */ (function () {
+    function VisConnectUi(visconnect, element) {
+        this.visconnect = visconnect;
         this.element = element;
         this.cursorResetTimeout = 0;
         this.addTemplate();
         this.initiateCursors();
-        this.descvis.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        this.visconnect.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
         this.updateConnections();
     }
-    DescUi.prototype.initiateCursors = function () {
+    VisConnectUi.prototype.initiateCursors = function () {
         this.element.addEventListener('mousemove', this.mouseMoved.bind(this));
         var container = document.createElement('div');
-        container.id = 'desc-cursors';
+        container.id = 'visconnect-cursors';
         document.body.appendChild(container);
     };
-    DescUi.prototype.getCursor = function (participant) {
-        var elementId = "desc-cursor-" + participant;
+    VisConnectUi.prototype.getCursor = function (participant) {
+        var elementId = "visconnect-cursor-" + participant;
         var cursor = document.getElementById(elementId);
         if (!cursor) {
-            var cursors = document.getElementById('desc-cursors');
+            var cursors = document.getElementById('visconnect-cursors');
             cursor = document.createElement('div');
             cursor.style.background = stringToHex(participant);
             cursor.style.width = '5px';
@@ -33,9 +33,9 @@ var DescUi = /** @class */ (function () {
         }
         return cursor;
     };
-    DescUi.prototype.mouseMoved = function (originalEvent) {
+    VisConnectUi.prototype.mouseMoved = function (originalEvent) {
         var event = originalEvent;
-        var ownId = this.descvis.protocol.communication.id;
+        var ownId = this.visconnect.protocol.communication.id;
         var collaborator = event['collaboratorId'];
         if (!collaborator || !ownId || ownId === collaborator) {
             return;
@@ -44,7 +44,7 @@ var DescUi = /** @class */ (function () {
         cursor.style.left = event.clientX - 2 + "px";
         cursor.style.top = event.clientY - 2 + "px";
     };
-    DescUi.prototype.eventCancelled = function (event) {
+    VisConnectUi.prototype.eventCancelled = function (event) {
         clearTimeout(this.cursorResetTimeout);
         var target = document.querySelector(event.target) || document.body;
         target.style.setProperty('cursor', 'not-allowed', 'important');
@@ -52,25 +52,25 @@ var DescUi = /** @class */ (function () {
             target.style.removeProperty('cursor');
         }, 50);
     };
-    DescUi.prototype.updateConnections = function () {
-        var connections = this.descvis.protocol.communication.getNumberOfConnections();
+    VisConnectUi.prototype.updateConnections = function () {
+        var connections = this.visconnect.protocol.communication.getNumberOfConnections();
         var collaborators = connections - 1;
         if (collaborators > 0) {
-            document.getElementById('desc-container').style.height = '70px';
-            document.getElementById('desc-collab-notice').style.display = 'inline';
-            document.getElementById('desc-collab-count').innerText = String(collaborators);
+            document.getElementById('visconnect-container').style.height = '70px';
+            document.getElementById('visconnect-collab-notice').style.display = 'inline';
+            document.getElementById('visconnect-collab-count').innerText = String(collaborators);
         }
         else {
-            document.getElementById('desc-container').style.height = '50px';
-            document.getElementById('desc-collab-notice').style.display = 'none';
+            document.getElementById('visconnect-container').style.height = '50px';
+            document.getElementById('visconnect-collab-notice').style.display = 'none';
         }
     };
-    DescUi.prototype.invite = function () {
-        var communication = this.descvis.protocol.communication;
+    VisConnectUi.prototype.invite = function () {
+        var communication = this.visconnect.protocol.communication;
         var leaderId = communication.leaderId;
-        var logo = document.getElementById('desc-logo');
+        var logo = document.getElementById('visconnect-logo');
         if (!leaderId) {
-            var errorElement_1 = document.getElementById('desc-not-ready');
+            var errorElement_1 = document.getElementById('visconnect-not-ready');
             logo.style.display = 'none';
             errorElement_1.style.display = 'inline';
             setTimeout(function () {
@@ -81,7 +81,7 @@ var DescUi = /** @class */ (function () {
         }
         var url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
         copyToClipboard(url);
-        var inviteLinkCopied = document.getElementById('desc-link-copied');
+        var inviteLinkCopied = document.getElementById('visconnect-link-copied');
         logo.style.display = 'none';
         inviteLinkCopied.style.display = 'inline';
         setTimeout(function () {
@@ -89,14 +89,14 @@ var DescUi = /** @class */ (function () {
             inviteLinkCopied.style.display = 'none';
         }, 2000);
     };
-    DescUi.prototype.addTemplate = function () {
+    VisConnectUi.prototype.addTemplate = function () {
         var container = document.createElement('div');
-        container.id = 'desc-container';
-        container.innerHTML = "\n<a id=\"desc-invite\">\n    <!--<svg id=\"desc-logo\" width=\"50\" aria-hidden=\"true\" focusable=\"false\" data-prefix=\"fas\" data-icon=\"link\" role=\"img\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" class=\"svg-inline&#45;&#45;fa fa-link fa-w-16 fa-2x\"><path fill=\"#fff\" d=\"M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z\" class=\"\"></path></svg>-->\n    <svg id=\"desc-logo\" width=\"50\" version=\"1.1\" viewBox=\"0 0 55.55724 55.55724\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:cc=\"http://creativecommons.org/ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n        <g transform=\"translate(-15.5 -20.905)\">\n            <path d=\"m49.236 53.67s-6.0878-19.94-22.215-6.3478c-10.3 8.6812-12.464 16.499-6.203 23.516 7.1388 8.0014 16.301 3.8953 25.966-10.387\" fill=\"none\" stroke=\"#36b\" stroke-width=\"3\"/>\n            <path d=\"m36.975 38.666s14.57-21.929 26.543-12.407c11.973 9.5217 1.9956 17.866-2.3081 22.362-6.4915 6.7806-14.408 11.996-20.629 5.0494-3.8794-4.3324-4.3277-7.6462-4.3277-7.6462\" fill=\"none\" stroke=\"#36b\" stroke-width=\"3\"/>\n            <path d=\"m61.313 40.246h-3.6787l1.936 4.6647c0.13471 0.32337-0.01958 0.68598-0.32747 0.82317l-1.7049 0.73499c-0.31772 0.13713-0.67422-0.01936-0.80906-0.33321l-1.8397-4.4295-3.0052 3.0575c-0.40047 0.40736-1.05 0.09324-1.05-0.44098v-14.738c0-0.56252 0.69082-0.83679 1.0499-0.44098l9.8624 10.034c0.39783 0.38345 0.10406 1.0682-0.43342 1.0682z\" fill=\"#fff\" stroke=\"#000\"/>\n            <path d=\"m37.341 62.869h-3.6787l1.936 4.6647c0.13472 0.32337-0.01958 0.68598-0.32747 0.82317l-1.7049 0.73499c-0.31772 0.13713-0.67422-0.01936-0.80906-0.33321l-1.8397-4.4295-3.0052 3.0575c-0.40047 0.40736-1.05 0.09324-1.05-0.44098v-14.738c0-0.56253 0.69082-0.83679 1.0499-0.44098l9.8624 10.034c0.39783 0.38345 0.10406 1.0682-0.43342 1.0682z\" fill=\"#fff\" stroke=\"#000\"/>\n        </g>\n    </svg>\n</a>\n<span id=\"desc-link-copied\">Invite Link Copied.</span>\n<span id=\"desc-not-ready\">Not yet ready...</span>\n<span id=\"desc-collab-notice\"><span id=\"desc-collab-count\"></span> connected</span>\n\n<style>\n#desc-container {\n    position: fixed;\n    right: 10px;\n    bottom: 100px;\n    background: rgba(120,120,120,0.5);\n    border: 1px solid #ccc;\n    border-radius: 10px;\n    width: 80px;\n    height: 50px;\n    padding: 10px;\n    transition: height 500ms;\n    color: #fff;\n    font-family: 'Times New Roman',Times;\n}\n#desc-logo {\n    padding-left: 15px;\n    display: block;\n    background: transparent;\n}\n#desc-invite:hover {\n    cursor: pointer;\n}\n#desc-invite:hover #desc-logo path {\n    stroke: #000;\n} \n#desc-link-copied, #desc-collab-notice, #desc-not-ready {\n    display: none;\n}\n#desc-collab-notice {\n    font-size: 11pt;\n    position: relative;\n    top: 5px;\n    display: inline-block;\n    width: 100px;\n}\n</style>";
+        container.id = 'visconnect-container';
+        container.innerHTML = "\n<a id=\"visconnect-invite\">\n    <!--<svg id=\"visconnect-logo\" width=\"50\" aria-hidden=\"true\" focusable=\"false\" data-prefix=\"fas\" data-icon=\"link\" role=\"img\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" class=\"svg-inline&#45;&#45;fa fa-link fa-w-16 fa-2x\"><path fill=\"#fff\" d=\"M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z\" class=\"\"></path></svg>-->\n    <svg id=\"visconnect-logo\" width=\"50\" version=\"1.1\" viewBox=\"0 0 55.55724 55.55724\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:cc=\"http://creativecommons.org/ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n        <g transform=\"translate(-15.5 -20.905)\">\n            <path d=\"m49.236 53.67s-6.0878-19.94-22.215-6.3478c-10.3 8.6812-12.464 16.499-6.203 23.516 7.1388 8.0014 16.301 3.8953 25.966-10.387\" fill=\"none\" stroke=\"#36b\" stroke-width=\"3\"/>\n            <path d=\"m36.975 38.666s14.57-21.929 26.543-12.407c11.973 9.5217 1.9956 17.866-2.3081 22.362-6.4915 6.7806-14.408 11.996-20.629 5.0494-3.8794-4.3324-4.3277-7.6462-4.3277-7.6462\" fill=\"none\" stroke=\"#36b\" stroke-width=\"3\"/>\n            <path d=\"m61.313 40.246h-3.6787l1.936 4.6647c0.13471 0.32337-0.01958 0.68598-0.32747 0.82317l-1.7049 0.73499c-0.31772 0.13713-0.67422-0.01936-0.80906-0.33321l-1.8397-4.4295-3.0052 3.0575c-0.40047 0.40736-1.05 0.09324-1.05-0.44098v-14.738c0-0.56252 0.69082-0.83679 1.0499-0.44098l9.8624 10.034c0.39783 0.38345 0.10406 1.0682-0.43342 1.0682z\" fill=\"#fff\" stroke=\"#000\"/>\n            <path d=\"m37.341 62.869h-3.6787l1.936 4.6647c0.13472 0.32337-0.01958 0.68598-0.32747 0.82317l-1.7049 0.73499c-0.31772 0.13713-0.67422-0.01936-0.80906-0.33321l-1.8397-4.4295-3.0052 3.0575c-0.40047 0.40736-1.05 0.09324-1.05-0.44098v-14.738c0-0.56253 0.69082-0.83679 1.0499-0.44098l9.8624 10.034c0.39783 0.38345 0.10406 1.0682-0.43342 1.0682z\" fill=\"#fff\" stroke=\"#000\"/>\n        </g>\n    </svg>\n</a>\n<span id=\"visconnect-link-copied\">Invite Link Copied.</span>\n<span id=\"visconnect-not-ready\">Not yet ready...</span>\n<span id=\"visconnect-collab-notice\"><span id=\"visconnect-collab-count\"></span> connected</span>\n\n<style>\n#visconnect-container {\n    position: fixed;\n    right: 10px;\n    bottom: 100px;\n    background: rgba(120,120,120,0.5);\n    border: 1px solid #ccc;\n    border-radius: 10px;\n    width: 80px;\n    height: 50px;\n    padding: 10px;\n    transition: height 500ms;\n    color: #fff;\n    font-family: 'Times New Roman',Times;\n}\n#visconnect-logo {\n    padding-left: 15px;\n    display: block;\n    background: transparent;\n}\n#visconnect-invite:hover {\n    cursor: pointer;\n}\n#visconnect-invite:hover #visconnect-logo path {\n    stroke: #000;\n} \n#visconnect-link-copied, #visconnect-collab-notice, #visconnect-not-ready {\n    display: none;\n}\n#visconnect-collab-notice {\n    font-size: 11pt;\n    position: relative;\n    top: 5px;\n    display: inline-block;\n    width: 100px;\n}\n</style>";
         document.body.appendChild(container);
-        document.getElementById('desc-invite').onclick = this.invite.bind(this);
+        document.getElementById('visconnect-invite').onclick = this.invite.bind(this);
     };
-    return DescUi;
+    return VisConnectUi;
 }());
 // From https://hackernoon.com/copying-text-to-clipboard-with-javascript-df4d4988697f
 var copyToClipboard = function (str) {
@@ -134,20 +134,20 @@ var stringToHex = function (string) {
     return color;
 };
 
-var DescListener = /** @class */ (function () {
-    function DescListener(svg, hearEvent) {
+var VcListener = /** @class */ (function () {
+    function VcListener(svg, hearEvent) {
         this.svg = svg;
         this.hearEvent = hearEvent;
         this.addListenersToElementAndChildren(this.svg);
     }
-    DescListener.prototype.addListenersToElementAndChildren = function (element) {
+    VcListener.prototype.addListenersToElementAndChildren = function (element) {
         this.addListenersToElement(element);
         for (var _i = 0, _a = element.children; _i < _a.length; _i++) {
             var child = _a[_i];
             this.addListenersToElementAndChildren(child);
         }
     };
-    DescListener.prototype.addListenersToElement = function (element) {
+    VcListener.prototype.addListenersToElement = function (element) {
         var boundCapture = this.captureEvent(element).bind(this);
         element.addEventListener('mousemove', boundCapture);
         element.addEventListener('mouseup', boundCapture);
@@ -176,14 +176,14 @@ var DescListener = /** @class */ (function () {
             return insertBeforeBackup.call(this, newChild, nextChild);
         };
     };
-    DescListener.prototype.captureEvent = function (element) {
+    VcListener.prototype.captureEvent = function (element) {
         var _this = this;
         return function (e) {
             if (e.target !== element) {
                 // Only capture for the correct target.
                 return;
             }
-            if (e['desc-received']) {
+            if (e['visconnect-received']) {
                 // Don't broadcast events that have been received from other clients.
                 return;
             }
@@ -192,7 +192,7 @@ var DescListener = /** @class */ (function () {
             _this.hearEvent(eventObj, e);
         };
     };
-    DescListener.prototype.getStrippedEvent = function (e) {
+    VcListener.prototype.getStrippedEvent = function (e) {
         var obj = { type: '', target: '', targetType: '', touches: [], timeStamp: -1, collaboratorId: '' };
         for (var key in e) {
             var val = e[key];
@@ -225,7 +225,7 @@ var DescListener = /** @class */ (function () {
         }
         return obj;
     };
-    DescListener.prototype.getElementSelector = function (element) {
+    VcListener.prototype.getElementSelector = function (element) {
         if (!element) {
             return null;
         }
@@ -240,12 +240,12 @@ var DescListener = /** @class */ (function () {
         var type = element.tagName;
         return this.getElementSelector(parent) + (" > " + type + ":nth-child(" + (index + 1) + ")");
     };
-    return DescListener;
+    return VcListener;
 }());
 
 function delayAddEventListener() {
-    // The visualization's event listeners need to be called after DESCVis' event listeners.
-    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    // The visualization's event listeners need to be called after VisConnect's event listeners.
+    // For this reason, we delay calling event listeners that are added before VisConnect is started.
     Element.prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
     Element.prototype.addEventListener = function (eventName, callback) {
         //console.log('doing a delayed execution on ', eventName, this);
@@ -255,7 +255,7 @@ function delayAddEventListener() {
         }, 110);
     };
     // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
-    // DESCVis.
+    // VisConnect.
     return new Promise(function (resolve) {
         window.setTimeout(function () {
             Element.prototype.addEventListener = Element.prototype['addEventListenerBackup'];
@@ -264,7 +264,7 @@ function delayAddEventListener() {
     });
 }
 function disableStopPropagation() {
-    // Prevent d3 from blocking DescVis and other code to have access to events.
+    // Prevent d3 from blocking VisConnect and other code to have access to events.
     Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
     Event.prototype.stopImmediatePropagation = function () { };
 }
@@ -1266,8 +1266,8 @@ var PeerjsNetwork = /** @class */ (function () {
 }());
 
 // This file should know all the message types and create the messages
-var DescCommunication = /** @class */ (function () {
-    function DescCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, onOpenCallback) {
+var VcCommunication = /** @class */ (function () {
+    function VcCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, onOpenCallback) {
         this.leaderId = leaderId;
         this.onEventReceived = onEventReceived;
         this.onNewLockOwner = onNewLockOwner;
@@ -1286,7 +1286,7 @@ var DescCommunication = /** @class */ (function () {
     /**
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
-    DescCommunication.prototype.requestLock = function (targetSelector) {
+    VcCommunication.prototype.requestLock = function (targetSelector) {
         if (!this.id) {
             return false;
         }
@@ -1294,7 +1294,7 @@ var DescCommunication = /** @class */ (function () {
             return false;
         }
         var msg = {
-            type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+            type: VC_MESSAGE_TYPE.LOCK_REQUESTED,
             targetSelector: targetSelector,
             requester: this.id,
             sender: this.id,
@@ -1312,9 +1312,9 @@ var DescCommunication = /** @class */ (function () {
     /**
      * This message is sent by the leader to inform clients that an element's lock owner has changed.
      */
-    DescCommunication.prototype.changeLockOwner = function (targetSelector, owner) {
+    VcCommunication.prototype.changeLockOwner = function (targetSelector, owner) {
         var msg = {
-            type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+            type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
             targetSelector: targetSelector,
             owner: owner,
             sender: this.id,
@@ -1325,10 +1325,10 @@ var DescCommunication = /** @class */ (function () {
         }
         this.receiveMessage(msg); // Tell itself that the lock owner has changed.
     };
-    DescCommunication.prototype.getId = function () {
+    VcCommunication.prototype.getId = function () {
         return this.peer.getId();
     };
-    DescCommunication.prototype.onOpen = function () {
+    VcCommunication.prototype.onOpen = function () {
         this.id = this.getId();
         if (!this.leaderId) {
             this.leaderId = this.id;
@@ -1342,10 +1342,10 @@ var DescCommunication = /** @class */ (function () {
         this.onOpenCallback();
         this.onConnectionCallback();
     };
-    DescCommunication.prototype.getNumberOfConnections = function () {
+    VcCommunication.prototype.getNumberOfConnections = function () {
         return this.connections.length;
     };
-    DescCommunication.prototype.onConnection = function (connection) {
+    VcCommunication.prototype.onConnection = function (connection) {
         return __awaiter(this, void 0, void 0, function () {
             var peer;
             return __generator(this, function (_a) {
@@ -1372,7 +1372,7 @@ var DescCommunication = /** @class */ (function () {
             });
         });
     };
-    DescCommunication.prototype.onDisconnection = function () {
+    VcCommunication.prototype.onDisconnection = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 this.sendDisconnectMessage();
@@ -1380,7 +1380,7 @@ var DescCommunication = /** @class */ (function () {
             });
         });
     };
-    DescCommunication.prototype.connectToPeer = function (id) {
+    VcCommunication.prototype.connectToPeer = function (id) {
         return __awaiter(this, void 0, void 0, function () {
             var connection, peer;
             return __generator(this, function (_a) {
@@ -1402,31 +1402,31 @@ var DescCommunication = /** @class */ (function () {
             });
         });
     };
-    DescCommunication.prototype.receiveMessage = function (data) {
-        if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
+    VcCommunication.prototype.receiveMessage = function (data) {
+        if (data.type === VC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data);
         }
-        else if (data.type === DESC_MESSAGE_TYPE.EVENT) {
+        else if (data.type === VC_MESSAGE_TYPE.EVENT) {
             var msg = data;
             this.onEventReceived(msg.data, msg.sender);
         }
-        else if (data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
+        else if (data.type === VC_MESSAGE_TYPE.LOCK_REQUESTED) {
             var msg = data;
             this.onLockRequested(msg.targetSelector, msg.requester);
         }
-        else if (data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
+        else if (data.type === VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             var msg = data;
             this.onNewLockOwner(msg.targetSelector, msg.owner);
         }
-        else if (data.type === DESC_MESSAGE_TYPE.DISCONNECTION) {
+        else if (data.type === VC_MESSAGE_TYPE.DISCONNECTION) {
             var msg = data;
             this.recieveDisconnectMessage(msg);
         }
     };
-    DescCommunication.prototype.broadcastEvent = function (e) {
+    VcCommunication.prototype.broadcastEvent = function (e) {
         if (!this.eventsMsg) {
             this.eventsMsg = {
-                'type': DESC_MESSAGE_TYPE.EVENT,
+                'type': VC_MESSAGE_TYPE.EVENT,
                 'sender': this.id,
                 data: [],
             };
@@ -1434,7 +1434,7 @@ var DescCommunication = /** @class */ (function () {
         this.eventsMsg.data.push(e);
         this.throttledSendEvents();
     };
-    DescCommunication.prototype.throttledSendEvents = function () {
+    VcCommunication.prototype.throttledSendEvents = function () {
         var _this = this;
         if (!this.eventsMsg) {
             return;
@@ -1453,17 +1453,17 @@ var DescCommunication = /** @class */ (function () {
         };
         window.requestAnimationFrame(onSend);
     };
-    DescCommunication.prototype.sendNewConnection = function (conn) {
+    VcCommunication.prototype.sendNewConnection = function (conn) {
         //console.log("Sending new connection message");
         var decoratedMessage = {
-            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
+            'type': VC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
             'peers': this.peers,
             'eventsLedger': this.getPastEvents(),
         };
         conn.send(decoratedMessage);
     };
-    DescCommunication.prototype.receiveNewConnection = function (data) {
+    VcCommunication.prototype.receiveNewConnection = function (data) {
         //console.log("New connection message", data);
         for (var i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
@@ -1471,11 +1471,11 @@ var DescCommunication = /** @class */ (function () {
                 this.connectToPeer(data.peers[i]);
             }
         }
-        this.onEventReceived(data.eventsLedger.map(function (descEvent) { return descEvent.event; }), data.sender, true);
+        this.onEventReceived(data.eventsLedger.map(function (vcEvent) { return vcEvent.event; }), data.sender, true);
     };
-    DescCommunication.prototype.sendDisconnectMessage = function () {
+    VcCommunication.prototype.sendDisconnectMessage = function () {
         var decoratedMessage = {
-            'type': DESC_MESSAGE_TYPE.DISCONNECTION,
+            'type': VC_MESSAGE_TYPE.DISCONNECTION,
             'sender': this.id
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
@@ -1483,7 +1483,7 @@ var DescCommunication = /** @class */ (function () {
             conn.send(decoratedMessage);
         }
     };
-    DescCommunication.prototype.recieveDisconnectMessage = function (msg) {
+    VcCommunication.prototype.recieveDisconnectMessage = function (msg) {
         console.log("Peer", msg.sender, "is disconnecting");
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
@@ -1496,20 +1496,20 @@ var DescCommunication = /** @class */ (function () {
         }
         this.onConnectionCallback();
     };
-    return DescCommunication;
+    return VcCommunication;
 }());
-var DESC_MESSAGE_TYPE;
-(function (DESC_MESSAGE_TYPE) {
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["NEW_CONNECTION"] = 0] = "NEW_CONNECTION";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_REQUESTED"] = 2] = "LOCK_REQUESTED";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_VOTE"] = 3] = "LOCK_VOTE";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["LOCK_OWNER_CHANGED"] = 4] = "LOCK_OWNER_CHANGED";
-    DESC_MESSAGE_TYPE[DESC_MESSAGE_TYPE["DISCONNECTION"] = 5] = "DISCONNECTION";
-})(DESC_MESSAGE_TYPE || (DESC_MESSAGE_TYPE = {}));
+var VC_MESSAGE_TYPE;
+(function (VC_MESSAGE_TYPE) {
+    VC_MESSAGE_TYPE[VC_MESSAGE_TYPE["NEW_CONNECTION"] = 0] = "NEW_CONNECTION";
+    VC_MESSAGE_TYPE[VC_MESSAGE_TYPE["EVENT"] = 1] = "EVENT";
+    VC_MESSAGE_TYPE[VC_MESSAGE_TYPE["LOCK_REQUESTED"] = 2] = "LOCK_REQUESTED";
+    VC_MESSAGE_TYPE[VC_MESSAGE_TYPE["LOCK_VOTE"] = 3] = "LOCK_VOTE";
+    VC_MESSAGE_TYPE[VC_MESSAGE_TYPE["LOCK_OWNER_CHANGED"] = 4] = "LOCK_OWNER_CHANGED";
+    VC_MESSAGE_TYPE[VC_MESSAGE_TYPE["DISCONNECTION"] = 5] = "DISCONNECTION";
+})(VC_MESSAGE_TYPE || (VC_MESSAGE_TYPE = {}));
 
-var DescProtocol = /** @class */ (function () {
-    function DescProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
+var VcProtocol = /** @class */ (function () {
+    function VcProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
         this.leaderId = leaderId;
         this.executeEvent = executeEvent;
         this.cancelEvent = cancelEvent;
@@ -1523,17 +1523,17 @@ var DescProtocol = /** @class */ (function () {
             this.communication = mockCommunication;
         }
         else {
-            this.communication = new DescCommunication(leaderId, this.receiveRemoteEvents.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.init.bind(this));
+            this.communication = new VcCommunication(leaderId, this.receiveRemoteEvents.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.init.bind(this));
         }
     }
-    DescProtocol.prototype.init = function () {
+    VcProtocol.prototype.init = function () {
         this.collaboratorId = this.communication.getId();
     };
-    DescProtocol.prototype.getPastEvents = function () {
+    VcProtocol.prototype.getPastEvents = function () {
         var events = Array.from(this.ledgers.values()).reduce(function (a, b) { return a.concat(b); }, []);
         return events.sort(function (a, b) { return a.event.timeStamp - b.event.timeStamp; });
     };
-    DescProtocol.prototype.localEvent = function (stripped) {
+    VcProtocol.prototype.localEvent = function (stripped) {
         var selector = stripped.target;
         stripped.collaboratorId = this.communication.getId();
         //console.log('local event on ', selector, this.lockOwners.get(selector), this.collaboratorId);
@@ -1541,8 +1541,8 @@ var DescProtocol = /** @class */ (function () {
         var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
         var lockOwner = this.lockOwners.get(selector);
         if (allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
-            var descEvent = this.addEventToLedger(stripped, this.collaboratorId);
-            if (descEvent) {
+            var vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
+            if (vcEvent) {
                 this.communication.broadcastEvent(stripped);
             }
         }
@@ -1559,17 +1559,17 @@ var DescProtocol = /** @class */ (function () {
             this.requestLock(selector);
         }
     };
-    DescProtocol.prototype.receiveRemoteEvents = function (events, sender, catchup) {
+    VcProtocol.prototype.receiveRemoteEvents = function (events, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
             var stripped = events_1[_i];
             this.addEventToLedger(stripped, sender, catchup);
         }
     };
-    DescProtocol.prototype.receiveLockRequest = function (selector, requester) {
+    VcProtocol.prototype.receiveLockRequest = function (selector, requester) {
         console.error('Clients are not supposed to receive lock requests.');
     };
-    DescProtocol.prototype.lockOwnerChanged = function (selector, owner) {
+    VcProtocol.prototype.lockOwnerChanged = function (selector, owner) {
         //console.log('Lock owner changed', selector, owner, this.collaboratorId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
         if (!owner) {
@@ -1583,15 +1583,15 @@ var DescProtocol = /** @class */ (function () {
             //console.log('Triggering some held up events', events);
             for (var _i = 0, events_2 = events; _i < events_2.length; _i++) {
                 var stripped = events_2[_i];
-                var descEvent = this.addEventToLedger(stripped, this.collaboratorId);
-                if (descEvent) {
+                var vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
+                if (vcEvent) {
                     this.communication.broadcastEvent(stripped);
                 }
             }
         }
         this.heldEvents.delete(selector);
     };
-    DescProtocol.prototype.requestLock = function (selector) {
+    VcProtocol.prototype.requestLock = function (selector) {
         if (this.requestedLocks.has(selector)) {
             return;
         }
@@ -1601,7 +1601,7 @@ var DescProtocol = /** @class */ (function () {
             this.requestedLocks.add(selector);
         }
     };
-    DescProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
+    VcProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         var selector = stripped.target;
         var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
@@ -1631,7 +1631,7 @@ var DescProtocol = /** @class */ (function () {
         ledger.push(newEvent);
         return true;
     };
-    return DescProtocol;
+    return VcProtocol;
 }());
 
 var LockService = /** @class */ (function () {
@@ -1666,9 +1666,9 @@ var LockService = /** @class */ (function () {
     return LockService;
 }());
 
-var DescLeaderProtocol = /** @class */ (function (_super) {
-    __extends(DescLeaderProtocol, _super);
-    function DescLeaderProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
+var VcLeaderProtocol = /** @class */ (function (_super) {
+    __extends(VcLeaderProtocol, _super);
+    function VcLeaderProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
         var _this = _super.call(this, leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) || this;
         _this.leaderId = leaderId;
         _this.executeEvent = executeEvent;
@@ -1677,21 +1677,21 @@ var DescLeaderProtocol = /** @class */ (function (_super) {
         _this.lockService = new LockService(_this.communication);
         return _this;
     }
-    DescLeaderProtocol.prototype.receiveLockRequest = function (selector, requester) {
+    VcLeaderProtocol.prototype.receiveLockRequest = function (selector, requester) {
         this.lockService.requestLock(selector, requester);
     };
-    DescLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
+    VcLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
         var success = _super.prototype.addEventToLedger.call(this, stripped, sender);
         if (success) {
             this.lockService.extendLock(stripped.target);
         }
         return success;
     };
-    return DescLeaderProtocol;
-}(DescProtocol));
+    return VcLeaderProtocol;
+}(VcProtocol));
 
-var DescVis = /** @class */ (function () {
-    function DescVis(svg, safeMode) {
+var Visconnect = /** @class */ (function () {
+    function Visconnect(svg, safeMode) {
         if (safeMode === void 0) { safeMode = true; }
         this.svg = svg;
         this.safeMode = safeMode;
@@ -1699,30 +1699,30 @@ var DescVis = /** @class */ (function () {
         var parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
         var leaderId = parts ? parts[1] : '';
         var isLeader = !leaderId;
-        var Protocol = isLeader ? DescLeaderProtocol : DescProtocol;
+        var Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
         var unsafeElements = safeMode ? ['body', 'svg', 'g'] : ['*'];
         this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this), unsafeElements);
-        this.listener = new DescListener(this.svg, this.localEvent.bind(this));
+        this.listener = new VcListener(this.svg, this.localEvent.bind(this));
     }
-    DescVis.prototype.localEvent = function (stripped, event) {
+    Visconnect.prototype.localEvent = function (stripped, event) {
         stopPropagation(event);
         event.preventDefault();
         this.protocol.localEvent(stripped);
     };
-    DescVis.prototype.cancelEvent = function (event) {
+    Visconnect.prototype.cancelEvent = function (event) {
         this.onEventCancelled(event);
     };
-    DescVis.prototype.executeEvent = function (stripped) {
+    Visconnect.prototype.executeEvent = function (stripped) {
         var event = recreateEvent(stripped, this.svg);
         //console.log('executing event', stripped, event);
-        event['desc-received'] = true;
+        event['visconnect-received'] = true;
         event['collaboratorId'] = stripped.collaboratorId;
         event['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
         if (event.target) {
             event.target.dispatchEvent(event);
         }
     };
-    return DescVis;
+    return Visconnect;
 }());
 
 var VisConnectUtil = /** @class */ (function () {
@@ -1862,7 +1862,7 @@ delayAddEventListener().then(function () {
         el = document.body;
     }
     console.log('start visconnect');
-    visconnect = new DescVis(el, safeMode);
-    visconnectUi = new DescUi(visconnect, el);
+    visconnect = new Visconnect(el, safeMode);
+    visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
 });

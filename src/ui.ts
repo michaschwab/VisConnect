@@ -1,14 +1,14 @@
-import {DescVis} from "./descvis";
+import {Visconnect} from "./visconnect";
 import {StrippedEvent} from "./listener";
 
-export class DescUi {
+export class VisConnectUi {
     private cursorResetTimeout = 0;
 
-    constructor(private descvis: DescVis, private element: Element) {
+    constructor(private visconnect: Visconnect, private element: Element) {
         this.addTemplate();
         this.initiateCursors();
 
-        this.descvis.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        this.visconnect.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
         this.updateConnections();
     }
 
@@ -16,15 +16,15 @@ export class DescUi {
         this.element.addEventListener('mousemove', this.mouseMoved.bind(this));
 
         const container = document.createElement('div');
-        container.id = 'desc-cursors';
+        container.id = 'visconnect-cursors';
         document.body.appendChild(container);
     }
 
     getCursor(participant: string) {
-        const elementId = `desc-cursor-${participant}`;
+        const elementId = `visconnect-cursor-${participant}`;
         let cursor = document.getElementById(elementId);
         if(!cursor) {
-            const cursors = document.getElementById('desc-cursors')!;
+            const cursors = document.getElementById('visconnect-cursors')!;
             cursor = document.createElement('div');
             cursor.style.background = stringToHex(participant);
             cursor.style.width = '5px';
@@ -40,7 +40,7 @@ export class DescUi {
 
     mouseMoved(originalEvent: Event) {
         const event = originalEvent as MouseEvent & {collaboratorId: string};
-        const ownId = this.descvis.protocol.communication.id;
+        const ownId = this.visconnect.protocol.communication.id;
         const collaborator = event['collaboratorId'];
         if(!collaborator || !ownId || ownId === collaborator) {
             return;
@@ -60,26 +60,26 @@ export class DescUi {
     }
 
     updateConnections() {
-        const connections = this.descvis.protocol.communication.getNumberOfConnections();
+        const connections = this.visconnect.protocol.communication.getNumberOfConnections();
         const collaborators = connections - 1;
 
         if(collaborators > 0) {
-            document.getElementById('desc-container')!.style.height = '70px';
-            document.getElementById('desc-collab-notice')!.style.display = 'inline';
-            document.getElementById('desc-collab-count')!.innerText = String(collaborators);
+            document.getElementById('visconnect-container')!.style.height = '70px';
+            document.getElementById('visconnect-collab-notice')!.style.display = 'inline';
+            document.getElementById('visconnect-collab-count')!.innerText = String(collaborators);
         } else {
-            document.getElementById('desc-container')!.style.height = '50px';
-            document.getElementById('desc-collab-notice')!.style.display = 'none';
+            document.getElementById('visconnect-container')!.style.height = '50px';
+            document.getElementById('visconnect-collab-notice')!.style.display = 'none';
         }
     }
 
     invite() {
-        const communication = this.descvis.protocol.communication;
+        const communication = this.visconnect.protocol.communication;
         const leaderId = communication.leaderId;
-        const logo = document.getElementById('desc-logo')!;
+        const logo = document.getElementById('visconnect-logo')!;
 
         if(!leaderId) {
-            const errorElement = document.getElementById('desc-not-ready')!;
+            const errorElement = document.getElementById('visconnect-not-ready')!;
             logo.style.display = 'none';
             errorElement.style.display = 'inline';
 
@@ -93,7 +93,7 @@ export class DescUi {
         const url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
         copyToClipboard(url);
 
-        const inviteLinkCopied = document.getElementById('desc-link-copied')!;
+        const inviteLinkCopied = document.getElementById('visconnect-link-copied')!;
 
         logo.style.display = 'none';
         inviteLinkCopied.style.display = 'inline';
@@ -106,12 +106,12 @@ export class DescUi {
 
     addTemplate() {
         const container = document.createElement('div');
-        container.id = 'desc-container';
+        container.id = 'visconnect-container';
 
         container.innerHTML = `
-<a id="desc-invite">
-    <!--<svg id="desc-logo" width="50" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="link" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline&#45;&#45;fa fa-link fa-w-16 fa-2x"><path fill="#fff" d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z" class=""></path></svg>-->
-    <svg id="desc-logo" width="50" version="1.1" viewBox="0 0 55.55724 55.55724" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<a id="visconnect-invite">
+    <!--<svg id="visconnect-logo" width="50" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="link" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline&#45;&#45;fa fa-link fa-w-16 fa-2x"><path fill="#fff" d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z" class=""></path></svg>-->
+    <svg id="visconnect-logo" width="50" version="1.1" viewBox="0 0 55.55724 55.55724" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
         <g transform="translate(-15.5 -20.905)">
             <path d="m49.236 53.67s-6.0878-19.94-22.215-6.3478c-10.3 8.6812-12.464 16.499-6.203 23.516 7.1388 8.0014 16.301 3.8953 25.966-10.387" fill="none" stroke="#36b" stroke-width="3"/>
             <path d="m36.975 38.666s14.57-21.929 26.543-12.407c11.973 9.5217 1.9956 17.866-2.3081 22.362-6.4915 6.7806-14.408 11.996-20.629 5.0494-3.8794-4.3324-4.3277-7.6462-4.3277-7.6462" fill="none" stroke="#36b" stroke-width="3"/>
@@ -120,12 +120,12 @@ export class DescUi {
         </g>
     </svg>
 </a>
-<span id="desc-link-copied">Invite Link Copied.</span>
-<span id="desc-not-ready">Not yet ready...</span>
-<span id="desc-collab-notice"><span id="desc-collab-count"></span> connected</span>
+<span id="visconnect-link-copied">Invite Link Copied.</span>
+<span id="visconnect-not-ready">Not yet ready...</span>
+<span id="visconnect-collab-notice"><span id="visconnect-collab-count"></span> connected</span>
 
 <style>
-#desc-container {
+#visconnect-container {
     position: fixed;
     right: 10px;
     bottom: 100px;
@@ -139,21 +139,21 @@ export class DescUi {
     color: #fff;
     font-family: 'Times New Roman',Times;
 }
-#desc-logo {
+#visconnect-logo {
     padding-left: 15px;
     display: block;
     background: transparent;
 }
-#desc-invite:hover {
+#visconnect-invite:hover {
     cursor: pointer;
 }
-#desc-invite:hover #desc-logo path {
+#visconnect-invite:hover #visconnect-logo path {
     stroke: #000;
 } 
-#desc-link-copied, #desc-collab-notice, #desc-not-ready {
+#visconnect-link-copied, #visconnect-collab-notice, #visconnect-not-ready {
     display: none;
 }
-#desc-collab-notice {
+#visconnect-collab-notice {
     font-size: 11pt;
     position: relative;
     top: 5px;
@@ -162,7 +162,7 @@ export class DescUi {
 }
 </style>`;
         document.body.appendChild(container);
-        document.getElementById('desc-invite')!.onclick = this.invite.bind(this);
+        document.getElementById('visconnect-invite')!.onclick = this.invite.bind(this);
     }
 }
 

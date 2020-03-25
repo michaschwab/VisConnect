@@ -1,25 +1,25 @@
-import {DescEvent} from './descvis';
-import {DescNetwork, PeerjsNetwork} from "./peerjs-network";
-import {DescConnection} from "./peerjs-connection";
+import {VcEvent} from './visconnect';
+import {VcNetwork, PeerjsNetwork} from "./peerjs-network";
+import {VcConnection} from "./peerjs-connection";
 import {StrippedEvent} from "./listener";
 
 // This file should know all the message types and create the messages
-export class DescCommunication {
-    private peer: DescNetwork;
-    private connections: DescConnection[] = [];
-    private leaderConnection?: DescConnection;
+export class VcCommunication {
+    private peer: VcNetwork;
+    private connections: VcConnection[] = [];
+    private leaderConnection?: VcConnection;
     private peers: string[] = [];
     onConnectionCallback = () => {};
     public id = '';
 
-    private eventsMsg?: DescEventsMessage;
+    private eventsMsg?: VcEventsMessage;
     private lastEventsMessageTime = -1;
     private throttleTimeout = -1;
 
     constructor(public leaderId: string,
                 private onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
                 private onNewLockOwner: (selector: string, owner: string) => void,
-                private getPastEvents: () => DescEvent[],
+                private getPastEvents: () => VcEvent[],
                 private onLockRequested: (selector: string, requester: string) => void,
                 private onOpenCallback: () => void) {
         this.peer = new PeerjsNetwork();
@@ -38,7 +38,7 @@ export class DescCommunication {
         }
 
         const msg: LockRequestMessage = {
-            type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+            type: VC_MESSAGE_TYPE.LOCK_REQUESTED,
             targetSelector,
             requester: this.id,
             sender: this.id,
@@ -59,7 +59,7 @@ export class DescCommunication {
      */
     changeLockOwner(targetSelector: string, owner: string) {
         const msg: LockOwnerChangedMessage = {
-            type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+            type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
             targetSelector,
             owner,
             sender: this.id,
@@ -98,7 +98,7 @@ export class DescCommunication {
         return this.connections.length;
     }
 
-    async onConnection(connection: DescConnection) {
+    async onConnection(connection: VcConnection) {
         // Incoming connection: Leader or client receives connection from client.
         const peer = connection.getPeer();
 
@@ -127,7 +127,7 @@ export class DescCommunication {
 
     async connectToPeer(id: string) {
         // Outgoing connection: Client connects to leader or other client.
-        const connection: DescConnection = await this.peer.connect(id);
+        const connection: VcConnection = await this.peer.connect(id);
 
         this.connections.push(connection);
         this.peers.push(id);
@@ -144,19 +144,19 @@ export class DescCommunication {
         connection.messages.subscribe(this.receiveMessage.bind(this));
     }
 
-    receiveMessage(data: DescMessage) {
-        if (data.type === DESC_MESSAGE_TYPE.NEW_CONNECTION) {
+    receiveMessage(data: VcMessage) {
+        if (data.type === VC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data as InitMessage);
-        } else if(data.type === DESC_MESSAGE_TYPE.EVENT) {
-            const msg = data as DescEventsMessage;
+        } else if(data.type === VC_MESSAGE_TYPE.EVENT) {
+            const msg = data as VcEventsMessage;
             this.onEventReceived(msg.data, msg.sender);
-        } else if(data.type === DESC_MESSAGE_TYPE.LOCK_REQUESTED) {
+        } else if(data.type === VC_MESSAGE_TYPE.LOCK_REQUESTED) {
             const msg = data as LockRequestMessage;
             this.onLockRequested(msg.targetSelector, msg.requester);
-        } else if(data.type === DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
+        } else if(data.type === VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
             this.onNewLockOwner(msg.targetSelector, msg.owner);
-        } else if(data.type === DESC_MESSAGE_TYPE.DISCONNECTION) {
+        } else if(data.type === VC_MESSAGE_TYPE.DISCONNECTION) {
             const msg = data as DisconnectMessage;
             this.recieveDisconnectMessage(msg);
         }
@@ -165,7 +165,7 @@ export class DescCommunication {
     broadcastEvent(e: StrippedEvent) {
         if(!this.eventsMsg) {
             this.eventsMsg = {
-                'type': DESC_MESSAGE_TYPE.EVENT,
+                'type': VC_MESSAGE_TYPE.EVENT,
                 'sender': this.id,
                 data: [],
             };
@@ -195,10 +195,10 @@ export class DescCommunication {
         window.requestAnimationFrame(onSend);
     }
 
-    sendNewConnection(conn: DescConnection) {
+    sendNewConnection(conn: VcConnection) {
         //console.log("Sending new connection message");
         const decoratedMessage: InitMessage = {
-            'type': DESC_MESSAGE_TYPE.NEW_CONNECTION,
+            'type': VC_MESSAGE_TYPE.NEW_CONNECTION,
             'sender': this.id,
             'peers': this.peers as string[],
             'eventsLedger': this.getPastEvents(),
@@ -216,12 +216,12 @@ export class DescCommunication {
             }
         }
 
-        this.onEventReceived(data.eventsLedger.map(descEvent => descEvent.event), data.sender, true);
+        this.onEventReceived(data.eventsLedger.map(vcEvent => vcEvent.event), data.sender, true);
     }
     
     sendDisconnectMessage() {
         const decoratedMessage: DisconnectMessage = {
-            'type': DESC_MESSAGE_TYPE.DISCONNECTION,
+            'type': VC_MESSAGE_TYPE.DISCONNECTION,
             'sender': this.id
         };
 
@@ -245,7 +245,7 @@ export class DescCommunication {
     }
 }
 
-export enum DESC_MESSAGE_TYPE {
+export enum VC_MESSAGE_TYPE {
     NEW_CONNECTION,
     EVENT,
     LOCK_REQUESTED,
@@ -254,36 +254,36 @@ export enum DESC_MESSAGE_TYPE {
     DISCONNECTION
 }
 
-export interface DescMessage {
+export interface VcMessage {
     peers?: string[],
-    type: DESC_MESSAGE_TYPE,
+    type: VC_MESSAGE_TYPE,
     sender: string,
     data?: any,
 }
 
-export interface DescEventsMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.EVENT,
+export interface VcEventsMessage extends VcMessage {
+    type: VC_MESSAGE_TYPE.EVENT,
     data: StrippedEvent[]
 }
 
-export interface InitMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.NEW_CONNECTION,
+export interface InitMessage extends VcMessage {
+    type: VC_MESSAGE_TYPE.NEW_CONNECTION,
     peers: string[],
-    eventsLedger: DescEvent[]
+    eventsLedger: VcEvent[]
 }
 
-export interface DisconnectMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.DISCONNECTION,
+export interface DisconnectMessage extends VcMessage {
+    type: VC_MESSAGE_TYPE.DISCONNECTION,
 }
 
-export interface LockRequestMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.LOCK_REQUESTED,
+export interface LockRequestMessage extends VcMessage {
+    type: VC_MESSAGE_TYPE.LOCK_REQUESTED,
     targetSelector: string,
     requester: string,
 }
 
-export interface LockOwnerChangedMessage extends DescMessage {
-    type: DESC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
+export interface LockOwnerChangedMessage extends VcMessage {
+    type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
     targetSelector: string,
     owner: string,
 }

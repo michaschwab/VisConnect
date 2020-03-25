@@ -6,14 +6,14 @@ export interface PeerjsConnectionI {
     send: (msg: {}) => void;
 }
 
-export interface DescConnection {
+export interface VcConnection {
     send(message: {}): void;
     getPeer(): string;
     messages: Subject<any>;
     open(): Promise<void>;
 }
 
-export class PeerjsConnection implements DescConnection {
+export class PeerjsConnection implements VcConnection {
     messages = new Subject<{}>();
 
     constructor(private connection: PeerjsConnectionI) {
@@ -39,6 +39,4 @@ export class PeerjsConnection implements DescConnection {
             this.connection.on('open', resolve);
         });
     }
-
-    
 }

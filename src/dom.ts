@@ -1,8 +1,8 @@
 import {StrippedEvent} from "./listener";
 
 export function delayAddEventListener() {
-    // The visualization's event listeners need to be called after DESCVis' event listeners.
-    // For this reason, we delay calling event listeners that are added before DESCVis is started.
+    // The visualization's event listeners need to be called after VisConnect's event listeners.
+    // For this reason, we delay calling event listeners that are added before VisConnect is started.
     (Element as any).prototype['addEventListenerBackup'] = Element.prototype.addEventListener;
     Element.prototype.addEventListener = function(this: Element, eventName: string, callback: () => void) {
         //console.log('doing a delayed execution on ', eventName, this);
@@ -13,7 +13,7 @@ export function delayAddEventListener() {
     } as any;
 
     // After the visualization code is run, reset the addEventListener function to its normal functionality, and start
-    // DESCVis.
+    // VisConnect.
     return new Promise<void>(resolve => {
         window.setTimeout(() => {
             Element.prototype.addEventListener = (Element as any).prototype['addEventListenerBackup'];
@@ -23,7 +23,7 @@ export function delayAddEventListener() {
 }
 
 export function disableStopPropagation() {
-    // Prevent d3 from blocking DescVis and other code to have access to events.
+    // Prevent d3 from blocking VisConnect and other code to have access to events.
     (Event as any).prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
     Event.prototype.stopImmediatePropagation = () => {};
 }
