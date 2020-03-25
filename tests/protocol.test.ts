@@ -1,8 +1,16 @@
 import {VcProtocol} from "../src/protocol";
 import {VcCommunication, VcCommunicationI} from "../src/communication";
+import {VcLeaderProtocol} from "../src/leader-protocol";
 
 function test() {
-    const leaderId = '';
+    const leaderId = 'leader';
+    const leader = getMockClient(leaderId, leaderId);
+    const client = getMockClient(leaderId, 'client');
+
+
+}
+
+function getMockClient(id: string, leaderId: string) {
     const execute = () => {
 
     };
@@ -10,9 +18,11 @@ function test() {
 
     };
     const communication: VcCommunicationI = {
-        getId: () => 'test',
+        getId: () => id,
         broadcastEvent: () => {},
         requestLock: (selector) => true
     };
-    const protocol = new VcProtocol(leaderId, execute, cancel, [], communication);
+    const isLeader = id === leaderId;
+    const Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
+    const protocol = new Protocol(leaderId, execute, cancel, [], communication);
 }
