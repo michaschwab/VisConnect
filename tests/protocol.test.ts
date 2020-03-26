@@ -1,4 +1,4 @@
-import { describe, test, it, expect } from 'jest-without-globals';
+import { describe, test, expect } from 'jest-without-globals';
 //declare var describe: any, test: any, expect: any;
 
 import {getMockNetwork, MockCommunication} from "./mock-network";
@@ -6,68 +6,50 @@ import {VcLeaderProtocol} from "../src/leader-protocol";
 
 describe('Protocol', () => {
     test('Events get executed on client and leader when client sends', () => {
-        const {leader, clients} = getMockNetwork(1);
-        const client = clients[0];
+        const {leader, clients: [client]} = getMockNetwork(1);
 
-        const event = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        client.localEvent(event);
-
+        client.localEvent(createEvent());
         expect(client.ledgers.get('svg')!.length).toBe(1);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
 
     test('Events get executed on client and leader when leader sends', () => {
-        const {leader, clients} = getMockNetwork(1);
-        const client = clients[0];
+        const {leader, clients: [client]} = getMockNetwork(1);
 
-        const event = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        leader.localEvent(event);
-
+        leader.localEvent(createEvent());
         expect(client.ledgers.get('svg')!.length).toBe(1);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
 
     test('Multiple events get executed', () => {
-        const {leader, clients} = getMockNetwork(1);
-        const client = clients[0];
+        const {leader, clients: [client]} = getMockNetwork(1);
 
-        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        const eventB = {...eventA};
-        client.localEvent(eventA);
-        client.localEvent(eventB);
+        client.localEvent(createEvent());
+        client.localEvent(createEvent());
 
         expect(client.ledgers.get('svg')!.length).toBe(2);
         expect(leader.ledgers.get('svg')!.length).toBe(2);
     });
 
     test('Multiple element executors get blocked', () => {
-        const {leader, clients} = getMockNetwork(1);
-        const client = clients[0];
+        const {leader, clients: [client]} = getMockNetwork(1);
 
-        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        leader.localEvent(eventA);
-
+        leader.localEvent(createEvent());
         expect(client.ledgers.get('svg')!.length).toBe(1);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
 
-        const eventB = {...eventA};
-        client.localEvent(eventB);
-
+        client.localEvent(createEvent());
         expect(client.ledgers.get('svg')!.length).toBe(1);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
 
     test('Delays work as expected', async () => {
-        const {leader, clients} = getMockNetwork(1);
-        const client = clients[0];
+        const {leader, clients: [client]} = getMockNetwork(1);
 
         (leader.communication as MockCommunication).delay = false;
         (client.communication as MockCommunication).delay = 20;
 
-        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        const eventB = {...eventA};
-        client.localEvent(eventA);
-
+        client.localEvent(createEvent());
         expect(client.ledgers.get('svg')).toBeFalsy();
         expect(leader.ledgers.get('svg')).toBeFalsy();
 
@@ -75,7 +57,7 @@ describe('Protocol', () => {
         expect(client.ledgers.get('svg')!.length).toBe(1);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
 
-        client.localEvent(eventB);
+        client.localEvent(createEvent());
         expect(client.ledgers.get('svg')!.length).toBe(2);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
 
@@ -85,19 +67,16 @@ describe('Protocol', () => {
     });
 
     test('Multiple element executors work in succession', async () => {
-        const {leader, clients} = getMockNetwork(1);
+        const {leader, clients: [client]} = getMockNetwork(1);
         (leader as VcLeaderProtocol).lockService.expireTimeoutMs = 50;
-        const client = clients[0];
 
-        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        leader.localEvent(eventA);
+        leader.localEvent(createEvent());
 
         expect(client.ledgers.get('svg')!.length).toBe(1);
         expect(leader.ledgers.get('svg')!.length).toBe(1);
 
         await wait(60);
-        const eventB = {...eventA};
-        client.localEvent(eventB);
+        client.localEvent(createEvent());
 
         expect(client.ledgers.get('svg')!.length).toBe(2);
         expect(leader.ledgers.get('svg')!.length).toBe(2);
@@ -105,3 +84,13 @@ describe('Protocol', () => {
 });
 
 const wait = (ms: number) => new Promise<void>((resolve: () => void) => setTimeout(resolve, ms));
+const createEvent = () => {
+    return {
+        type: 'mousedown',
+        target: 'svg',
+        targetType: 'svg',
+        timeStamp: 0,
+        collaboratorId: '',
+        touches: []
+    };
+};
