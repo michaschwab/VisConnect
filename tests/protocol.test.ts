@@ -1,6 +1,7 @@
 import {VcProtocol} from "../src/protocol";
 import {VcCommunicationConstructorData, VcCommunicationI} from "../src/communication";
 import {VcLeaderProtocol} from "../src/leader-protocol";
+import {StrippedEvent} from "../src/listener";
 
 function test() {
     const leaderId = 'leader';
@@ -8,6 +9,8 @@ function test() {
     const client = getMockClient(leaderId, 'client');
 
 }
+
+const communications: MockCommunication[] = [];
 
 function getMockClient(id: string, leaderId: string) {
     const lockOwners = new Map<string, string>();
@@ -20,15 +23,21 @@ function getMockClient(id: string, leaderId: string) {
 
     const isLeader = id === leaderId;
     const Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
-    const protocol = new Protocol(leaderId, execute, cancel, [], MockCommunicationConstructor);
+    const protocol = new Protocol(leaderId, execute, cancel, [], MockCommunication);
     protocol.communication.id = id;
+
+    communications.push(protocol.communication as MockCommunication);
 }
 
-class MockCommunicationConstructor implements VcCommunicationI {
+class MockCommunication implements VcCommunicationI {
     public id = '';
-    constructor(private data: VcCommunicationConstructorData) {}
+    constructor(public data: VcCommunicationConstructorData) {}
     getId() { return this.id; }
-    broadcastEvent() {}
+    broadcastEvent(stripped: StrippedEvent) {
+        communications.forEach(comm => {
+            comm.data.onEventReceived([stripped], this.id);
+        })
+    }
     requestLock(selector: string) { return true; }
     changeLockOwner(selector: string, owner: string) {}
 }
