@@ -1,5 +1,5 @@
 import {StrippedEvent} from "./listener";
-import {VcCommunication, VcCommunicationI} from "./communication";
+import {VcCommunication, VcCommunicationConstructor, VcCommunicationI} from "./communication";
 
 export class VcProtocol {
     protected ledgers = new Map<string, VcEvent[]>();
@@ -13,14 +13,16 @@ export class VcProtocol {
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
-                mockCommunication?: VcCommunicationI) {
-        if(mockCommunication) {
-            this.communication = mockCommunication;
-        } else {
-            this.communication = new VcCommunication(leaderId, this.receiveRemoteEvents.bind(this),
-                this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this),
-                this.init.bind(this));
-        }
+                MockCommunication?: VcCommunicationConstructor) {
+        const Communication = MockCommunication ? MockCommunication : VcCommunication;
+        this.communication = new Communication({
+            leaderId: leaderId,
+            onEventReceived: this.receiveRemoteEvents.bind(this),
+            onNewLockOwner:  this.lockOwnerChanged.bind(this),
+            getPastEvents: this.getPastEvents.bind(this),
+            onLockRequested: this.receiveLockRequest.bind(this),
+            onOpenCallback:  this.init.bind(this)
+        });
     }
 
     init() {

@@ -1,6 +1,6 @@
 import {VcProtocol} from "./protocol";
 import {StrippedEvent} from "./listener";
-import {VcCommunication} from "./communication";
+import {VcCommunication, VcCommunicationConstructor, VcCommunicationI} from "./communication";
 import {LockService} from "./lock-service";
 
 export class VcLeaderProtocol extends VcProtocol {
@@ -10,7 +10,7 @@ export class VcLeaderProtocol extends VcProtocol {
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
-                mockCommunication?: VcCommunication) {
+                mockCommunication?: VcCommunicationConstructor) {
         super(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication);
 
         this.lockService = new LockService(this.communication);

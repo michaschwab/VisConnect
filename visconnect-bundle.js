@@ -1265,21 +1265,20 @@ var PeerjsNetwork = /** @class */ (function () {
     return PeerjsNetwork;
 }());
 
-// This file should know all the message types and create the messages
 var VcCommunication = /** @class */ (function () {
-    function VcCommunication(leaderId, onEventReceived, onNewLockOwner, getPastEvents, onLockRequested, onOpenCallback) {
-        this.leaderId = leaderId;
-        this.onEventReceived = onEventReceived;
-        this.onNewLockOwner = onNewLockOwner;
-        this.getPastEvents = getPastEvents;
-        this.onLockRequested = onLockRequested;
-        this.onOpenCallback = onOpenCallback;
+    function VcCommunication(data) {
         this.connections = [];
         this.peers = [];
         this.onConnectionCallback = function () { };
         this.id = '';
         this.lastEventsMessageTime = -1;
         this.throttleTimeout = -1;
+        this.leaderId = data.leaderId;
+        this.onEventReceived = data.onEventReceived;
+        this.onNewLockOwner = data.onNewLockOwner;
+        this.getPastEvents = data.getPastEvents;
+        this.onLockRequested = data.onLockRequested;
+        this.onOpenCallback = data.onOpenCallback;
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
@@ -1509,7 +1508,7 @@ var VC_MESSAGE_TYPE;
 })(VC_MESSAGE_TYPE || (VC_MESSAGE_TYPE = {}));
 
 var VcProtocol = /** @class */ (function () {
-    function VcProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
+    function VcProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, MockCommunication) {
         this.leaderId = leaderId;
         this.executeEvent = executeEvent;
         this.cancelEvent = cancelEvent;
@@ -1519,12 +1518,15 @@ var VcProtocol = /** @class */ (function () {
         this.requestedLocks = new Set();
         this.heldEvents = new Map();
         this.collaboratorId = '';
-        if (mockCommunication) {
-            this.communication = mockCommunication;
-        }
-        else {
-            this.communication = new VcCommunication(leaderId, this.receiveRemoteEvents.bind(this), this.lockOwnerChanged.bind(this), this.getPastEvents.bind(this), this.receiveLockRequest.bind(this), this.init.bind(this));
-        }
+        var Communication = MockCommunication ? MockCommunication : VcCommunication;
+        this.communication = new Communication({
+            leaderId: leaderId,
+            onEventReceived: this.receiveRemoteEvents.bind(this),
+            onNewLockOwner: this.lockOwnerChanged.bind(this),
+            getPastEvents: this.getPastEvents.bind(this),
+            onLockRequested: this.receiveLockRequest.bind(this),
+            onOpenCallback: this.init.bind(this)
+        });
     }
     VcProtocol.prototype.init = function () {
         this.collaboratorId = this.communication.getId();

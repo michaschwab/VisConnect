@@ -5,9 +5,24 @@ import {StrippedEvent} from "./listener";
 
 // This file should know all the message types and create the messages
 export interface VcCommunicationI {
+    id: string;
     getId: () => string;
     broadcastEvent: (e: StrippedEvent) => void;
     requestLock: (selector: string) => boolean;
+    changeLockOwner: (selector: string, owner: string) => void;
+}
+
+export interface VcCommunicationConstructorData {
+    leaderId: string,
+    onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
+    onNewLockOwner: (selector: string, owner: string) => void,
+    getPastEvents: () => VcEvent[],
+    onLockRequested: (selector: string, requester: string) => void,
+    onOpenCallback: () => void
+}
+
+export interface VcCommunicationConstructor {
+    new(data: VcCommunicationConstructorData): VcCommunicationI;
 }
 
 export class VcCommunication implements VcCommunicationI {
@@ -22,12 +37,21 @@ export class VcCommunication implements VcCommunicationI {
     private lastEventsMessageTime = -1;
     private throttleTimeout = -1;
 
-    constructor(public leaderId: string,
-                private onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
-                private onNewLockOwner: (selector: string, owner: string) => void,
-                private getPastEvents: () => VcEvent[],
-                private onLockRequested: (selector: string, requester: string) => void,
-                private onOpenCallback: () => void) {
+    public leaderId: string;
+    private readonly onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void;
+    private readonly onNewLockOwner: (selector: string, owner: string) => void;
+    private readonly getPastEvents: () => VcEvent[];
+    private readonly onLockRequested: (selector: string, requester: string) => void;
+    private readonly onOpenCallback: () => void;
+
+    constructor(data: VcCommunicationConstructorData) {
+        this.leaderId = data.leaderId;
+        this.onEventReceived = data.onEventReceived;
+        this.onNewLockOwner = data.onNewLockOwner;
+        this.getPastEvents = data.getPastEvents;
+        this.onLockRequested = data.onLockRequested;
+        this.onOpenCallback = data.onOpenCallback;
+
         this.peer = new PeerjsNetwork();
         this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
