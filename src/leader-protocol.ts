@@ -1,6 +1,6 @@
 import {VcProtocol} from "./protocol";
 import {StrippedEvent} from "./listener";
-import {VcCommunication, VcCommunicationConstructor, VcCommunicationI} from "./communication";
+import {VcCommunicationConstructor} from "./communication";
 import {LockService} from "./lock-service";
 
 export class VcLeaderProtocol extends VcProtocol {

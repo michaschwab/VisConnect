@@ -16,7 +16,7 @@
   },
   "scripts": {
     "compile": "rollup -c rollup.config.js && cp visconnect-bundle.js extension/",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "rollup -c rollup.test.config.js && node visconnect-test-bundle.js"
   },
   "repository": {
     "type": "git",
