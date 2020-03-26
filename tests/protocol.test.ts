@@ -8,7 +8,7 @@ function test() {
 
     const leaderId = 'leader';
     const leader = getMockClient(leaderId, leaderId);
-    const client = getMockClient(leaderId, 'client');
+    const client = getMockClient('client', leaderId);
 
     client.localEvent({
         type: 'mousedown',
@@ -24,8 +24,8 @@ let leaderComm: MockCommunication;
 const communications: MockCommunication[] = [];
 
 function getMockClient(id: string, leaderId: string) {
-    const execute = () => {
-        console.log(`client ${id} executing something`);
+    const execute = (event: StrippedEvent) => {
+        console.log(`client ${id} executing`, event);
     };
     const cancel = () => {
         console.log(`client ${id} rejecting something`);
@@ -34,11 +34,13 @@ function getMockClient(id: string, leaderId: string) {
     const isLeader = id === leaderId;
     const Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
     const protocol = new Protocol(leaderId, execute, cancel, [], MockCommunication);
-    protocol.communication.id = id;
+    const communication = protocol.communication as MockCommunication;
+    communication.id = id;
+    communication.data.onOpenCallback();
 
-    communications.push(protocol.communication as MockCommunication);
+    communications.push(communication);
     if(isLeader) {
-        leaderComm = protocol.communication as MockCommunication;
+        leaderComm = communication;
     }
 
     return protocol;
@@ -59,6 +61,7 @@ class MockCommunication implements VcCommunicationI {
         return true;
     }
     changeLockOwner(selector: string, owner: string) {
+        console.log(`client ${this.id} declaring new lock owner ${owner} on element ${selector}`);
         communications.forEach(comm => {
             comm.data.onNewLockOwner(selector, owner);
         });
