@@ -8,13 +8,13 @@ export class LockService {
 
     }
 
-    requestLock(selector: string, client: string) {
+    requestLock(selector: string, client: string, seqNum: number) {
         if(this.lockOwners.has(selector)) {
             return;
         }
 
         this.lockOwners.set(selector, client);
-        this.communication.changeLockOwner(selector, client);
+        this.communication.changeLockOwner(selector, client, seqNum);
     }
 
     extendLock(selector: string) {
@@ -30,7 +30,7 @@ export class LockService {
     private expireLock(selector: string) {
         return () => {
             this.lockOwners.delete(selector);
-            this.communication.changeLockOwner(selector, '');
+            this.communication.changeLockOwner(selector, '', -1);
         };
     }
 }

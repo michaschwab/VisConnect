@@ -1,21 +1,20 @@
 import {VcEvent} from './visconnect';
 import {VcNetwork, PeerjsNetwork} from "./peerjs-network";
 import {VcConnection} from "./peerjs-connection";
-import {StrippedEvent} from "./listener";
 
 // This file should know all the message types and create the messages
 export interface VcCommunicationI {
     id: string;
     getId: () => string;
-    broadcastEvent: (e: StrippedEvent) => void;
+    broadcastEvent: (e: VcEvent) => void;
     requestLock: (selector: string) => boolean;
-    changeLockOwner: (selector: string, owner: string) => void;
+    changeLockOwner: (selector: string, owner: string, seqNum: number) => void;
 }
 
 export interface VcCommunicationConstructorData {
     leaderId: string,
-    onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void,
-    onNewLockOwner: (selector: string, owner: string) => void,
+    onEventReceived: (e: VcEvent[], sender: string, catchup?: boolean) => void,
+    onNewLockOwner: (selector: string, owner: string, seqNum: number) => void,
     getPastEvents: () => VcEvent[],
     onLockRequested: (selector: string, requester: string) => void,
     onOpenCallback: () => void
@@ -38,8 +37,8 @@ export class VcCommunication implements VcCommunicationI {
     private throttleTimeout = -1;
 
     public leaderId: string;
-    private readonly onEventReceived: (e: StrippedEvent[], sender: string, catchup?: boolean) => void;
-    private readonly onNewLockOwner: (selector: string, owner: string) => void;
+    private readonly onEventReceived: (e: VcEvent[], sender: string, catchup?: boolean) => void;
+    private readonly onNewLockOwner: (selector: string, owner: string, seqNum: number) => void;
     private readonly getPastEvents: () => VcEvent[];
     private readonly onLockRequested: (selector: string, requester: string) => void;
     private readonly onOpenCallback: () => void;
@@ -87,12 +86,13 @@ export class VcCommunication implements VcCommunicationI {
     /**
      * This message is sent by the leader to inform clients that an element's lock owner has changed.
      */
-    changeLockOwner(targetSelector: string, owner: string) {
+    changeLockOwner(targetSelector: string, owner: string, seqNum: number) {
         const msg: LockOwnerChangedMessage = {
             type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
             targetSelector,
             owner,
             sender: this.id,
+            seqNum
         };
 
         for(const conn of this.connections) {
@@ -185,14 +185,14 @@ export class VcCommunication implements VcCommunicationI {
             this.onLockRequested(msg.targetSelector, msg.requester);
         } else if(data.type === VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
-            this.onNewLockOwner(msg.targetSelector, msg.owner);
+            this.onNewLockOwner(msg.targetSelector, msg.owner, msg.seqNum);
         } else if(data.type === VC_MESSAGE_TYPE.DISCONNECTION) {
             const msg = data as DisconnectMessage;
             this.recieveDisconnectMessage(msg);
         }
     }
 
-    broadcastEvent(e: StrippedEvent) {
+    broadcastEvent(e: VcEvent) {
         if(!this.eventsMsg) {
             this.eventsMsg = {
                 'type': VC_MESSAGE_TYPE.EVENT,
@@ -246,7 +246,7 @@ export class VcCommunication implements VcCommunicationI {
             }
         }
 
-        this.onEventReceived(data.eventsLedger.map(vcEvent => vcEvent.event), data.sender, true);
+        this.onEventReceived(data.eventsLedger, data.sender, true);
     }
     
     sendDisconnectMessage() {
@@ -293,7 +293,7 @@ export interface VcMessage {
 
 export interface VcEventsMessage extends VcMessage {
     type: VC_MESSAGE_TYPE.EVENT,
-    data: StrippedEvent[]
+    data: VcEvent[]
 }
 
 export interface InitMessage extends VcMessage {
@@ -316,4 +316,5 @@ export interface LockOwnerChangedMessage extends VcMessage {
     type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
     targetSelector: string,
     owner: string,
+    seqNum: number
 }

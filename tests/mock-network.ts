@@ -1,7 +1,7 @@
 import {VcProtocol} from "../src/protocol";
 import {VcLeaderProtocol} from "../src/leader-protocol";
 import {VcCommunicationConstructorData, VcCommunicationI} from "../src/communication";
-import {StrippedEvent} from "../src/listener";
+import {VcEvent} from "../src/visconnect";
 
 export function getMockNetwork(numClients: number) {
     let leaderComm: MockCommunication;
@@ -45,7 +45,7 @@ class MockCommunication implements VcCommunicationI {
     public leaderComm?: MockCommunication;
     constructor(public data: VcCommunicationConstructorData) {}
     getId() { return this.id; }
-    broadcastEvent(stripped: StrippedEvent) {
+    broadcastEvent(stripped: VcEvent) {
         this.communications.forEach(comm => {
             if(comm.id !== this.id) {
                 comm.data.onEventReceived([{...stripped}], this.id);
@@ -53,7 +53,7 @@ class MockCommunication implements VcCommunicationI {
         });
     }
     requestLock(selector: string) {
-        console.log(`client ${this.id} requesting lock for ${selector}`);
+        //console.log(`client ${this.id} requesting lock for ${selector}`);
         if(!this.leaderComm) {
             console.error('no leader comm');
             return false;
@@ -61,10 +61,10 @@ class MockCommunication implements VcCommunicationI {
         this.leaderComm.data.onLockRequested(selector, this.id);
         return true;
     }
-    changeLockOwner(selector: string, owner: string) {
-        console.log(`client ${this.id} declaring new lock owner ${owner} on element ${selector}`);
+    changeLockOwner(selector: string, owner: string, seqNum: number) {
+        //console.log(`client ${this.id} declaring new lock owner ${owner} on element ${selector}`);
         this.communications.forEach(comm => {
-            comm.data.onNewLockOwner(selector, owner);
+            comm.data.onNewLockOwner(selector, owner, seqNum);
         });
     }
 }

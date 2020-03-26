@@ -1,11 +1,13 @@
 import {StrippedEvent} from "./listener";
 import {VcCommunication, VcCommunicationConstructor, VcCommunicationI} from "./communication";
+import {VcEvent} from "./visconnect";
 
 export class VcProtocol {
     ledgers = new Map<string, VcEvent[]>();
     protected lockOwners = new Map<string, string>();
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
+    protected heldRemoteEvents = new Map<string, VcEvent[]>();
     communication: VcCommunicationI;
     protected collaboratorId = '';
 
@@ -46,7 +48,7 @@ export class VcProtocol {
         if(allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
             const vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
             if(vcEvent) {
-                this.communication.broadcastEvent(stripped);
+                this.communication.broadcastEvent(vcEvent);
             }
         } else if(lockOwner && lockOwner !== this.collaboratorId) {
             // Do nothing - do not execute the event.
@@ -62,9 +64,16 @@ export class VcProtocol {
         }
     }
 
-    receiveRemoteEvents(events: StrippedEvent[], sender: string, catchup = false) {
-        for(const stripped of events) {
-            this.addEventToLedger(stripped, sender, catchup);
+    receiveRemoteEvents(events: VcEvent[], sender: string, catchup = false) {
+        for(const event of events) {
+            const success = this.addEventToLedger(event.event, sender, catchup);
+            if(!success && !this.lockOwners.has(event.event.target)) {
+                if(!this.heldRemoteEvents.has(event.event.target)) {
+                    this.heldRemoteEvents.set(event.event.target, []);
+                }
+                this.heldRemoteEvents.get(event.event.target)!.push(event);
+                //console.log('adding event to held remote events on ', this.collaboratorId);
+            }
         }
     }
 
@@ -72,7 +81,7 @@ export class VcProtocol {
         console.error('Clients are not supposed to receive lock requests.');
     }
 
-    lockOwnerChanged(selector: string, owner: string) {
+    lockOwnerChanged(selector: string, owner: string, seqNum: number) {
         //console.log('Lock owner changed', selector, owner, this.collaboratorId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
 
@@ -89,11 +98,17 @@ export class VcProtocol {
             for(const stripped of events) {
                 const vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
                 if(vcEvent) {
-                    this.communication.broadcastEvent(stripped);
+                    this.communication.broadcastEvent(vcEvent);
                 }
             }
+            this.heldEvents.delete(selector);
+        } else if(this.heldRemoteEvents.has(selector)) {
+            const filtered = this.heldRemoteEvents.get(selector)!.filter(e => e.seqNum >= seqNum);
+            for(const event of filtered) {
+                this.addEventToLedger(event.event, event.sender, false);
+            }
+            this.heldRemoteEvents.delete(selector);
         }
-        this.heldEvents.delete(selector);
     }
 
     protected requestLock(selector: string) {
@@ -115,7 +130,9 @@ export class VcProtocol {
         // Skip ownership check for catchup events, and for background events.
         if(!catchup && !allAllowed) {
             const lockOwner = this.lockOwners.get(selector);
-            if(!lockOwner || lockOwner !== sender) {
+            if(!lockOwner) {
+                return false;
+            } else if(lockOwner !== sender) {
                 console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
                 return false;
             }
@@ -141,12 +158,6 @@ export class VcProtocol {
 
         ledger.push(newEvent);
 
-        return true;
+        return newEvent;
     }
-}
-
-export interface VcEvent {
-    seqNum: number,
-    event: StrippedEvent,
-    sender: string
 }

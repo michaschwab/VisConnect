@@ -17,7 +17,9 @@ export class VcLeaderProtocol extends VcProtocol {
     }
 
     receiveLockRequest(selector: string, requester: string) {
-        this.lockService.requestLock(selector, requester);
+        const ledger = this.ledgers.get(selector);
+        const seqNum = !ledger ? 0 : ledger[ledger.length - 1].seqNum + 1;
+        this.lockService.requestLock(selector, requester, seqNum);
     }
 
     protected addEventToLedger(stripped: StrippedEvent, sender: string) {
