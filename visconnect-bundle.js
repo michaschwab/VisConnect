@@ -1655,7 +1655,7 @@ var LockService = /** @class */ (function () {
         if (prevTimeout) {
             clearTimeout(prevTimeout);
         }
-        var timeout = window.setTimeout(this.expireLock(selector), 1000);
+        var timeout = setTimeout(this.expireLock(selector), 1000);
         this.lockTimeouts.set(selector, timeout);
     };
     LockService.prototype.expireLock = function (selector) {

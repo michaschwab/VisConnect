@@ -2,7 +2,7 @@ import {StrippedEvent} from "./listener";
 import {VcCommunication, VcCommunicationConstructor, VcCommunicationI} from "./communication";
 
 export class VcProtocol {
-    protected ledgers = new Map<string, VcEvent[]>();
+    ledgers = new Map<string, VcEvent[]>();
     protected lockOwners = new Map<string, string>();
     protected requestedLocks = new Set<string>();
     protected heldEvents = new Map<string, StrippedEvent[]>();
