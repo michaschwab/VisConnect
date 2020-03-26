@@ -1661,6 +1661,7 @@ var LockService = /** @class */ (function () {
         this.communication = communication;
         this.lockOwners = new Map();
         this.lockTimeouts = new Map();
+        this.expireTimeoutMs = 1000;
     }
     LockService.prototype.requestLock = function (selector, client, seqNum) {
         if (this.lockOwners.has(selector)) {
@@ -1675,7 +1676,7 @@ var LockService = /** @class */ (function () {
         if (prevTimeout) {
             clearTimeout(prevTimeout);
         }
-        var timeout = setTimeout(this.expireLock(selector), 1000);
+        var timeout = setTimeout(this.expireLock(selector), this.expireTimeoutMs);
         this.lockTimeouts.set(selector, timeout);
     };
     LockService.prototype.expireLock = function (selector) {

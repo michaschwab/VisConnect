@@ -4,7 +4,7 @@ import {VcCommunicationConstructor} from "./communication";
 import {LockService} from "./lock-service";
 
 export class VcLeaderProtocol extends VcProtocol {
-    private lockService: LockService;
+    lockService: LockService;
 
     constructor(protected leaderId: string,
                 protected executeEvent: (e: StrippedEvent) => void,

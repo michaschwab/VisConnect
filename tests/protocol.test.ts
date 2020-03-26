@@ -2,6 +2,7 @@ import { describe, test, it, expect } from 'jest-without-globals';
 //declare var describe: any, test: any, expect: any;
 
 import {getMockNetwork, MockCommunication} from "./mock-network";
+import {VcLeaderProtocol} from "../src/leader-protocol";
 
 describe('Protocol', () => {
     test('Events get executed on client and leader when client sends', () => {
@@ -79,6 +80,25 @@ describe('Protocol', () => {
         expect(leader.ledgers.get('svg')!.length).toBe(1);
 
         await wait(30);
+        expect(client.ledgers.get('svg')!.length).toBe(2);
+        expect(leader.ledgers.get('svg')!.length).toBe(2);
+    });
+
+    test('Multiple element executors work in succession', async () => {
+        const {leader, clients} = getMockNetwork(1);
+        (leader as VcLeaderProtocol).lockService.expireTimeoutMs = 50;
+        const client = clients[0];
+
+        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        leader.localEvent(eventA);
+
+        expect(client.ledgers.get('svg')!.length).toBe(1);
+        expect(leader.ledgers.get('svg')!.length).toBe(1);
+
+        await wait(60);
+        const eventB = {...eventA};
+        client.localEvent(eventB);
+
         expect(client.ledgers.get('svg')!.length).toBe(2);
         expect(leader.ledgers.get('svg')!.length).toBe(2);
     });

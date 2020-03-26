@@ -3,6 +3,7 @@ import {VcCommunicationI} from "./communication";
 export class LockService {
     protected lockOwners = new Map<string, string>();
     protected lockTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+    public expireTimeoutMs = 1000;
 
     constructor(protected communication: VcCommunicationI) {
 
@@ -23,7 +24,7 @@ export class LockService {
         if(prevTimeout) {
             clearTimeout(prevTimeout);
         }
-        const timeout = setTimeout(this.expireLock(selector), 1000);
+        const timeout = setTimeout(this.expireLock(selector), this.expireTimeoutMs);
         this.lockTimeouts.set(selector, timeout);
     }
 
