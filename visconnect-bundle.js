@@ -1189,6 +1189,8 @@ var PeerjsConnection = /** @class */ (function () {
         });
     }
     PeerjsConnection.prototype.send = function (message) {
+        // To test bad network conditions, the following line can be activated instead of the one following it.
+        //setTimeout(() => this.connection.send(message), Math.round(Math.random() * 60));
         this.connection.send(message);
     };
     PeerjsConnection.prototype.getPeer = function () {
@@ -1545,8 +1547,9 @@ var VcProtocol = /** @class */ (function () {
         var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
         var lockOwner = this.lockOwners.get(selector);
         if (allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
-            var vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
-            if (vcEvent) {
+            var vcEvent = this.makeVcEvent(stripped);
+            var success = this.addEventToLedger(vcEvent, this.collaboratorId);
+            if (success) {
                 this.communication.broadcastEvent(vcEvent);
             }
         }
@@ -1567,15 +1570,27 @@ var VcProtocol = /** @class */ (function () {
         if (catchup === void 0) { catchup = false; }
         for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
             var event = events_1[_i];
-            var success = this.addEventToLedger(event.event, sender, catchup);
-            if (!success && !this.lockOwners.has(event.event.target)) {
-                if (!this.heldRemoteEvents.has(event.event.target)) {
-                    this.heldRemoteEvents.set(event.event.target, []);
+            var ledger = this.ledgers.get(event.event.target);
+            var lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+            this.playHeldRemoteEvents(event.event.target, lastSeqNum);
+            lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+            if (event.seqNum !== lastSeqNum + 1) {
+                this.holdRemoteEvent(event);
+            }
+            else {
+                var success = this.addEventToLedger(event, sender, catchup);
+                if (!success && !this.lockOwners.has(event.event.target)) {
+                    this.holdRemoteEvent(event);
                 }
-                this.heldRemoteEvents.get(event.event.target).push(event);
-                //console.log('adding event to held remote events on ', this.collaboratorId);
             }
         }
+    };
+    VcProtocol.prototype.holdRemoteEvent = function (event) {
+        if (!this.heldRemoteEvents.has(event.event.target)) {
+            this.heldRemoteEvents.set(event.event.target, []);
+        }
+        this.heldRemoteEvents.get(event.event.target).push(event);
+        //console.log('adding event to held remote events on ', this.collaboratorId);
     };
     VcProtocol.prototype.receiveLockRequest = function (selector, requester) {
         console.error('Clients are not supposed to receive lock requests.');
@@ -1594,21 +1609,31 @@ var VcProtocol = /** @class */ (function () {
             //console.log('Triggering some held up events', events);
             for (var _i = 0, events_2 = events; _i < events_2.length; _i++) {
                 var stripped = events_2[_i];
-                var vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
-                if (vcEvent) {
-                    this.communication.broadcastEvent(vcEvent);
+                if (this.canExecuteEvent(stripped, this.collaboratorId)) {
+                    var vcEvent = this.makeVcEvent(stripped);
+                    var success = this.addEventToLedger(vcEvent, this.collaboratorId);
+                    if (success) {
+                        this.communication.broadcastEvent(vcEvent);
+                    }
                 }
             }
-            this.heldEvents.delete(selector);
+            //this.heldEvents.delete(selector);
         }
         else if (this.heldRemoteEvents.has(selector)) {
-            var filtered = this.heldRemoteEvents.get(selector).filter(function (e) { return e.seqNum >= seqNum; });
-            for (var _a = 0, filtered_1 = filtered; _a < filtered_1.length; _a++) {
-                var event = filtered_1[_a];
-                this.addEventToLedger(event.event, event.sender, false);
-            }
-            this.heldRemoteEvents.delete(selector);
+            this.playHeldRemoteEvents(selector, seqNum);
         }
+    };
+    VcProtocol.prototype.playHeldRemoteEvents = function (selector, seqNum) {
+        var held = this.heldRemoteEvents.get(selector);
+        if (!held) {
+            return;
+        }
+        var filtered = held.filter(function (e) { return e.seqNum >= seqNum; }).sort(function (a, b) { return a.seqNum - b.seqNum; });
+        for (var _i = 0, filtered_1 = filtered; _i < filtered_1.length; _i++) {
+            var event = filtered_1[_i];
+            this.addEventToLedger(event, event.sender, false);
+        }
+        //this.heldRemoteEvents.delete(selector);
     };
     VcProtocol.prototype.requestLock = function (selector) {
         if (this.requestedLocks.has(selector)) {
@@ -1620,7 +1645,7 @@ var VcProtocol = /** @class */ (function () {
             this.requestedLocks.add(selector);
         }
     };
-    VcProtocol.prototype.addEventToLedger = function (stripped, sender, catchup) {
+    VcProtocol.prototype.canExecuteEvent = function (stripped, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         var selector = stripped.target;
         var allAllowed = this.unsafeElements.includes(stripped.targetType) || this.unsafeElements.includes('*');
@@ -1635,7 +1660,28 @@ var VcProtocol = /** @class */ (function () {
                 return false;
             }
         }
-        this.executeEvent(stripped);
+        return true;
+    };
+    VcProtocol.prototype.makeVcEvent = function (stripped) {
+        var ledger = this.ledgers.get(stripped.target);
+        var seqNum = 0;
+        if (ledger && ledger.length) {
+            var lastEvent = ledger[ledger.length - 1];
+            seqNum = lastEvent.seqNum + 1;
+        }
+        return {
+            seqNum: seqNum,
+            event: stripped,
+            sender: this.collaboratorId
+        };
+    };
+    VcProtocol.prototype.addEventToLedger = function (event, sender, catchup) {
+        if (catchup === void 0) { catchup = false; }
+        var stripped = event.event;
+        var selector = stripped.target;
+        if (!this.canExecuteEvent(stripped, sender, catchup)) {
+            return false;
+        }
         if (!this.ledgers.has(selector)) {
             this.ledgers.set(selector, []);
         }
@@ -1645,13 +1691,17 @@ var VcProtocol = /** @class */ (function () {
             var lastEvent = ledger[ledger.length - 1];
             seqNum = lastEvent.seqNum + 1;
         }
-        var newEvent = {
-            seqNum: seqNum,
-            'event': stripped,
-            'sender': this.collaboratorId
-        };
-        ledger.push(newEvent);
-        return newEvent;
+        if (event.seqNum === seqNum) {
+            ledger.push(event);
+            //console.log(seqNum, stripped.type);
+            this.executeEvent(stripped);
+            return true;
+        }
+        else {
+            // The order is not right.
+            //console.log('cant execute this', event.seqNum);
+            return false;
+        }
     };
     return VcProtocol;
 }());
@@ -1705,10 +1755,10 @@ var VcLeaderProtocol = /** @class */ (function (_super) {
         var seqNum = !ledger ? 0 : ledger[ledger.length - 1].seqNum + 1;
         this.lockService.requestLock(selector, requester, seqNum);
     };
-    VcLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
-        var success = _super.prototype.addEventToLedger.call(this, stripped, sender);
+    VcLeaderProtocol.prototype.addEventToLedger = function (event, sender) {
+        var success = _super.prototype.addEventToLedger.call(this, event, sender);
         if (success) {
-            this.lockService.extendLock(stripped.target);
+            this.lockService.extendLock(event.event.target);
         }
         return success;
     };

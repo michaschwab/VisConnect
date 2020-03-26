@@ -23,7 +23,9 @@ export class PeerjsConnection implements VcConnection {
     }
 
     send(message: {}) {
-        this.connection.send(message);
+        // To test bad network conditions, the following line can be activated instead of the one following it.
+        //setTimeout(() => this.connection.send(message), Math.round(Math.random() * 60));
+        this.connection.send(message)
     }
 
     getPeer() {

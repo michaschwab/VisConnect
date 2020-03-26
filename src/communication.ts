@@ -9,6 +9,9 @@ export interface VcCommunicationI {
     broadcastEvent: (e: VcEvent) => void;
     requestLock: (selector: string) => boolean;
     changeLockOwner: (selector: string, owner: string, seqNum: number) => void;
+    getNumberOfConnections: () => number;
+    leaderId: string;
+    onConnectionCallback: () => void;
 }
 
 export interface VcCommunicationConstructorData {

@@ -2,6 +2,7 @@ import {VcProtocol} from "./protocol";
 import {StrippedEvent} from "./listener";
 import {VcCommunicationConstructor} from "./communication";
 import {LockService} from "./lock-service";
+import {VcEvent} from "./visconnect";
 
 export class VcLeaderProtocol extends VcProtocol {
     lockService: LockService;
@@ -22,11 +23,11 @@ export class VcLeaderProtocol extends VcProtocol {
         this.lockService.requestLock(selector, requester, seqNum);
     }
 
-    protected addEventToLedger(stripped: StrippedEvent, sender: string) {
-        const success = super.addEventToLedger(stripped, sender);
+    protected addEventToLedger(event: VcEvent, sender: string) {
+        const success = super.addEventToLedger(event, sender);
 
         if(success) {
-            this.lockService.extendLock(stripped.target);
+            this.lockService.extendLock(event.event.target);
         }
 
         return success;

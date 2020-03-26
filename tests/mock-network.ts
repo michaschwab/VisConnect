@@ -41,9 +41,12 @@ function getMockClient(id: string, leaderId: string) {
 
 export class MockCommunication implements VcCommunicationI {
     public id = '';
+    public leaderId = '';
     public communications: MockCommunication[] = [];
     public leaderComm?: MockCommunication;
     public delay: number|false = false;
+    onConnectionCallback = () => {};
+
     constructor(public data: VcCommunicationConstructorData) {}
     getId() { return this.id; }
     broadcastEvent(stripped: VcEvent) {
@@ -71,5 +74,8 @@ export class MockCommunication implements VcCommunicationI {
             const cb = () => comm.data.onNewLockOwner(selector, owner, seqNum);
             this.delay ? setTimeout(cb, this.delay) : cb();
         });
+    }
+    getNumberOfConnections() {
+        return this.communications.length;
     }
 }
