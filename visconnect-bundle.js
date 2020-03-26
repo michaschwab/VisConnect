@@ -1311,12 +1311,13 @@ var VcCommunication = /** @class */ (function () {
     /**
      * This message is sent by the leader to inform clients that an element's lock owner has changed.
      */
-    VcCommunication.prototype.changeLockOwner = function (targetSelector, owner) {
+    VcCommunication.prototype.changeLockOwner = function (targetSelector, owner, seqNum) {
         var msg = {
             type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
             targetSelector: targetSelector,
             owner: owner,
             sender: this.id,
+            seqNum: seqNum
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
@@ -1415,7 +1416,7 @@ var VcCommunication = /** @class */ (function () {
         }
         else if (data.type === VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             var msg = data;
-            this.onNewLockOwner(msg.targetSelector, msg.owner);
+            this.onNewLockOwner(msg.targetSelector, msg.owner, msg.seqNum);
         }
         else if (data.type === VC_MESSAGE_TYPE.DISCONNECTION) {
             var msg = data;
@@ -1470,7 +1471,7 @@ var VcCommunication = /** @class */ (function () {
                 this.connectToPeer(data.peers[i]);
             }
         }
-        this.onEventReceived(data.eventsLedger.map(function (vcEvent) { return vcEvent.event; }), data.sender, true);
+        this.onEventReceived(data.eventsLedger, data.sender, true);
     };
     VcCommunication.prototype.sendDisconnectMessage = function () {
         var decoratedMessage = {
@@ -1517,6 +1518,7 @@ var VcProtocol = /** @class */ (function () {
         this.lockOwners = new Map();
         this.requestedLocks = new Set();
         this.heldEvents = new Map();
+        this.heldRemoteEvents = new Map();
         this.collaboratorId = '';
         var Communication = MockCommunication ? MockCommunication : VcCommunication;
         this.communication = new Communication({
@@ -1545,7 +1547,7 @@ var VcProtocol = /** @class */ (function () {
         if (allAllowed || (lockOwner && lockOwner === this.collaboratorId)) {
             var vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
             if (vcEvent) {
-                this.communication.broadcastEvent(stripped);
+                this.communication.broadcastEvent(vcEvent);
             }
         }
         else if (lockOwner && lockOwner !== this.collaboratorId) {
@@ -1564,14 +1566,21 @@ var VcProtocol = /** @class */ (function () {
     VcProtocol.prototype.receiveRemoteEvents = function (events, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
-            var stripped = events_1[_i];
-            this.addEventToLedger(stripped, sender, catchup);
+            var event = events_1[_i];
+            var success = this.addEventToLedger(event.event, sender, catchup);
+            if (!success && !this.lockOwners.has(event.event.target)) {
+                if (!this.heldRemoteEvents.has(event.event.target)) {
+                    this.heldRemoteEvents.set(event.event.target, []);
+                }
+                this.heldRemoteEvents.get(event.event.target).push(event);
+                //console.log('adding event to held remote events on ', this.collaboratorId);
+            }
         }
     };
     VcProtocol.prototype.receiveLockRequest = function (selector, requester) {
         console.error('Clients are not supposed to receive lock requests.');
     };
-    VcProtocol.prototype.lockOwnerChanged = function (selector, owner) {
+    VcProtocol.prototype.lockOwnerChanged = function (selector, owner, seqNum) {
         //console.log('Lock owner changed', selector, owner, this.collaboratorId, this.heldEvents.has(selector), this.heldEvents.get(selector));
         this.requestedLocks.delete(selector);
         if (!owner) {
@@ -1587,11 +1596,19 @@ var VcProtocol = /** @class */ (function () {
                 var stripped = events_2[_i];
                 var vcEvent = this.addEventToLedger(stripped, this.collaboratorId);
                 if (vcEvent) {
-                    this.communication.broadcastEvent(stripped);
+                    this.communication.broadcastEvent(vcEvent);
                 }
             }
+            this.heldEvents.delete(selector);
         }
-        this.heldEvents.delete(selector);
+        else if (this.heldRemoteEvents.has(selector)) {
+            var filtered = this.heldRemoteEvents.get(selector).filter(function (e) { return e.seqNum >= seqNum; });
+            for (var _a = 0, filtered_1 = filtered; _a < filtered_1.length; _a++) {
+                var event = filtered_1[_a];
+                this.addEventToLedger(event.event, event.sender, false);
+            }
+            this.heldRemoteEvents.delete(selector);
+        }
     };
     VcProtocol.prototype.requestLock = function (selector) {
         if (this.requestedLocks.has(selector)) {
@@ -1610,7 +1627,10 @@ var VcProtocol = /** @class */ (function () {
         // Skip ownership check for catchup events, and for background events.
         if (!catchup && !allAllowed) {
             var lockOwner = this.lockOwners.get(selector);
-            if (!lockOwner || lockOwner !== sender) {
+            if (!lockOwner) {
+                return false;
+            }
+            else if (lockOwner !== sender) {
                 console.error('Trying to execute event on element with different lock owner', selector, lockOwner, sender);
                 return false;
             }
@@ -1631,7 +1651,7 @@ var VcProtocol = /** @class */ (function () {
             'sender': this.collaboratorId
         };
         ledger.push(newEvent);
-        return true;
+        return newEvent;
     };
     return VcProtocol;
 }());
@@ -1642,12 +1662,12 @@ var LockService = /** @class */ (function () {
         this.lockOwners = new Map();
         this.lockTimeouts = new Map();
     }
-    LockService.prototype.requestLock = function (selector, client) {
+    LockService.prototype.requestLock = function (selector, client, seqNum) {
         if (this.lockOwners.has(selector)) {
             return;
         }
         this.lockOwners.set(selector, client);
-        this.communication.changeLockOwner(selector, client);
+        this.communication.changeLockOwner(selector, client, seqNum);
     };
     LockService.prototype.extendLock = function (selector) {
         // Delete any previous timeouts
@@ -1662,7 +1682,7 @@ var LockService = /** @class */ (function () {
         var _this = this;
         return function () {
             _this.lockOwners.delete(selector);
-            _this.communication.changeLockOwner(selector, '');
+            _this.communication.changeLockOwner(selector, '', -1);
         };
     };
     return LockService;
@@ -1680,7 +1700,9 @@ var VcLeaderProtocol = /** @class */ (function (_super) {
         return _this;
     }
     VcLeaderProtocol.prototype.receiveLockRequest = function (selector, requester) {
-        this.lockService.requestLock(selector, requester);
+        var ledger = this.ledgers.get(selector);
+        var seqNum = !ledger ? 0 : ledger[ledger.length - 1].seqNum + 1;
+        this.lockService.requestLock(selector, requester, seqNum);
     };
     VcLeaderProtocol.prototype.addEventToLedger = function (stripped, sender) {
         var success = _super.prototype.addEventToLedger.call(this, stripped, sender);

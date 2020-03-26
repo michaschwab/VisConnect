@@ -39,16 +39,18 @@ function getMockClient(id: string, leaderId: string) {
     return protocol;
 }
 
-class MockCommunication implements VcCommunicationI {
+export class MockCommunication implements VcCommunicationI {
     public id = '';
     public communications: MockCommunication[] = [];
     public leaderComm?: MockCommunication;
+    public delay: number|false = false;
     constructor(public data: VcCommunicationConstructorData) {}
     getId() { return this.id; }
     broadcastEvent(stripped: VcEvent) {
         this.communications.forEach(comm => {
             if(comm.id !== this.id) {
-                comm.data.onEventReceived([{...stripped}], this.id);
+                const receive = () => comm.data.onEventReceived([{...stripped}], this.id);
+                this.delay ? setTimeout(receive, this.delay) : receive();
             }
         });
     }
@@ -58,13 +60,16 @@ class MockCommunication implements VcCommunicationI {
             console.error('no leader comm');
             return false;
         }
-        this.leaderComm.data.onLockRequested(selector, this.id);
+        const leader = this.leaderComm;
+        const req = () => leader.data.onLockRequested(selector, this.id);
+        this.delay ? setTimeout(req, this.delay) : req();
         return true;
     }
     changeLockOwner(selector: string, owner: string, seqNum: number) {
         //console.log(`client ${this.id} declaring new lock owner ${owner} on element ${selector}`);
         this.communications.forEach(comm => {
-            comm.data.onNewLockOwner(selector, owner, seqNum);
+            const cb = () => comm.data.onNewLockOwner(selector, owner, seqNum);
+            this.delay ? setTimeout(cb, this.delay) : cb();
         });
     }
 }

@@ -1,7 +1,7 @@
 import { describe, test, it, expect } from 'jest-without-globals';
 //declare var describe: any, test: any, expect: any;
 
-import {getMockNetwork} from "./mock-network";
+import {getMockNetwork, MockCommunication} from "./mock-network";
 
 describe('Protocol', () => {
     test('Events get executed on client and leader when client sends', () => {
@@ -11,10 +11,7 @@ describe('Protocol', () => {
         const event = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
         client.localEvent(event);
 
-        expect(client.ledgers.has('svg')).toBeTruthy();
         expect(client.ledgers.get('svg')!.length).toBe(1);
-
-        expect(leader.ledgers.has('svg')).toBeTruthy();
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
 
@@ -25,10 +22,7 @@ describe('Protocol', () => {
         const event = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
         leader.localEvent(event);
 
-        expect(client.ledgers.has('svg')).toBeTruthy();
         expect(client.ledgers.get('svg')!.length).toBe(1);
-
-        expect(leader.ledgers.has('svg')).toBeTruthy();
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
 
@@ -37,14 +31,11 @@ describe('Protocol', () => {
         const client = clients[0];
 
         const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
-        const eventB = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        const eventB = {...eventA};
         client.localEvent(eventA);
         client.localEvent(eventB);
 
-        expect(client.ledgers.has('svg')).toBeTruthy();
         expect(client.ledgers.get('svg')!.length).toBe(2);
-
-        expect(leader.ledgers.has('svg')).toBeTruthy();
         expect(leader.ledgers.get('svg')!.length).toBe(2);
     });
 
@@ -55,19 +46,42 @@ describe('Protocol', () => {
         const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
         leader.localEvent(eventA);
 
-        expect(client.ledgers.has('svg')).toBeTruthy();
         expect(client.ledgers.get('svg')!.length).toBe(1);
-
-        expect(leader.ledgers.has('svg')).toBeTruthy();
         expect(leader.ledgers.get('svg')!.length).toBe(1);
 
-        const eventB = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        const eventB = {...eventA};
         client.localEvent(eventB);
 
-        expect(client.ledgers.has('svg')).toBeTruthy();
         expect(client.ledgers.get('svg')!.length).toBe(1);
-
-        expect(leader.ledgers.has('svg')).toBeTruthy();
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
+
+    test('Delays work as expected', async () => {
+        const {leader, clients} = getMockNetwork(1);
+        const client = clients[0];
+
+        (leader.communication as MockCommunication).delay = false;
+        (client.communication as MockCommunication).delay = 20;
+
+        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        const eventB = {...eventA};
+        client.localEvent(eventA);
+
+        expect(client.ledgers.get('svg')).toBeFalsy();
+        expect(leader.ledgers.get('svg')).toBeFalsy();
+
+        await wait(60);
+        expect(client.ledgers.get('svg')!.length).toBe(1);
+        expect(leader.ledgers.get('svg')!.length).toBe(1);
+
+        client.localEvent(eventB);
+        expect(client.ledgers.get('svg')!.length).toBe(2);
+        expect(leader.ledgers.get('svg')!.length).toBe(1);
+
+        await wait(30);
+        expect(client.ledgers.get('svg')!.length).toBe(2);
+        expect(leader.ledgers.get('svg')!.length).toBe(2);
+    });
 });
+
+const wait = (ms: number) => new Promise<void>((resolve: () => void) => setTimeout(resolve, ms));
