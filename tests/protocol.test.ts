@@ -2,29 +2,75 @@ import { describe, test, it, expect } from 'jest-without-globals';
 //declare var describe: any, test: any, expect: any;
 
 import {VcProtocol} from "../src/protocol";
-import {VcCommunicationConstructorData, VcCommunicationI, VcMessage} from "../src/communication";
+import {VcCommunicationConstructorData, VcCommunicationI} from "../src/communication";
 import {VcLeaderProtocol} from "../src/leader-protocol";
 import {StrippedEvent} from "../src/listener";
 
 describe('Protocol', () => {
-    test('Events get executed on client and leader', () => {
-        const network = getMockNetwork(1);
-        const leader = network.leader;
-        const client = network.clients[0];
+    test('Events get executed on client and leader when client sends', () => {
+        const {leader, clients} = getMockNetwork(1);
+        const client = clients[0];
 
-        client.localEvent({
-            type: 'mousedown',
-            target: 'svg',
-            targetType: 'svg',
-            timeStamp: 0,
-            collaboratorId: 'client',
-            touches: []
-        });
+        const event = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        client.localEvent(event);
 
-        expect(client.ledgers.get('svg')).toBeDefined();
+        expect(client.ledgers.has('svg')).toBeTruthy();
         expect(client.ledgers.get('svg')!.length).toBe(1);
 
-        expect(leader.ledgers.get('svg')).toBeDefined();
+        expect(leader.ledgers.has('svg')).toBeTruthy();
+        expect(leader.ledgers.get('svg')!.length).toBe(1);
+    });
+
+    test('Events get executed on client and leader when leader sends', () => {
+        const {leader, clients} = getMockNetwork(1);
+        const client = clients[0];
+
+        const event = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        leader.localEvent(event);
+
+        expect(client.ledgers.has('svg')).toBeTruthy();
+        expect(client.ledgers.get('svg')!.length).toBe(1);
+
+        expect(leader.ledgers.has('svg')).toBeTruthy();
+        expect(leader.ledgers.get('svg')!.length).toBe(1);
+    });
+
+    test('Multiple events get executed', () => {
+        const {leader, clients} = getMockNetwork(1);
+        const client = clients[0];
+
+        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        const eventB = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        client.localEvent(eventA);
+        client.localEvent(eventB);
+
+        expect(client.ledgers.has('svg')).toBeTruthy();
+        expect(client.ledgers.get('svg')!.length).toBe(2);
+
+        expect(leader.ledgers.has('svg')).toBeTruthy();
+        expect(leader.ledgers.get('svg')!.length).toBe(2);
+    });
+
+    test('Multiple element executors get blocked', () => {
+        const {leader, clients} = getMockNetwork(1);
+        const client = clients[0];
+
+        const eventA = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        leader.localEvent(eventA);
+
+        expect(client.ledgers.has('svg')).toBeTruthy();
+        expect(client.ledgers.get('svg')!.length).toBe(1);
+
+        expect(leader.ledgers.has('svg')).toBeTruthy();
+        expect(leader.ledgers.get('svg')!.length).toBe(1);
+
+        const eventB = {type: 'mousedown', target: 'svg', targetType: 'svg', timeStamp: 0, collaboratorId: '', touches: []};
+        client.localEvent(eventB);
+
+        expect(client.ledgers.has('svg')).toBeTruthy();
+        expect(client.ledgers.get('svg')!.length).toBe(1);
+
+        expect(leader.ledgers.has('svg')).toBeTruthy();
         expect(leader.ledgers.get('svg')!.length).toBe(1);
     });
 });
@@ -79,7 +125,7 @@ class MockCommunication implements VcCommunicationI {
         });
     }
     requestLock(selector: string) {
-        //console.log(`client ${this.id} requesting lock for ${selector}`);
+        console.log(`client ${this.id} requesting lock for ${selector}`);
         if(!this.leaderComm) {
             console.error('no leader comm');
             return false;
@@ -88,7 +134,7 @@ class MockCommunication implements VcCommunicationI {
         return true;
     }
     changeLockOwner(selector: string, owner: string) {
-        //console.log(`client ${this.id} declaring new lock owner ${owner} on element ${selector}`);
+        console.log(`client ${this.id} declaring new lock owner ${owner} on element ${selector}`);
         this.communications.forEach(comm => {
             comm.data.onNewLockOwner(selector, owner);
         });
