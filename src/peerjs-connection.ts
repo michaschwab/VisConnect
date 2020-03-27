@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import {VcMessage} from "./communication";
 
 export interface PeerjsConnectionI {
     on: (id: string, callback: (data: any) => void) => void;
@@ -14,7 +15,7 @@ export interface VcConnection {
 }
 
 export class PeerjsConnection implements VcConnection {
-    messages = new Subject<{}>();
+    messages = new Subject<VcMessage>();
 
     constructor(private connection: PeerjsConnectionI) {
         this.connection.on('data', message => {
@@ -22,17 +23,20 @@ export class PeerjsConnection implements VcConnection {
         });
     }
 
-    send(message: {}) {
-        // To test bad network conditions, the following line can be activated instead of the one following it.
-        //setTimeout(() => this.connection.send(message), Math.round(Math.random() * 60));
-        this.connection.send(message)
+    send(message: VcMessage) {
+        // The testdelay URL flag can be used to test bad network conditions.
+        if(location.href.includes('testdelay')) {
+            setTimeout(() => this.connection.send(message), Math.round(Math.random() * 100));
+        } else {
+            this.connection.send(message)
+        }
     }
 
     getPeer() {
         return this.connection.peer;
     }
 
-    private receiveMessage(message: any) {
+    private receiveMessage(message: VcMessage) {
         this.messages.next(message);
     }
 

@@ -1189,9 +1189,14 @@ var PeerjsConnection = /** @class */ (function () {
         });
     }
     PeerjsConnection.prototype.send = function (message) {
-        // To test bad network conditions, the following line can be activated instead of the one following it.
-        //setTimeout(() => this.connection.send(message), Math.round(Math.random() * 60));
-        this.connection.send(message);
+        var _this = this;
+        // The testdelay URL flag can be used to test bad network conditions.
+        if (location.href.includes('testdelay')) {
+            setTimeout(function () { return _this.connection.send(message); }, Math.round(Math.random() * 100));
+        }
+        else {
+            this.connection.send(message);
+        }
     };
     PeerjsConnection.prototype.getPeer = function () {
         return this.connection.peer;
