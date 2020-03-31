@@ -10,7 +10,7 @@ export interface StrippedEvent {
 
 export class VcListener {
     constructor(private svg: Element, private hearEvent: (e: StrippedEvent, event: Event) => void,
-                private customEvents?: string[]) {
+                private customEvents?: string[], private ignoreEvents?: string[]) {
         this.addListenersToElementAndChildren(this.svg);
     }
 
@@ -24,25 +24,13 @@ export class VcListener {
     addListenersToElement(element: Element) {
         const boundCapture = this.captureEvent(element).bind(this);
 
-        element.addEventListener('mousemove', boundCapture);
-        element.addEventListener('mouseup', boundCapture);
-        element.addEventListener('mousedown', boundCapture);
-        element.addEventListener('touchmove', boundCapture);
-        element.addEventListener('mouseenter', boundCapture);
-        element.addEventListener('mouseout', boundCapture);
-        element.addEventListener('mouseover', boundCapture);
-        element.addEventListener('mouseleave', boundCapture);
-        element.addEventListener('click', boundCapture);
-        element.addEventListener('dblclick', boundCapture);
-        element.addEventListener('touchstart', boundCapture);
-        element.addEventListener('touchend', boundCapture);
-        element.addEventListener('selectstart', boundCapture);
-        element.addEventListener('dragstart', boundCapture);
+        const custom = this.customEvents ? this.customEvents : [];
+        const eventTypes = ['mousemove', 'mouseup', 'mousedown', 'touchmove', 'mouseenter', 'mouseout', 'mouseover',
+            'mouseleave', 'click', 'dblclick', 'touchstart', 'touchend', 'selectstart', 'dragstart'].concat(custom)
+            .filter(type => !this.ignoreEvents || !this.ignoreEvents.includes(type));
 
-        if(this.customEvents) {
-            for(const customEvent of this.customEvents) {
-                element.addEventListener(customEvent, boundCapture);
-            }
+        for(const type of eventTypes) {
+            element.addEventListener(type, boundCapture);
         }
 
         // Add listeners to future child elements.

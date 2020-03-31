@@ -15,6 +15,7 @@ delayAddEventListener().then(() => {
     const svg = document.getElementsByTagName('svg')[0];
     let safeMode = true;
     let customEvents: string[]|undefined = undefined;
+    let ignoreEvents: string[]|undefined = undefined;
 
     if (elsWithAttribute.length) {
         el = elsWithAttribute[0];
@@ -26,6 +27,10 @@ delayAddEventListener().then(() => {
         if(customEventsVal) {
             customEvents = customEventsVal.replace(' ', '').split(',');
         }
+        const ignoreEventsVal = el.getAttribute('ignore-events');
+        if(ignoreEventsVal) {
+            ignoreEvents = ignoreEventsVal.replace(' ', '').split(',');
+        }
     } else if (svg) {
         el = svg;
     } else {
@@ -33,7 +38,7 @@ delayAddEventListener().then(() => {
     }
 
     console.log('start visconnect');
-    visconnect = new Visconnect(el, safeMode, customEvents);
+    visconnect = new Visconnect(el, safeMode, customEvents, ignoreEvents);
 
     visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
