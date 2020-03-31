@@ -14,12 +14,17 @@ delayAddEventListener().then(() => {
     const elsWithAttribute = document.querySelectorAll('[collaboration]');
     const svg = document.getElementsByTagName('svg')[0];
     let safeMode = true;
+    let customEvents: string[]|undefined = undefined;
 
     if (elsWithAttribute.length) {
         el = elsWithAttribute[0];
         const val = el.getAttribute('collaboration');
         if(val && val === 'live') {
             safeMode = false;
+        }
+        const customEventsVal = el.getAttribute('custom-events');
+        if(customEventsVal) {
+            customEvents = customEventsVal.replace(' ', '').split(',');
         }
     } else if (svg) {
         el = svg;
@@ -28,7 +33,7 @@ delayAddEventListener().then(() => {
     }
 
     console.log('start visconnect');
-    visconnect = new Visconnect(el, safeMode);
+    visconnect = new Visconnect(el, safeMode, customEvents);
 
     visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);

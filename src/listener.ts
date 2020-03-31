@@ -9,7 +9,8 @@ export interface StrippedEvent {
 }
 
 export class VcListener {
-    constructor(private svg: Element, private hearEvent: (e: StrippedEvent, event: Event) => void) {
+    constructor(private svg: Element, private hearEvent: (e: StrippedEvent, event: Event) => void,
+                private customEvents?: string[]) {
         this.addListenersToElementAndChildren(this.svg);
     }
 
@@ -37,6 +38,12 @@ export class VcListener {
         element.addEventListener('touchend', boundCapture);
         element.addEventListener('selectstart', boundCapture);
         element.addEventListener('dragstart', boundCapture);
+
+        if(this.customEvents) {
+            for(const customEvent of this.customEvents) {
+                element.addEventListener(customEvent, boundCapture);
+            }
+        }
 
         // Add listeners to future child elements.
         const appendBackup = element.appendChild;
@@ -70,7 +77,7 @@ export class VcListener {
         };
     }
 
-    getStrippedEvent(e: MouseEvent|TouchEvent|Event) {
+    getStrippedEvent(e: MouseEvent|TouchEvent|Event|CustomEvent) {
         let obj: StrippedEvent = {type: '', target: '', targetType: '', touches: [], timeStamp: -1, collaboratorId: ''};
         for(const key in e) {
             const val = (e as any)[key];
@@ -95,6 +102,9 @@ export class VcListener {
             for(const touch of e.touches) {
                 obj.touches.push({clientX: touch.clientX + window.scrollX, clientY: touch.clientY + window.scrollX});
             }
+        }
+        if((e as CustomEvent).detail) {
+            obj.detail = (e as CustomEvent).detail;
         }
         const target = this.getElementSelector(e.target as Element);
         if(target) {

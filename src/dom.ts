@@ -72,6 +72,12 @@ export function recreateEvent(eventObject: StrippedEvent, target: Element): Even
     } else {
         e = new Event(eventObject.type, eventObject as any);
     }
+    if(eventObject.detail) {
+        Object.defineProperty(e, 'detail', {
+            writable: true,
+            value: eventObject.detail,
+        });
+    }
 
     if(targetSelector) {
         let newTarget: Element|null = document.querySelector(targetSelector);

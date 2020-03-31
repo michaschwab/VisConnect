@@ -14,7 +14,7 @@ export class Visconnect {
     protocol: VcProtocol;
     onEventCancelled: (event: StrippedEvent) => void = () => {};
 
-    constructor(private svg: Element, private safeMode = true) {
+    constructor(private svg: Element, private safeMode = true, customEvents?: string[]) {
         let parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
         const leaderId = parts ? parts[1] : '';
         const isLeader = !leaderId;
@@ -24,7 +24,7 @@ export class Visconnect {
 
         this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this),
             unsafeElements);
-        this.listener = new VcListener(this.svg, this.localEvent.bind(this));
+        this.listener = new VcListener(this.svg, this.localEvent.bind(this), customEvents);
     }
 
     localEvent(stripped: StrippedEvent, event: Event) {
@@ -46,6 +46,10 @@ export class Visconnect {
         (event as any)['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
         if(event.target) {
             event.target.dispatchEvent(event);
+
+            if(event.type === 'click') {
+                (event.target as HTMLElement).focus();
+            }
         }
     }
 }
