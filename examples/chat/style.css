@@ -1,0 +1,31 @@
+#wrapper {
+    width: 900px;
+    margin: auto;
+}
+#chat {
+    height: 300px;
+    width: 600px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    margin-bottom: 50px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+input {
+    padding: 7px 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    outline: none;
+    box-sizing: border-box;
+}
+input:focus {
+    border-color: #666;
+}
+
+#chat-nick {
+    width: 100px;
+}
+#chat-input {
+    width: 500px;
+}
