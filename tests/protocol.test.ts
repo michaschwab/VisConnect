@@ -31,7 +31,7 @@ describe('Protocol', () => {
         expect(leader.ledgers.get('svg')!.length).toBe(2);
     });
 
-    test('Multiple element executors get blocked', () => {
+    test('Conflicting events get blocked', () => {
         const {leader, clients: [client]} = getMockNetwork(1);
 
         leader.localEvent(createEvent());
