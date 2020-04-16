@@ -31,7 +31,7 @@ function getMockClient(id: string, leaderId: string) {
     const cancel = () => {};
     const isLeader = id === leaderId;
     const Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
-    const protocol = new Protocol(leaderId, execute, cancel, [], MockCommunication);
+    const protocol = new Protocol(leaderId, id, execute, cancel, [], MockCommunication);
     const communication = protocol.communication as MockCommunication;
     communication.id = id;
     communication.data.onOpenCallback();
@@ -46,6 +46,7 @@ export class MockCommunication implements VcCommunicationI {
     public leaderComm?: MockCommunication;
     public delay: number|false = false;
     onConnectionCallback = () => {};
+    init = () => {};
 
     constructor(public data: VcCommunicationConstructorData) {}
     getId() { return this.id; }

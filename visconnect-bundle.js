@@ -134,6 +134,80 @@ var stringToHex = function (string) {
     return color;
 };
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+/* global Reflect, Promise */
+
+var extendStatics = function(d, b) {
+    extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return extendStatics(d, b);
+};
+
+function __extends(d, b) {
+    extendStatics(d, b);
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
+
+function __spreadArrays() {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+}
+
 var VcListener = /** @class */ (function () {
     function VcListener(svg, hearEvent, customEvents, ignoreEvents) {
         this.svg = svg;
@@ -339,72 +413,6 @@ function recreateEvent(eventObject, target) {
         value: window,
     });
     return e;
-}
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return extendStatics(d, b);
-};
-
-function __extends(d, b) {
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
 }
 
 /** PURE_IMPORTS_START  PURE_IMPORTS_END */
@@ -1223,9 +1231,9 @@ var PeerjsNetwork = /** @class */ (function () {
     function PeerjsNetwork() {
         this.onOpen = function () { return 0; };
     }
-    PeerjsNetwork.prototype.init = function (onOpen, onConnection, onDisconnection) {
+    PeerjsNetwork.prototype.init = function (id, onOpen, onConnection, onDisconnection) {
         this.onOpen = onOpen;
-        this.peer = new Peer({
+        this.peer = new Peer(id, {
             host: 'michaschwab.de',
             port: 9000,
             secure: true,
@@ -1239,7 +1247,7 @@ var PeerjsNetwork = /** @class */ (function () {
                     }
                 ] }
         });
-        if (this.peer.id) {
+        if (this.peer._open) {
             this.onOpen(); // In case it was done too fast.
         }
         else {
@@ -1287,14 +1295,17 @@ var VcCommunication = /** @class */ (function () {
         this.lastEventsMessageTime = -1;
         this.throttleTimeout = -1;
         this.leaderId = data.leaderId;
+        this.id = data.ownId;
         this.onEventReceived = data.onEventReceived;
         this.onNewLockOwner = data.onNewLockOwner;
         this.getPastEvents = data.getPastEvents;
         this.onLockRequested = data.onLockRequested;
         this.onOpenCallback = data.onOpenCallback;
         this.peer = new PeerjsNetwork();
-        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
+    VcCommunication.prototype.init = function () {
+        this.peer.init(this.id, this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
+    };
     /**
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
@@ -1522,8 +1533,9 @@ var VC_MESSAGE_TYPE;
 })(VC_MESSAGE_TYPE || (VC_MESSAGE_TYPE = {}));
 
 var VcProtocol = /** @class */ (function () {
-    function VcProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, MockCommunication) {
+    function VcProtocol(leaderId, ownId, executeEvent, cancelEvent, unsafeElements, MockCommunication) {
         this.leaderId = leaderId;
+        this.ownId = ownId;
         this.executeEvent = executeEvent;
         this.cancelEvent = cancelEvent;
         this.unsafeElements = unsafeElements;
@@ -1536,12 +1548,14 @@ var VcProtocol = /** @class */ (function () {
         var Communication = MockCommunication ? MockCommunication : VcCommunication;
         this.communication = new Communication({
             leaderId: leaderId,
+            ownId: ownId,
             onEventReceived: this.receiveRemoteEvents.bind(this),
             onNewLockOwner: this.lockOwnerChanged.bind(this),
             getPastEvents: this.getPastEvents.bind(this),
             onLockRequested: this.receiveLockRequest.bind(this),
             onOpenCallback: this.init.bind(this)
         });
+        this.communication.init();
     }
     VcProtocol.prototype.init = function () {
         this.collaboratorId = this.communication.getId();
@@ -1752,9 +1766,10 @@ var LockService = /** @class */ (function () {
 
 var VcLeaderProtocol = /** @class */ (function (_super) {
     __extends(VcLeaderProtocol, _super);
-    function VcLeaderProtocol(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
-        var _this = _super.call(this, leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication) || this;
+    function VcLeaderProtocol(leaderId, ownId, executeEvent, cancelEvent, unsafeElements, mockCommunication) {
+        var _this = _super.call(this, leaderId, ownId, executeEvent, cancelEvent, unsafeElements, mockCommunication) || this;
         _this.leaderId = leaderId;
+        _this.ownId = ownId;
         _this.executeEvent = executeEvent;
         _this.cancelEvent = cancelEvent;
         _this.unsafeElements = unsafeElements;
@@ -1783,11 +1798,12 @@ var Visconnect = /** @class */ (function () {
         this.safeMode = safeMode;
         this.onEventCancelled = function () { };
         var parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
-        var leaderId = parts ? parts[1] : '';
-        var isLeader = !leaderId;
+        var ownId = __spreadArrays(Array(10)).map(function (i) { return (~~(Math.random() * 36)).toString(36); }).join('');
+        var leaderId = parts ? parts[1] : ownId;
+        var isLeader = leaderId === ownId;
         var Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
         var unsafeElements = safeMode ? ['body', 'svg', 'g'] : ['*'];
-        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this), unsafeElements);
+        this.protocol = new Protocol(leaderId, ownId, this.executeEvent.bind(this), this.cancelEvent.bind(this), unsafeElements);
         this.listener = new VcListener(this.svg, this.localEvent.bind(this), customEvents, ignoreEvents);
     }
     Visconnect.prototype.localEvent = function (stripped, event) {

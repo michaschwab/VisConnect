@@ -3,7 +3,7 @@ import {PeerjsConnection, PeerjsConnectionI} from "./peerjs-connection";
 declare var Peer: any;
 
 export interface VcNetwork {
-    init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void): void;
+    init(id: string, onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void): void;
     getId(): string;
     connect(peerId: string): Promise<PeerjsConnection>;
 }
@@ -12,10 +12,10 @@ export class PeerjsNetwork implements VcNetwork {
     private peer: any;
     private onOpen: () => void = () => 0;
 
-    init(onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void) {
+    init(id: string, onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void) {
         this.onOpen = onOpen;
 
-        this.peer = new Peer({
+        this.peer = new Peer(id, {
             host: 'michaschwab.de',
             port: 9000,
             secure: true,
@@ -30,7 +30,7 @@ export class PeerjsNetwork implements VcNetwork {
             ]}
         });
 
-        if(this.peer.id) {
+        if(this.peer._open) {
             this.onOpen(); // In case it was done too fast.
         } else {
             this.peer.on('open', this.onOpen);
@@ -52,7 +52,6 @@ export class PeerjsNetwork implements VcNetwork {
         return this.peer.id;
     }
 
-    
     connect(peerId: string): Promise<PeerjsConnection> {
         return new Promise<PeerjsConnection>(async (resolve) => {
             const conn: PeerjsConnectionI = this.peer.connect(peerId);

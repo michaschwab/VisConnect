@@ -12,6 +12,7 @@ export class VcProtocol {
     protected collaboratorId = '';
 
     constructor(protected leaderId: string,
+                protected ownId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
@@ -19,12 +20,14 @@ export class VcProtocol {
         const Communication = MockCommunication ? MockCommunication : VcCommunication;
         this.communication = new Communication({
             leaderId: leaderId,
+            ownId: ownId,
             onEventReceived: this.receiveRemoteEvents.bind(this),
             onNewLockOwner:  this.lockOwnerChanged.bind(this),
             getPastEvents: this.getPastEvents.bind(this),
             onLockRequested: this.receiveLockRequest.bind(this),
             onOpenCallback:  this.init.bind(this)
         });
+        this.communication.init();
     }
 
     init() {

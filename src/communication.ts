@@ -12,10 +12,12 @@ export interface VcCommunicationI {
     getNumberOfConnections: () => number;
     leaderId: string;
     onConnectionCallback: () => void;
+    init: () => void;
 }
 
 export interface VcCommunicationConstructorData {
     leaderId: string,
+    ownId: string,
     onEventReceived: (e: VcEvent[], sender: string, catchup?: boolean) => void,
     onNewLockOwner: (selector: string, owner: string, seqNum: number) => void,
     getPastEvents: () => VcEvent[],
@@ -48,6 +50,7 @@ export class VcCommunication implements VcCommunicationI {
 
     constructor(data: VcCommunicationConstructorData) {
         this.leaderId = data.leaderId;
+        this.id = data.ownId;
         this.onEventReceived = data.onEventReceived;
         this.onNewLockOwner = data.onNewLockOwner;
         this.getPastEvents = data.getPastEvents;
@@ -55,7 +58,10 @@ export class VcCommunication implements VcCommunicationI {
         this.onOpenCallback = data.onOpenCallback;
 
         this.peer = new PeerjsNetwork();
-        this.peer.init(this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
+    }
+
+    init() {
+        this.peer.init(this.id, this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
     }
 
     /**

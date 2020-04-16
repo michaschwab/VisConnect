@@ -17,13 +17,14 @@ export class Visconnect {
     constructor(private svg: Element, private safeMode = true, customEvents?: string[],
                 ignoreEvents?: string[]) {
         let parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
-        const leaderId = parts ? parts[1] : '';
-        const isLeader = !leaderId;
+        const ownId = [...Array(10)].map(i=>(~~(Math.random()*36)).toString(36)).join('');
+        const leaderId = parts ? parts[1] : ownId;
+        const isLeader = leaderId === ownId;
         const Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
 
         const unsafeElements = safeMode ? ['body', 'svg', 'g'] : ['*'];
 
-        this.protocol = new Protocol(leaderId, this.executeEvent.bind(this), this.cancelEvent.bind(this),
+        this.protocol = new Protocol(leaderId, ownId, this.executeEvent.bind(this), this.cancelEvent.bind(this),
             unsafeElements);
         this.listener = new VcListener(this.svg, this.localEvent.bind(this), customEvents, ignoreEvents);
     }

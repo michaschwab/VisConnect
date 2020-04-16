@@ -8,11 +8,12 @@ export class VcLeaderProtocol extends VcProtocol {
     lockService: LockService;
 
     constructor(protected leaderId: string,
+                protected ownId: string,
                 protected executeEvent: (e: StrippedEvent) => void,
                 protected cancelEvent: (e: StrippedEvent) => void,
                 protected unsafeElements: string[],
                 mockCommunication?: VcCommunicationConstructor) {
-        super(leaderId, executeEvent, cancelEvent, unsafeElements, mockCommunication);
+        super(leaderId, ownId, executeEvent, cancelEvent, unsafeElements, mockCommunication);
 
         this.lockService = new LockService(this.communication);
     }
