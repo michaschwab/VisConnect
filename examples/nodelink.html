@@ -16,12 +16,6 @@
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="../visconnect-bundle.js"></script>
 <script>
-    var seed = 1;
-    function random() { // Bad but seeded random function
-        var x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
-    }
-
     var svg = d3.select("svg"),
         width = +svg.attr("width"),
         height = +svg.attr("height");
@@ -42,7 +36,7 @@
         {
             var id = '';
             for(let j = 0; j < 10; j++) {
-                id += alphabet[Math.round(random() * (alphabet.length - 1))];
+                id += alphabet[Math.round(vc.random() * (alphabet.length - 1))];
             }
             ids.push(id);
         }
@@ -51,19 +45,19 @@
 
         for(i = 0; i < numberNodes; i++)
         {
-            nodes.push({id: ids[i], group: Math.round(random() * 9)});
+            nodes.push({id: ids[i], group: Math.round(vc.random() * 9)});
         }
 
         var links = []
 
         for(i = 0; i < numberNodes * connectionsPerNode / 2; i++)
         {
-            var id1 = ids[Math.round(random()*(numberNodes-1))];
-            var id2 = ids[Math.round(random()*(numberNodes-1))];
+            var id1 = ids[Math.round(vc.random()*(numberNodes-1))];
+            var id2 = ids[Math.round(vc.random()*(numberNodes-1))];
 
             if(id1 !== id2)
             {
-                links.push({source: id1, target: id2, fromId: id1, toId: id2, value: Math.round(random()*9)})
+                links.push({source: id1, target: id2, fromId: id1, toId: id2, value: Math.round(vc.random()*9)})
             }
         }
 

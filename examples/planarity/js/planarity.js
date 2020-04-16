@@ -11,12 +11,6 @@ var w = 960,
     graph;
 
 let level = 0;
-let seed = level;
-
-function random() { // Bad but seeded random function
-  const x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
-}
 
 graph = scramble(planarGraph(8));
 
@@ -113,8 +107,8 @@ function update() {
           .on("drag", function(d) {
               // Jitter to prevent coincident nodes.
               const pos = vc.mouse(this);
-              d[0] = Math.max(0, Math.min(1, x.invert(pos[0]))) + random() * 1e-4;
-              d[1] = Math.max(0, Math.min(1, y.invert(pos[1]))) + random() * 1e-4;
+              d[0] = Math.max(0, Math.min(1, x.invert(pos[0]))) + vc.random() * 1e-4;
+              d[1] = Math.max(0, Math.min(1, y.invert(pos[1]))) + vc.random() * 1e-4;
               update();
           })
           .on("end", function() {
@@ -167,8 +161,8 @@ function scramble(graph) {
   if (graph.nodes.length < 4) return graph;
   do {
     graph.nodes.forEach(function(node) {
-      node[0] = random();
-      node[1] = random();
+      node[0] = vc.random();
+      node[1] = vc.random();
     });
   } while (!intersections(graph.links));
   return graph;
@@ -180,9 +174,9 @@ function planarGraph(n) {
       links = [],
       i = -1,
       j;
-  while (++i < n) points[i] = [random(), random()];
+  while (++i < n) points[i] = [vc.random(), vc.random()];
   i = -1; while (++i < n) {
-    addPlanarLink([points[i], points[~~(random() * n)]], links);
+    addPlanarLink([points[i], points[~~(vc.random() * n)]], links);
   }
   i = -1; while (++i < n) {
     j = i; while (++j < n) addPlanarLink([points[i], points[j]], links);

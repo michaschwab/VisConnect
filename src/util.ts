@@ -95,6 +95,16 @@ export class VisConnectUtil {
         const coords = (window as any)['d3'].mouse(node);
         return [coords[0] - window.scrollX, coords[1] - window.scrollY];
     }
+
+    static random(leaderId: string) {
+        // string to int hash from https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0.
+        let seed = Array.from(leaderId).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0);
+        return () => {
+            // Bad but seeded random function
+            const x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        };
+    }
 }
 
 // Adapted from D3.js

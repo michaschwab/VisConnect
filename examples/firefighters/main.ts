@@ -1,4 +1,5 @@
 declare var d3;
+declare var vc;
 
 interface FallingObject {
     type: 'rock'|'person';
@@ -63,10 +64,10 @@ const addRandomFallingObject = () => {
     }
 
     fallingObjects.push({
-        id: String(random()),
-        type: random() > 0.7 ? 'rock' : 'person',
-        position: {x: random() * width, y: -100},
-        speed: 0.1 + random() * 0.2,
+        id: String(vc.random()),
+        type: vc.random() > 0.7 ? 'rock' : 'person',
+        position: {x: vc.random() * width, y: -100},
+        speed: 0.1 + vc.random() * 0.2,
         timeSinceLanding: 0,
         intersected: false
     });
@@ -205,9 +206,3 @@ const getCollaboratorIndex = (id: string) => {
     }
     return Array.from(collaboratorIds.values()).indexOf(id) + 1; // 1 or 2
 };
-
-let seed = 1;
-function random() { // Bad but seeded random function
-    const x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
-}

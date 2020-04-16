@@ -14,11 +14,8 @@ export class Visconnect {
     protocol: VcProtocol;
     onEventCancelled: (event: StrippedEvent) => void = () => {};
 
-    constructor(private svg: Element, private safeMode = true, customEvents?: string[],
-                ignoreEvents?: string[]) {
-        let parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
-        const ownId = [...Array(10)].map(i=>(~~(Math.random()*36)).toString(36)).join('');
-        const leaderId = parts ? parts[1] : ownId;
+    constructor(private svg: Element, ownId: string, leaderId: string, private safeMode = true,
+                customEvents?: string[], ignoreEvents?: string[]) {
         const isLeader = leaderId === ownId;
         const Protocol = isLeader ? VcLeaderProtocol : VcProtocol;
 

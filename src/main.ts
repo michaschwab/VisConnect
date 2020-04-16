@@ -4,7 +4,16 @@ import {VisConnectUtil} from "./util";
 import {delayAddEventListener, disableStopPropagation} from "./dom";
 var visconnect;
 var visconnectUi;
-(window as any).vc = {drag: VisConnectUtil.drag, mouse: VisConnectUtil.mouse};
+
+let parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
+const ownId = [...Array(10)].map(i=>(~~(Math.random()*36)).toString(36)).join('');
+const leaderId = parts ? parts[1] : ownId;
+
+(window as any).vc = {
+    drag: VisConnectUtil.drag,
+    mouse: VisConnectUtil.mouse,
+    random: VisConnectUtil.random(leaderId)
+};
 
 console.log('init vislink');
 disableStopPropagation();
@@ -38,7 +47,7 @@ delayAddEventListener().then(() => {
     }
 
     console.log('start visconnect');
-    visconnect = new Visconnect(el, safeMode, customEvents, ignoreEvents);
+    visconnect = new Visconnect(el, ownId, leaderId, safeMode, customEvents, ignoreEvents);
 
     visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);

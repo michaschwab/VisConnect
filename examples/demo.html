@@ -24,13 +24,6 @@
 </svg>
 
 <script>
-// Custom seed based random function.
-var seed = 11;
-function random() {
-    var x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
-}
-
 var svg = d3.select("svg");
 var width = svg.attr('width');
 var height = svg.attr('height');
@@ -51,9 +44,9 @@ var participants = ["Luke", "David K", "David Sl", "Micha", "David Sa", "Kunal",
     "Dat", "Cristina", "Asad"];
 var nodes = participants.map(name => { return {
     name,
-    x: (0.1 + 0.8 * random()) * width,
-    y: (0.1 + 0.8 * random()) * height,
-    color: Math.round(random() * 20)}});
+    x: (0.1 + 0.8 * vc.random()) * width,
+    y: (0.1 + 0.8 * vc.random()) * height,
+    color: Math.round(vc.random() * 20)}});
 
 var node = svg.append("g")
     .attr("class", "nodes")
