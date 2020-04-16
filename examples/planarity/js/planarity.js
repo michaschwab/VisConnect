@@ -107,8 +107,8 @@ function update() {
           .on("drag", function(d) {
               // Jitter to prevent coincident nodes.
               const pos = vc.mouse(this);
-              d[0] = Math.max(0, Math.min(1, x.invert(pos[0]))) + vc.random() * 1e-4;
-              d[1] = Math.max(0, Math.min(1, y.invert(pos[1]))) + vc.random() * 1e-4;
+              d[0] = x.invert(pos[0]);
+              d[1] = y.invert(pos[1]);
               update();
           })
           .on("end", function() {
