@@ -138,6 +138,8 @@ export class VisConnectUi {
     transition: height 500ms;
     color: #fff;
     font-family: 'Times New Roman',Times,serif;
+}
+#visconnect-container, #visconnect-container * {
     box-sizing: content-box;
 }
 #visconnect-logo {
