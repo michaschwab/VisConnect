@@ -137,7 +137,8 @@ export class VisConnectUi {
     padding: 10px;
     transition: height 500ms;
     color: #fff;
-    font-family: 'Times New Roman',Times;
+    font-family: 'Times New Roman',Times,serif;
+    box-sizing: content-box;
 }
 #visconnect-logo {
     padding-left: 15px;
