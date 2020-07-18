@@ -34,7 +34,7 @@
     background: #ff9999;
 }
 </style>
-<body>
+<body collaboration="live" custom-events="brush-message, label-message" ignore-events="click, mousedown, mouseup, mousemove, selectstart, dragstart">
 <div id="left">
     <h2>Overview</h2>
     <div id="overview">
@@ -59,14 +59,34 @@ const heightOrig = 838;
 const scale = 0.3;
 const width = scale * widthOrig;
 const height = scale * heightOrig;
+const collaboratorId = Math.ceil(100000-1+900000*Math.random());
+const collaboratorBrushes = {};
 
 const overviewWrap = d3.select('#overview');
 const overviewSvg = overviewWrap.append("svg").attr("width", width).attr("height", height);
 const overviewLabels = overviewSvg.append('g').style('opacity', '0.5');
+const overviewBrushes = overviewSvg.append('g').style('opacity', '0.5');
 const detail = d3.select('#detail-image');
 let x0, y0, x1, y1;
 
-const brushEnded = () => {
+document.body.addEventListener('brush-message', (e) => {
+    if(!collaboratorBrushes[e.detail.collaboratorId]) {
+        collaboratorBrushes[e.detail.collaboratorId] = overviewBrushes.append('rect')
+            .attr('fill', `#${e.detail.collaboratorId}`)
+            .style('pointer-events', 'none');
+    }
+    const rect = collaboratorBrushes[e.detail.collaboratorId];
+    const [[x0orig, y0orig], [x1orig, y1orig]] = e.detail.event;
+    [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
+
+    rect
+        .attr('x', x0 * scale)
+        .attr('y', y0 * scale)
+        .attr('width', (x1 - x0) * scale)
+        .attr('height', (y1 - y0) * scale);
+});
+
+const updateDetailView = () => {
     const [[x0orig, y0orig], [x1orig, y1orig]] = d3.event.selection;
     [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
     const [selWidth, selHeight] = [x1 - x0, y1 - y0];
@@ -77,21 +97,32 @@ const brushEnded = () => {
 
 const brush = d3.brush()
     .extent([[0,0], [width, height]])
-    .on("brush", brushEnded);
+    .on("brush", () => {
+        const event = new CustomEvent('brush-message', {detail: {event: d3.event.selection, collaboratorId}});
+        document.body.dispatchEvent(event);
+        updateDetailView();
+    });
 
 overviewSvg.call(brush);
 
 const onLabel = (color) => {
     return () => {
-        overviewLabels.append('rect')
-            .attr('x', x0 * scale)
-            .attr('y', y0 * scale)
-            .attr('width', (x1 - x0) * scale)
-            .attr('height', (y1 - y0) * scale)
-            .attr('fill', color)
-            .style('pointer-events', 'none');
+        const event = new CustomEvent('label-message', {detail: {positions: [x0, y0, x1, y1], color}});
+        document.body.dispatchEvent(event);
+
     }
 }
+
+document.body.addEventListener('label-message', (e) => {
+    const [x0, y0, x1, y1] = e.detail.positions;
+    overviewLabels.append('rect')
+        .attr('x', x0 * scale)
+        .attr('y', y0 * scale)
+        .attr('width', (x1 - x0) * scale)
+        .attr('height', (y1 - y0) * scale)
+        .attr('fill', e.detail.color)
+        .style('pointer-events', 'none');
+});
 
 const onWaldo = onLabel('#ff3333');
 const onNoWaldo = onLabel('#99ff99');
