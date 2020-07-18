@@ -18,7 +18,7 @@
     top: 0;
 }
 #detail-image {
-    background-image: url(beach.png);
+    background-image: url(megamap.jpg);
     width: 600px;
     height: 400px;
     visibility: hidden;
@@ -39,7 +39,7 @@
 <div id="left">
     <h2>Overview</h2>
     <div id="overview">
-        <img src="beach.png" width="359" />
+        <img src="megamap.jpg" width="400" />
     </div>
 </div>
 <div id="right">
@@ -55,9 +55,9 @@
 <script src="../../visconnect-bundle.js"></script>
 <script src="//d3js.org/d3.v5.min.js"></script>
 <script>
-const widthOrig = 1196;
-const heightOrig = 838;
-const scale = 0.3;
+const widthOrig = 6447;
+const heightOrig = 3772;
+const scale = 400 / widthOrig;
 const width = scale * widthOrig;
 const height = scale * heightOrig;
 const collaboratorId = Math.ceil(100000-1+900000*Math.random());
