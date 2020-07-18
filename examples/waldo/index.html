@@ -34,13 +34,31 @@
 #waldoButton {
     background: #ff9999;
 }
+#title {
+    position: relative;
+}
+#waldoLogo {
+    position: absolute;
+    top: -10px;
+    left: 240px;
+}
+#recommendedBrush {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background: #ff9999;
+    border: 1px solid #aa0000;
+}
 </style>
 <body collaboration="live" custom-events="brush-message, label-message" ignore-events="all">
+<h1 id="title">Where's Waldo? <img src="waldo.png" width="50" id="waldoLogo" /></h1>
 <div id="left">
     <h2>Overview</h2>
     <div id="overview">
         <img src="megamap.jpg" width="400" />
     </div>
+
+    Recommended brush size: <div id="recommendedBrush"></div>
 </div>
 <div id="right">
     <h2>Detail</h2>
