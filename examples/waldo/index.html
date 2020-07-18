@@ -48,7 +48,7 @@
     </div>
     <button id="noWaldoButton" class="marker-button">No Waldo Here (Shortcut: &lt;N&gt;)</button>
     <button id="waldoButton" class="marker-button">Found Waldo! (Shortcut: &lt;W&gt;)</button>
-    <button id="removeLabelButton" class="marker-button">Remove Label (Shortcut: &lt;R&gt;)</button>
+    <!--<button id="removeLabelButton" class="marker-button">Remove Label (Shortcut: &lt;R&gt;)</button>-->
 </div>
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
 <script src="../../visconnect-bundle.js"></script>
@@ -61,9 +61,8 @@ const width = scale * widthOrig;
 const height = scale * heightOrig;
 
 const overviewWrap = d3.select('#overview');
-const overviewSvg = overviewWrap.append("svg")
-    .attr("width", width)
-    .attr("height", height);
+const overviewSvg = overviewWrap.append("svg").attr("width", width).attr("height", height);
+const overviewLabels = overviewSvg.append('g').style('opacity', '0.5');
 const detail = d3.select('#detail-image');
 let x0, y0, x1, y1;
 
@@ -82,21 +81,26 @@ const brush = d3.brush()
 
 overviewSvg.call(brush);
 
-const onLabel = () => {
-    overviewSvg.append('rect')
-        .attr('x', x0*scale)
-        .attr('y', y0*scale)
-        .attr('width', (x1-x0)*scale)
-        .attr('height', (y1-y0)*scale)
-        .attr('fill', 'rgba(100,255,100,0.5)')
-        .style('pointer-events', 'none');
+const onLabel = (color) => {
+    return () => {
+        overviewLabels.append('rect')
+            .attr('x', x0 * scale)
+            .attr('y', y0 * scale)
+            .attr('width', (x1 - x0) * scale)
+            .attr('height', (y1 - y0) * scale)
+            .attr('fill', color)
+            .style('pointer-events', 'none');
+    }
 }
 
-document.getElementById('noWaldoButton').addEventListener('click', onLabel);
+const onWaldo = onLabel('#ff3333');
+const onNoWaldo = onLabel('#99ff99');
+document.getElementById('noWaldoButton').addEventListener('click', onNoWaldo);
+document.getElementById('waldoButton').addEventListener('click', onWaldo);
+
 window.addEventListener('keydown', (event) => {
-    if(event.key === 'n') {
-        onLabel();
-    }
+    if(event.key === 'n') { onNoWaldo(); }
+    if(event.key === 'w') { onWaldo(); }
 })
 
 </script>
