@@ -109,7 +109,7 @@ overviewSvg.call(brush);
 
 const onLabel = (color) => {
     return () => {
-        console.log('making label message', color);
+        console.log('making label message', color, x0, y0, x1, y1);
         const event = new CustomEvent('label-message', {detail: {positions: [x0, y0, x1, y1], color}});
         document.body.dispatchEvent(event);
     }
@@ -117,7 +117,7 @@ const onLabel = (color) => {
 
 document.body.addEventListener('label-message', (e) => {
     const [x0l, y0l, x1l, y1l] = e.detail.positions;
-    console.log('adding label', e.detail.color);
+    console.log('adding label', e.detail.color, x0l, y0l, x1l, y1l);
     overviewLabels.append('rect')
         .attr('x', x0l * scale)
         .attr('y', y0l * scale)
