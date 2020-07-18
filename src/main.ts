@@ -34,11 +34,11 @@ delayAddEventListener().then(() => {
         }
         const customEventsVal = el.getAttribute('custom-events');
         if(customEventsVal) {
-            customEvents = customEventsVal.replace(' ', '').split(',');
+            customEvents = customEventsVal.replace(/ /g, '').split(',');
         }
         const ignoreEventsVal = el.getAttribute('ignore-events');
         if(ignoreEventsVal) {
-            ignoreEvents = ignoreEventsVal.replace(' ', '').split(',');
+            ignoreEvents = ignoreEventsVal.replace(/ /g, '').split(',');
         }
     } else if (svg) {
         el = svg;
