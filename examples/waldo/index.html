@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+#left {
+    float: left;
+    width: 400px;
+}
+#right {
+    float: left;
+    width: 800px;
+}
+#overview {
+    position: relative;
+}
+#overview svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+#detail-image {
+    background-image: url(beach.png);
+    width: 600px;
+    height: 400px;
+}
+#noWaldoButton, #waldoButton {
+    margin: 10px;
+    padding: 8px;
+    border: none;
+}
+#noWaldoButton {
+    background: #99ff99;
+}
+#waldoButton {
+    background: #ff9999;
+}
+</style>
+<body>
+<div id="left">
+    <h2>Overview</h2>
+    <div id="overview">
+        <img src="beach.png" width="359" />
+    </div>
+</div>
+<div id="right">
+    <h2>Detail</h2>
+    <div id="detail">
+        <div id="detail-image"></div>
+    </div>
+    <button id="noWaldoButton">No Waldo Here (Shortcut: &lt;N&gt;)</button>
+    <button id="waldoButton">Found Waldo! (Shortcut: &lt;W&gt;)</button>
+</div>
+<script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+<script src="../../visconnect-bundle.js"></script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+<script>
+const widthOrig = 1196;
+const heightOrig = 838;
+const scale = 0.3;
+
+const width = scale * widthOrig;
+const height = scale * heightOrig;
+
+const overviewWrap = d3.select('#overview');
+
+const overviewSvg = overviewWrap.append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+const detail = d3.select('#detail-image');
+
+const brushEnded = () => {
+    const [[x0orig, y0orig], [x1orig, y1orig]] = d3.event.selection;
+    const [[x0, y0], [x1, y1]] = [[x0orig/scale, y0orig/scale], [x1orig/scale, y1orig/scale]];
+    const [selWidth, selHeight] = [x1 - x0, y1 - y0];
+    const [imageWidth, imageHeight] = [600*widthOrig/selWidth, 400*heightOrig/selHeight];
+    detail.style('background-size', `${imageWidth}px ${imageHeight}px`);
+    detail.style('background-position', `${-x0*imageWidth/widthOrig}px ${-y0*imageHeight/heightOrig}px`);
+};
+
+const brush = d3.brush()
+    .extent([[0,0], [width, height]])
+    .on("brush", brushEnded);
+
+overviewSvg.call(brush);
+
+</script>
