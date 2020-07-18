@@ -78,7 +78,7 @@ document.body.addEventListener('brush-message', (e) => {
     }
     const rect = collaboratorBrushes[e.detail.collaboratorId];
     const [[x0orig, y0orig], [x1orig, y1orig]] = e.detail.event;
-    [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
+    const [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
 
     rect
         .attr('x', x0 * scale)
@@ -109,20 +109,18 @@ overviewSvg.call(brush);
 
 const onLabel = (color) => {
     return () => {
-        console.log('making label message', color, x0, y0, x1, y1);
         const event = new CustomEvent('label-message', {detail: {positions: [x0, y0, x1, y1], color}});
         document.body.dispatchEvent(event);
     }
 }
 
 document.body.addEventListener('label-message', (e) => {
-    const [x0l, y0l, x1l, y1l] = e.detail.positions;
-    console.log('adding label', e.detail.color, x0l, y0l, x1l, y1l);
+    const [x0, y0, x1, y1] = e.detail.positions;
     overviewLabels.append('rect')
-        .attr('x', x0l * scale)
-        .attr('y', y0l * scale)
-        .attr('width', (x1l - x0l) * scale)
-        .attr('height', (y1l - y0l) * scale)
+        .attr('x', x0 * scale)
+        .attr('y', y0 * scale)
+        .attr('width', (x1 - x0) * scale)
+        .attr('height', (y1 - y0) * scale)
         .attr('fill', e.detail.color)
         .style('pointer-events', 'none');
 });
