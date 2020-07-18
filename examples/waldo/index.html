@@ -21,6 +21,7 @@
     background-image: url(beach.png);
     width: 600px;
     height: 400px;
+    visibility: hidden;
 }
 .marker-button {
     margin: 10px 10px 0 0;
@@ -91,6 +92,7 @@ const updateDetailView = () => {
     [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
     const [selWidth, selHeight] = [x1 - x0, y1 - y0];
     const [imageWidth, imageHeight] = [600*widthOrig/selWidth, 400*heightOrig/selHeight];
+    detail.style('visibility', 'visible');
     detail.style('background-size', `${imageWidth}px ${imageHeight}px`);
     detail.style('background-position', `${-x0*imageWidth/widthOrig}px ${-y0*imageHeight/heightOrig}px`);
 };
@@ -109,7 +111,6 @@ const onLabel = (color) => {
     return () => {
         const event = new CustomEvent('label-message', {detail: {positions: [x0, y0, x1, y1], color}});
         document.body.dispatchEvent(event);
-
     }
 }
 
