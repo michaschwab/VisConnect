@@ -215,6 +215,9 @@ var VcListener = /** @class */ (function () {
         this.customEvents = customEvents;
         this.ignoreEvents = ignoreEvents;
         this.addListenersToElementAndChildren(this.svg);
+        if (ignoreEvents) {
+            this.ignoreEvents = ignoreEvents.map(function (event) { return event.trim(); });
+        }
     }
     VcListener.prototype.addListenersToElementAndChildren = function (element) {
         this.addListenersToElement(element);
@@ -230,6 +233,7 @@ var VcListener = /** @class */ (function () {
         var eventTypes = ['mousemove', 'mouseup', 'mousedown', 'touchmove', 'mouseenter', 'mouseout', 'mouseover',
             'mouseleave', 'click', 'dblclick', 'touchstart', 'touchend', 'selectstart', 'dragstart'].concat(custom)
             .filter(function (type) { return !_this.ignoreEvents || !_this.ignoreEvents.includes(type); });
+        console.log(this.ignoreEvents, eventTypes);
         for (var _i = 0, eventTypes_1 = eventTypes; _i < eventTypes_1.length; _i++) {
             var type = eventTypes_1[_i];
             element.addEventListener(type, boundCapture);

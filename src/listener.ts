@@ -12,6 +12,9 @@ export class VcListener {
     constructor(private svg: Element, private hearEvent: (e: StrippedEvent, event: Event) => void,
                 private customEvents?: string[], private ignoreEvents?: string[]) {
         this.addListenersToElementAndChildren(this.svg);
+        if(ignoreEvents) {
+            this.ignoreEvents = ignoreEvents.map(event => event.trim());
+        }
     }
 
     addListenersToElementAndChildren(element: Element) {
@@ -28,6 +31,7 @@ export class VcListener {
         const eventTypes = ['mousemove', 'mouseup', 'mousedown', 'touchmove', 'mouseenter', 'mouseout', 'mouseover',
             'mouseleave', 'click', 'dblclick', 'touchstart', 'touchend', 'selectstart', 'dragstart'].concat(custom)
             .filter(type => !this.ignoreEvents || !this.ignoreEvents.includes(type));
+        console.log(this.ignoreEvents, eventTypes);
 
         for(const type of eventTypes) {
             element.addEventListener(type, boundCapture);
