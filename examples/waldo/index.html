@@ -109,18 +109,20 @@ overviewSvg.call(brush);
 
 const onLabel = (color) => {
     return () => {
+        console.log('making label message', color);
         const event = new CustomEvent('label-message', {detail: {positions: [x0, y0, x1, y1], color}});
         document.body.dispatchEvent(event);
     }
 }
 
 document.body.addEventListener('label-message', (e) => {
-    const [x0, y0, x1, y1] = e.detail.positions;
+    const [x0l, y0l, x1l, y1l] = e.detail.positions;
+    console.log('adding label', e.detail.color);
     overviewLabels.append('rect')
-        .attr('x', x0 * scale)
-        .attr('y', y0 * scale)
-        .attr('width', (x1 - x0) * scale)
-        .attr('height', (y1 - y0) * scale)
+        .attr('x', x0l * scale)
+        .attr('y', y0l * scale)
+        .attr('width', (x1l - x0l) * scale)
+        .attr('height', (y1l - y0l) * scale)
         .attr('fill', e.detail.color)
         .style('pointer-events', 'none');
 });
