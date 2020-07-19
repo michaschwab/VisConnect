@@ -2,6 +2,7 @@ import {VcListener, StrippedEvent} from "./listener";
 import {recreateEvent, stopPropagation} from "./dom";
 import {VcProtocol} from "./protocol";
 import {VcLeaderProtocol} from "./leader-protocol";
+import {VisConnectUtil} from "./util";
 
 export interface VcEvent {
     seqNum: number,
@@ -42,6 +43,7 @@ export class Visconnect {
 
         (event as any)['visconnect-received'] = true;
         (event as any)['collaboratorId'] = stripped.collaboratorId;
+        (event as any)['collaboratorColor'] = VisConnectUtil.stringToHex(stripped.collaboratorId);
         (event as any)['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
         if(event.target) {
             event.target.dispatchEvent(event);

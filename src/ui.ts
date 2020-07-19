@@ -1,4 +1,5 @@
 import {Visconnect} from "./visconnect";
+import {VisConnectUtil} from "./util";
 import {StrippedEvent} from "./listener";
 
 export class VisConnectUi {
@@ -26,7 +27,7 @@ export class VisConnectUi {
         if(!cursor) {
             const cursors = document.getElementById('visconnect-cursors')!;
             cursor = document.createElement('div');
-            cursor.style.background = stringToHex(participant);
+            cursor.style.background = VisConnectUtil.stringToHex(participant);
             cursor.style.width = '5px';
             cursor.style.height = '5px';
             cursor.style.position = 'absolute';
@@ -187,20 +188,4 @@ const copyToClipboard = (str: string) => {
         selection.removeAllRanges();
         selection.addRange(selected);
     }
-};
-
-// From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
-const stringToHex = (string: string) => {
-    var hash = 0;
-    if (string.length === 0) return '#000000';
-    for (let i = 0; i < string.length; i++) {
-        hash = string.charCodeAt(i) + ((hash << 5) - hash);
-        hash = hash & hash;
-    }
-    let color = '#';
-    for (let i = 0; i < 3; i++) {
-        const value = (hash >> (i * 8)) & 255;
-        color += ('00' + value.toString(16)).substr(-2);
-    }
-    return color;
 };

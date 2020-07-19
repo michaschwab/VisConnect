@@ -109,15 +109,15 @@ export class VisConnectUtil {
             });
 
         document.body.addEventListener('brush-message', (e) => {
-            const event = e as Event & {detail: {event: any, collaboratorId: string}};
-            console.log(event);
+            const event = e as Event & {detail: {event: any}, collaboratorId: string, collaboratorColor: string};
 
-            if(!collaboratorBrushes[event.detail.collaboratorId]) {
-                collaboratorBrushes[event.detail.collaboratorId] = data.svg.append('rect')
-                    .attr('fill', `#${event.detail.collaboratorId}`)
+            if(!collaboratorBrushes[event.collaboratorId]) {
+                collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+                    .attr('fill', event.collaboratorColor)
+                    .attr('opacity', '0.4')
                     .style('pointer-events', 'none');
             }
-            const rect = collaboratorBrushes[event.detail.collaboratorId];
+            const rect = collaboratorBrushes[event.collaboratorId];
             const [[x0, y0], [x1, y1]] = event.detail.event;
 
             rect
@@ -167,6 +167,23 @@ export class VisConnectUtil {
             return x - Math.floor(x);
         };
     }
+
+    // From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
+    static stringToHex(string: string) {
+        let hash = 0;
+        if (string.length === 0) return '#000000';
+        for (let i = 0; i < string.length; i++) {
+            hash = string.charCodeAt(i) + ((hash << 5) - hash);
+            hash = hash & hash;
+        }
+        let color = '#';
+        for (let i = 0; i < 3; i++) {
+            const value = (hash >> (i * 8)) & 255;
+            color += ('00' + value.toString(16)).substr(-2);
+        }
+        return color;
+    };
+
 }
 
 // Adapted from D3.js

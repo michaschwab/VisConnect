@@ -71,7 +71,7 @@
 </div>
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
 <script src="../../visconnect-bundle.js"></script>
-<script src="//d3js.org/d3.v5.min.js"></script>
+<script src="//d3js.org/d3.v5.js"></script>
 <script>
 const widthOrig = 6447;
 const heightOrig = 3772;
@@ -115,14 +115,14 @@ const updateDetailView = () => {
     detail.style('background-position', `${-x0*imageWidth/widthOrig}px ${-y0*imageHeight/heightOrig}px`);
 };
 
-const brush = d3.brush()
+const brush = vc.brush()
     .extent([[0,0], [width, height]])
     .on("brush", () => {
-        const event = new CustomEvent('brush-message', {detail: {event: d3.event.selection, collaboratorId}});
-        document.body.dispatchEvent(event);
+        //const event = new CustomEvent('brush-message', {detail: {event: d3.event.selection, collaboratorId}});
+        //document.body.dispatchEvent(event);
         updateDetailView();
     });
-
+console.log(brush);
 overviewSvg.call(brush);
 
 const onLabel = (color) => {

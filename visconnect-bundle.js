@@ -74,6 +74,200 @@ function __spreadArrays() {
     return r;
 }
 
+var VisConnectUtil = /** @class */ (function () {
+    function VisConnectUtil() {
+    }
+    VisConnectUtil.drag = function () {
+        var data = {
+            elements: null,
+            draggingElements: {},
+            onStart: function (data) { },
+            onEnd: function (data) { },
+            onDrag: function (data) { }
+        };
+        var dragStart = function (element) {
+            return function (e) {
+                var event = e;
+                if (!setCustomEvent(event)) {
+                    return;
+                }
+                data.draggingElements[event.collaboratorId] = element;
+                data.onStart.call(element, element['__data__']);
+            };
+        };
+        var dragMove = function (e) {
+            var event = e;
+            if (!setCustomEvent(event)) {
+                return;
+            }
+            var element = data.draggingElements[event.collaboratorId];
+            if (element) {
+                data.onDrag.call(element, element['__data__']);
+            }
+        };
+        var dragEnd = function (e) {
+            var event = e;
+            if (!setCustomEvent(event)) {
+                return;
+            }
+            var element = data.draggingElements[event.collaboratorId];
+            if (element) {
+                delete data.draggingElements[event.collaboratorId];
+                data.onEnd.call(element, element['__data__']);
+            }
+        };
+        var drag = function (selection) {
+            var elements = selection._groups[0].filter(function (element) { return element; });
+            if (!elements.length) {
+                return;
+            }
+            data.elements = elements;
+            for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
+                var element = _a[_i];
+                element.addEventListener('mousedown', dragStart(element));
+                element.addEventListener('touchstart', dragStart(element));
+            }
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('touchmove', dragMove);
+            window.addEventListener('mouseup', dragEnd);
+            window.addEventListener('touchend', dragEnd);
+        };
+        var setCustomEvent = function (event) {
+            var pos = point(event);
+            if (!pos) {
+                return false;
+            }
+            window['d3'].event = {
+                sourceEvent: event,
+                x: pos.x,
+                y: pos.y,
+            };
+            return true;
+        };
+        drag.on = function (type, callback) {
+            if (type === 'start') {
+                data.onStart = callback;
+            }
+            else if (type === 'drag') {
+                data.onDrag = callback;
+            }
+            else if (type === 'end') {
+                data.onEnd = callback;
+            }
+            else {
+                console.error('Drag type ', type, ' not defined.');
+            }
+            return drag;
+        };
+        return drag;
+    };
+    VisConnectUtil.brush = function () {
+        var data = {
+            svg: {},
+            onStart: function () { },
+            onBrush: function () { },
+            onEnd: function () { },
+        };
+        var collaboratorBrushes = {};
+        var d3b = d3.brush()
+            .on('brush', function () {
+            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId } };
+            var event = new CustomEvent('brush-message', evtData);
+            document.body.dispatchEvent(event);
+            //data.onBrush();
+        });
+        document.body.addEventListener('brush-message', function (e) {
+            var event = e;
+            if (!collaboratorBrushes[event.collaboratorId]) {
+                collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+                    .attr('fill', event.collaboratorColor)
+                    .attr('opacity', '0.4')
+                    .style('pointer-events', 'none');
+            }
+            var rect = collaboratorBrushes[event.collaboratorId];
+            var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
+            rect
+                .attr('x', x0)
+                .attr('y', y0)
+                .attr('width', "" + (x1 - x0))
+                .attr('height', "" + (y1 - y0));
+        });
+        var brush = function (svg) {
+            data.svg = svg;
+            return d3b.call(d3b, svg);
+        };
+        brush.extent = function () {
+            d3b.extent.apply(d3b, arguments);
+            return brush;
+        };
+        brush.on = function (type, callback) {
+            if (type === 'start') {
+                data.onStart = callback;
+            }
+            else if (type === 'brush') {
+                data.onBrush = callback;
+            }
+            else if (type === 'end') {
+                data.onEnd = callback;
+            }
+            else {
+                console.error('Drag type ', type, ' not defined.');
+            }
+            return brush;
+        };
+        return brush;
+    };
+    VisConnectUtil.mouse = function (node) {
+        var coords = window['d3'].mouse(node);
+        return [coords[0] - window.scrollX, coords[1] - window.scrollY];
+    };
+    VisConnectUtil.random = function (leaderId) {
+        // string to int hash from https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0.
+        var seed = Array.from(leaderId).reduce(function (s, c) { return Math.imul(31, s) + c.charCodeAt(0) | 0; }, 0);
+        return function () {
+            // Bad but seeded random function
+            var x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        };
+    };
+    // From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
+    VisConnectUtil.stringToHex = function (string) {
+        var hash = 0;
+        if (string.length === 0)
+            return '#000000';
+        for (var i = 0; i < string.length; i++) {
+            hash = string.charCodeAt(i) + ((hash << 5) - hash);
+            hash = hash & hash;
+        }
+        var color = '#';
+        for (var i = 0; i < 3; i++) {
+            var value = (hash >> (i * 8)) & 255;
+            color += ('00' + value.toString(16)).substr(-2);
+        }
+        return color;
+    };
+    return VisConnectUtil;
+}());
+// Adapted from D3.js
+function point(event) {
+    var node = event.target;
+    var svg = node.ownerSVGElement || node;
+    var position = event instanceof MouseEvent ? event : event.touches[0];
+    if (!position) {
+        console.warn(event);
+        return null;
+    }
+    if (svg.createSVGPoint) {
+        var point_1 = svg.createSVGPoint();
+        point_1.x = position.clientX;
+        point_1.y = position.clientY;
+        point_1 = point_1.matrixTransform(node.getScreenCTM().inverse());
+        return { x: point_1.x, y: point_1.y };
+    }
+    var rect = node.getBoundingClientRect();
+    return { x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop };
+}
+
 var VisConnectUi = /** @class */ (function () {
     function VisConnectUi(visconnect, element) {
         this.visconnect = visconnect;
@@ -96,7 +290,7 @@ var VisConnectUi = /** @class */ (function () {
         if (!cursor) {
             var cursors = document.getElementById('visconnect-cursors');
             cursor = document.createElement('div');
-            cursor.style.background = stringToHex(participant);
+            cursor.style.background = VisConnectUtil.stringToHex(participant);
             cursor.style.width = '5px';
             cursor.style.height = '5px';
             cursor.style.position = 'absolute';
@@ -190,22 +384,6 @@ var copyToClipboard = function (str) {
         selection.removeAllRanges();
         selection.addRange(selected);
     }
-};
-// From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
-var stringToHex = function (string) {
-    var hash = 0;
-    if (string.length === 0)
-        return '#000000';
-    for (var i = 0; i < string.length; i++) {
-        hash = string.charCodeAt(i) + ((hash << 5) - hash);
-        hash = hash & hash;
-    }
-    var color = '#';
-    for (var i = 0; i < 3; i++) {
-        var value = (hash >> (i * 8)) & 255;
-        color += ('00' + value.toString(16)).substr(-2);
-    }
-    return color;
 };
 
 var VcListener = /** @class */ (function () {
@@ -1816,6 +1994,7 @@ var Visconnect = /** @class */ (function () {
         //console.log('executing event', stripped, event);
         event['visconnect-received'] = true;
         event['collaboratorId'] = stripped.collaboratorId;
+        event['collaboratorColor'] = VisConnectUtil.stringToHex(stripped.collaboratorId);
         event['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
         if (event.target) {
             event.target.dispatchEvent(event);
@@ -1826,184 +2005,6 @@ var Visconnect = /** @class */ (function () {
     };
     return Visconnect;
 }());
-
-var VisConnectUtil = /** @class */ (function () {
-    function VisConnectUtil() {
-    }
-    VisConnectUtil.drag = function () {
-        var data = {
-            elements: null,
-            draggingElements: {},
-            onStart: function (data) { },
-            onEnd: function (data) { },
-            onDrag: function (data) { }
-        };
-        var dragStart = function (element) {
-            return function (e) {
-                var event = e;
-                if (!setCustomEvent(event)) {
-                    return;
-                }
-                data.draggingElements[event.collaboratorId] = element;
-                data.onStart.call(element, element['__data__']);
-            };
-        };
-        var dragMove = function (e) {
-            var event = e;
-            if (!setCustomEvent(event)) {
-                return;
-            }
-            var element = data.draggingElements[event.collaboratorId];
-            if (element) {
-                data.onDrag.call(element, element['__data__']);
-            }
-        };
-        var dragEnd = function (e) {
-            var event = e;
-            if (!setCustomEvent(event)) {
-                return;
-            }
-            var element = data.draggingElements[event.collaboratorId];
-            if (element) {
-                delete data.draggingElements[event.collaboratorId];
-                data.onEnd.call(element, element['__data__']);
-            }
-        };
-        var drag = function (selection) {
-            var elements = selection._groups[0].filter(function (element) { return element; });
-            if (!elements.length) {
-                return;
-            }
-            data.elements = elements;
-            for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
-                var element = _a[_i];
-                element.addEventListener('mousedown', dragStart(element));
-                element.addEventListener('touchstart', dragStart(element));
-            }
-            window.addEventListener('mousemove', dragMove);
-            window.addEventListener('touchmove', dragMove);
-            window.addEventListener('mouseup', dragEnd);
-            window.addEventListener('touchend', dragEnd);
-        };
-        var setCustomEvent = function (event) {
-            var pos = point(event);
-            if (!pos) {
-                return false;
-            }
-            window['d3'].event = {
-                sourceEvent: event,
-                x: pos.x,
-                y: pos.y,
-            };
-            return true;
-        };
-        drag.on = function (type, callback) {
-            if (type === 'start') {
-                data.onStart = callback;
-            }
-            else if (type === 'drag') {
-                data.onDrag = callback;
-            }
-            else if (type === 'end') {
-                data.onEnd = callback;
-            }
-            else {
-                console.error('Drag type ', type, ' not defined.');
-            }
-            return drag;
-        };
-        return drag;
-    };
-    VisConnectUtil.brush = function () {
-        var data = {
-            svg: {},
-            onStart: function () { },
-            onBrush: function () { },
-            onEnd: function () { },
-        };
-        var collaboratorBrushes = {};
-        var d3b = d3.brush()
-            .on('brush', function () {
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId } };
-            var event = new CustomEvent('brush-message', evtData);
-            document.body.dispatchEvent(event);
-            //data.onBrush();
-        });
-        document.body.addEventListener('brush-message', function (e) {
-            var event = e;
-            console.log(event);
-            if (!collaboratorBrushes[event.detail.collaboratorId]) {
-                collaboratorBrushes[event.detail.collaboratorId] = data.svg.append('rect')
-                    .attr('fill', "#" + event.detail.collaboratorId)
-                    .style('pointer-events', 'none');
-            }
-            var rect = collaboratorBrushes[event.detail.collaboratorId];
-            var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
-            rect
-                .attr('x', x0)
-                .attr('y', y0)
-                .attr('width', "" + (x1 - x0))
-                .attr('height', "" + (y1 - y0));
-        });
-        var brush = function (svg) {
-            data.svg = svg;
-            return d3b.call(d3b, svg);
-        };
-        brush.extent = function () {
-            d3b.extent.apply(d3b, arguments);
-            return brush;
-        };
-        brush.on = function (type, callback) {
-            if (type === 'start') {
-                data.onStart = callback;
-            }
-            else if (type === 'brush') {
-                data.onBrush = callback;
-            }
-            else if (type === 'end') {
-                data.onEnd = callback;
-            }
-            else {
-                console.error('Drag type ', type, ' not defined.');
-            }
-            return brush;
-        };
-        return brush;
-    };
-    VisConnectUtil.mouse = function (node) {
-        var coords = window['d3'].mouse(node);
-        return [coords[0] - window.scrollX, coords[1] - window.scrollY];
-    };
-    VisConnectUtil.random = function (leaderId) {
-        // string to int hash from https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0.
-        var seed = Array.from(leaderId).reduce(function (s, c) { return Math.imul(31, s) + c.charCodeAt(0) | 0; }, 0);
-        return function () {
-            // Bad but seeded random function
-            var x = Math.sin(seed++) * 10000;
-            return x - Math.floor(x);
-        };
-    };
-    return VisConnectUtil;
-}());
-// Adapted from D3.js
-function point(event) {
-    var node = event.target;
-    var svg = node.ownerSVGElement || node;
-    var position = event instanceof MouseEvent ? event : event.touches[0];
-    if (!position) {
-        console.warn(event);
-        return null;
-    }
-    if (svg.createSVGPoint) {
-        var point_1 = svg.createSVGPoint();
-        point_1.x = position.clientX;
-        point_1.y = position.clientY;
-        point_1 = point_1.matrixTransform(node.getScreenCTM().inverse());
-        return { x: point_1.x, y: point_1.y };
-    }
-    var rect = node.getBoundingClientRect();
-    return { x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop };
-}
 
 var visconnect;
 var visconnectUi;
