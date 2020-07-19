@@ -78,32 +78,12 @@ const heightOrig = 3772;
 const scale = 400 / widthOrig;
 const width = scale * widthOrig;
 const height = scale * heightOrig;
-const collaboratorId = Math.ceil(100000-1+900000*Math.random());
-const collaboratorBrushes = {};
 
 const overviewWrap = d3.select('#overview');
 const overviewSvg = overviewWrap.append("svg").attr("width", width).attr("height", height);
 const overviewLabels = overviewSvg.append('g').style('opacity', '0.5');
-const overviewBrushes = overviewSvg.append('g').style('opacity', '0.5');
 const detail = d3.select('#detail-image');
 let x0, y0, x1, y1;
-
-document.body.addEventListener('brush-message', (e) => {
-    if(!collaboratorBrushes[e.detail.collaboratorId]) {
-        collaboratorBrushes[e.detail.collaboratorId] = overviewBrushes.append('rect')
-            .attr('fill', `#${e.detail.collaboratorId}`)
-            .style('pointer-events', 'none');
-    }
-    const rect = collaboratorBrushes[e.detail.collaboratorId];
-    const [[x0orig, y0orig], [x1orig, y1orig]] = e.detail.event;
-    const [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
-
-    rect
-        .attr('x', x0 * scale)
-        .attr('y', y0 * scale)
-        .attr('width', (x1 - x0) * scale)
-        .attr('height', (y1 - y0) * scale);
-});
 
 const updateDetailView = () => {
     const [[x0orig, y0orig], [x1orig, y1orig]] = d3.event.selection;
@@ -117,12 +97,8 @@ const updateDetailView = () => {
 
 const brush = vc.brush()
     .extent([[0,0], [width, height]])
-    .on("brush", () => {
-        //const event = new CustomEvent('brush-message', {detail: {event: d3.event.selection, collaboratorId}});
-        //document.body.dispatchEvent(event);
-        updateDetailView();
-    });
-console.log(brush);
+    .on("brush", updateDetailView);
+
 overviewSvg.call(brush);
 
 const onLabel = (color) => {

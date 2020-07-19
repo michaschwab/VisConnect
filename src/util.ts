@@ -105,7 +105,7 @@ export class VisConnectUtil {
                 const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId}};
                 const event = new CustomEvent('brush-message', evtData);
                 document.body.dispatchEvent(event);
-                //data.onBrush();
+                data.onBrush();
             });
 
         document.body.addEventListener('brush-message', (e) => {

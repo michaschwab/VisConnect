@@ -174,7 +174,7 @@ var VisConnectUtil = /** @class */ (function () {
             var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId } };
             var event = new CustomEvent('brush-message', evtData);
             document.body.dispatchEvent(event);
-            //data.onBrush();
+            data.onBrush();
         });
         document.body.addEventListener('brush-message', function (e) {
             var event = e;
