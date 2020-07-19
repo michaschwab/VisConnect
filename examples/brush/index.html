@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<body  collaboration="live" custom-events="brush-message, label-message" ignore-events="all">
+<script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+<script src="../../visconnect-bundle.js"></script>
+<script src="//d3js.org/d3.v4.min.js"></script>
+<h1>VisConnect Brushing</h1>
+<p>
+    This VisConnect example is a copy of
+    <a href="https://bl.ocks.org/EfratVil/0e542f5fc426065dd1d4b6daaa345a9f">this block</a>.
+    The only changes are adding the PeerJS and VisConnect script tags, adding the collaboration attribute to the HTML
+    body, and replacing d3.brush with vc.brush.
+</p>
+<p id="g1"></p>
+
+<script>
+    function randomData(samples) {
+        var data = [],
+            random = d3.randomNormal();
+
+        for (i = 0; i < samples; i++) {
+            data.push({
+                x: random(),
+                y: random()
+            });
+        }
+        return data;
+    }
+
+    var ds = randomData(300);
+
+    var margin = { top: 20, right: 20, bottom: 30, left: 50 };
+    width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    var x = d3.scaleLinear()
+        .range([0, width]);
+
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+
+    var xAxis = d3.axisBottom(x).ticks(12),
+        yAxis = d3.axisLeft(y).ticks(12 * height / width);
+
+    var svg = d3.select("#g1").append("svg")
+        .attr("id", "g1_svg")
+        .attr("data-margin-right", margin.right)
+        .attr("data-margin-left", margin.left)
+        .attr("data-margin-top", margin.top)
+        .attr("data-margin-bottom", margin.bottom)
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    x.domain(d3.extent(ds, function (d) { return d.x; })).nice();
+    y.domain(d3.extent(ds, function (d) { return d.y; })).nice();
+
+    svg.append("g")
+        .attr("class", "x axis ")
+        .attr('id', "axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr('id', "axis--y")
+        .call(yAxis);
+
+    var dot = svg.selectAll(".dot")
+        .data(ds)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", 5)
+        .attr("cx", function (d) { return x(d.x); })
+        .attr("cy", function (d) { return y(d.y); })
+        .attr("opacity", 0.7)
+        .style("fill", "#4292c6");
+
+    svg.append("g")
+        .call(vc.brush().extent([[0, 0], [width, height]]).on("brush", brushed).on("end", brushended));
+
+
+    function brushed() {
+        var s = d3.event.selection,
+            x0 = s[0][0],
+            y0 = s[0][1],
+            dx = s[1][0] - x0,
+            dy = s[1][1] - y0;
+        // console.log(s);
+
+        svg.selectAll('circle')
+            .style("fill", function (d) {
+                if (x(d.x) >= x0 && x(d.x) <= x0 + dx && y(d.y) >= y0 && y(d.y) <= y0 + dy)
+                { return "#ec7014"; }
+                else { return "#4292c6"; }
+            });
+    }
+
+    function brushended() {
+        if (!d3.event.selection) {
+            svg.selectAll('circle')
+                .transition()
+                .duration(150)
+                .ease(d3.easeLinear)
+                .style("fill", "#4292c6");
+        }
+    }
+
+</script>
+</body>
