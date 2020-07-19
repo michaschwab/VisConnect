@@ -1914,6 +1914,62 @@ var VisConnectUtil = /** @class */ (function () {
         };
         return drag;
     };
+    VisConnectUtil.brush = function () {
+        var data = {
+            svg: {},
+            onStart: function () { },
+            onBrush: function () { },
+            onEnd: function () { },
+        };
+        var collaboratorBrushes = {};
+        var d3b = d3.brush()
+            .on('brush', function () {
+            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId } };
+            var event = new CustomEvent('brush-message', evtData);
+            document.body.dispatchEvent(event);
+            //data.onBrush();
+        });
+        document.body.addEventListener('brush-message', function (e) {
+            var event = e;
+            console.log(event);
+            if (!collaboratorBrushes[event.detail.collaboratorId]) {
+                collaboratorBrushes[event.detail.collaboratorId] = data.svg.append('rect')
+                    .attr('fill', "#" + event.detail.collaboratorId)
+                    .style('pointer-events', 'none');
+            }
+            var rect = collaboratorBrushes[event.detail.collaboratorId];
+            var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
+            rect
+                .attr('x', x0)
+                .attr('y', y0)
+                .attr('width', "" + (x1 - x0))
+                .attr('height', "" + (y1 - y0));
+        });
+        var brush = function (svg) {
+            data.svg = svg;
+            return d3b.call(d3b, svg);
+        };
+        brush.extent = function () {
+            d3b.extent.apply(d3b, arguments);
+            return brush;
+        };
+        brush.on = function (type, callback) {
+            if (type === 'start') {
+                data.onStart = callback;
+            }
+            else if (type === 'brush') {
+                data.onBrush = callback;
+            }
+            else if (type === 'end') {
+                data.onEnd = callback;
+            }
+            else {
+                console.error('Drag type ', type, ' not defined.');
+            }
+            return brush;
+        };
+        return brush;
+    };
     VisConnectUtil.mouse = function (node) {
         var coords = window['d3'].mouse(node);
         return [coords[0] - window.scrollX, coords[1] - window.scrollY];
@@ -1956,6 +2012,7 @@ var ownId = __spreadArrays(Array(10)).map(function (i) { return (~~(Math.random(
 var leaderId = parts ? parts[1] : ownId;
 window.vc = {
     drag: VisConnectUtil.drag,
+    brush: VisConnectUtil.brush,
     mouse: VisConnectUtil.mouse,
     random: VisConnectUtil.random(leaderId)
 };

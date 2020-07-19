@@ -91,6 +91,68 @@ export class VisConnectUtil {
         return drag;
     }
 
+    static brush() {
+        const data = {
+            svg: {} as D3Selection,
+            onStart: () => {},
+            onBrush: () => {},
+            onEnd: () => {},
+        }
+        const collaboratorBrushes: {[collaboratorId: string]: any} = {};
+
+        const d3b = d3.brush()
+            .on('brush', () => {
+                const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId}};
+                const event = new CustomEvent('brush-message', evtData);
+                document.body.dispatchEvent(event);
+                //data.onBrush();
+            });
+
+        document.body.addEventListener('brush-message', (e) => {
+            const event = e as Event & {detail: {event: any, collaboratorId: string}};
+            console.log(event);
+
+            if(!collaboratorBrushes[event.detail.collaboratorId]) {
+                collaboratorBrushes[event.detail.collaboratorId] = data.svg.append('rect')
+                    .attr('fill', `#${event.detail.collaboratorId}`)
+                    .style('pointer-events', 'none');
+            }
+            const rect = collaboratorBrushes[event.detail.collaboratorId];
+            const [[x0, y0], [x1, y1]] = event.detail.event;
+
+            rect
+                .attr('x', x0)
+                .attr('y', y0)
+                .attr('width', `${x1 - x0}`)
+                .attr('height', `${y1 - y0}`);
+        });
+
+        const brush = function(svg: any) {
+            data.svg = svg;
+
+            return d3b.call(d3b, svg);
+        };
+        brush.extent = () => {
+            d3b.extent.apply(d3b, arguments);
+            return brush;
+        }
+
+        brush.on = (type: string, callback: () => void) => {
+            if(type === 'start') {
+                data.onStart = callback;
+            } else if(type === 'brush') {
+                data.onBrush = callback;
+            } else if(type === 'end') {
+                data.onEnd = callback;
+            } else {
+                console.error('Drag type ', type, ' not defined.');
+            }
+            return brush;
+        };
+
+        return brush;
+    }
+
     static mouse(node: HTMLElement) {
         const coords = (window as any)['d3'].mouse(node);
         return [coords[0] - window.scrollX, coords[1] - window.scrollY];
@@ -128,4 +190,10 @@ function point(event: MouseEvent|TouchEvent) {
 
     const rect = node.getBoundingClientRect();
     return {x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop};
+}
+
+interface D3Selection {
+    append: (elementType: string) => D3Selection;
+    attr: (name: string, value?: string) => D3Selection;
+    style: (name: string, value?: string) => D3Selection;
 }

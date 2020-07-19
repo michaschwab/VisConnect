@@ -11,6 +11,7 @@ const leaderId = parts ? parts[1] : ownId;
 
 (window as any).vc = {
     drag: VisConnectUtil.drag,
+    brush: VisConnectUtil.brush,
     mouse: VisConnectUtil.mouse,
     random: VisConnectUtil.random(leaderId)
 };
