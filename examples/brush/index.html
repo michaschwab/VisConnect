@@ -17,7 +17,7 @@
 <script>
     function randomData(samples) {
         var data = [],
-            random = d3.randomNormal();
+            random = d3.randomNormal.source(vc.random)();
 
         for (i = 0; i < samples; i++) {
             data.push({
