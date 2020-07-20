@@ -7,7 +7,8 @@
 }
 #right {
     float: left;
-    width: 800px;
+    width: 600px;
+    margin-left: 10px;
 }
 #overview {
     position: relative;
@@ -16,6 +17,9 @@
     position: absolute;
     left: 0;
     top: 0;
+}
+#detail {
+    position: relative;
 }
 #detail-image {
     background-image: url(megamap.jpg);
@@ -49,6 +53,30 @@
     background: #ff9999;
     border: 1px solid #aa0000;
 }
+.detail-crop {
+    position: absolute;
+    background: #eee;
+}
+#detail-crop-left {
+    left: 0;
+}
+#detail-crop-right {
+    right: 0;
+}
+#detail-crop-top {
+    top: 0;
+}
+#detail-crop-bottom {
+    bottom: 0;
+}
+#detail-crop-left, #detail-crop-right {
+    height: 100%;
+    top: 0;
+}
+#detail-crop-top, #detail-crop-bottom {
+    width: 100%;
+    left: 0;
+}
 </style>
 <body collaboration="live" custom-events="brush-message, label-message" ignore-events="all">
 <h1 id="title">Where's Waldo? <img src="waldo.png" width="50" id="waldoLogo" /></h1>
@@ -64,6 +92,12 @@
     <h2>Detail</h2>
     <div id="detail">
         <div id="detail-image"></div>
+        <div id="crop">
+            <div id="detail-crop-left" class="detail-crop"></div>
+            <div id="detail-crop-right" class="detail-crop"></div>
+            <div id="detail-crop-top" class="detail-crop"></div>
+            <div id="detail-crop-bottom" class="detail-crop"></div>
+        </div>
     </div>
     <button id="noWaldoButton" class="marker-button">No Waldo Here (Shortcut: &lt;N&gt;)</button>
     <button id="waldoButton" class="marker-button">Found Waldo! (Shortcut: &lt;W&gt;)</button>
@@ -84,15 +118,40 @@ const overviewSvg = overviewWrap.append("svg").attr("width", width).attr("height
 const overviewLabels = overviewSvg.append('g').style('opacity', '0.5');
 const detail = d3.select('#detail-image');
 let x0, y0, x1, y1;
+const cropLeft = d3.select('#detail-crop-left');
+const cropRight = d3.select('#detail-crop-right');
+const cropTop = d3.select('#detail-crop-top');
+const cropBottom = d3.select('#detail-crop-bottom');
 
 const updateDetailView = () => {
     const [[x0orig, y0orig], [x1orig, y1orig]] = d3.event.selection;
     [x0, y0, x1, y1] = [x0orig/scale, y0orig/scale, x1orig/scale, y1orig/scale];
-    const [selWidth, selHeight] = [x1 - x0, y1 - y0];
+    let [selWidth, selHeight] = [x1 - x0, y1 - y0];
+    let cropPercent;
+    let cropXoffset = 0;
+    let cropYoffset = 0;
+    if(selWidth < selHeight) {
+        cropPercent = 1 - selWidth / selHeight;
+        selWidth = selHeight;
+        cropXoffset = 600*cropPercent/2;
+        cropLeft.style('width', `${600*cropPercent/2}px`);
+        cropRight.style('width', `${600*cropPercent/2}px`);
+        cropTop.style('height', `0`);
+        cropBottom.style('height', `0`);
+    } else {
+        cropPercent = 1 - selHeight / selWidth;
+        selHeight = selWidth;
+        cropLeft.style('width', `0`);
+        cropRight.style('width', `0`);
+        cropYoffset = 400*cropPercent/2;
+        cropTop.style('height', `${400*cropPercent/2}px`);
+        cropBottom.style('height', `${400*cropPercent/2}px`);
+    }
+
     const [imageWidth, imageHeight] = [600*widthOrig/selWidth, 400*heightOrig/selHeight];
     detail.style('visibility', 'visible');
     detail.style('background-size', `${imageWidth}px ${imageHeight}px`);
-    detail.style('background-position', `${-x0*imageWidth/widthOrig}px ${-y0*imageHeight/heightOrig}px`);
+    detail.style('background-position', `${-x0*imageWidth/widthOrig+cropXoffset}px ${-y0*imageHeight/heightOrig+cropYoffset}px`);
 };
 
 const brush = vc.brush()
