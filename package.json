@@ -1,7 +1,7 @@
 {
-  "name": "descvis",
+  "name": "visconnect",
   "version": "1.0.0",
-  "description": "Demo at https://michaschwab.github.io/VisConnect/",
+  "description": "Collaborate on data visualizations! Demo at https://michaschwab.github.io/VisConnect/",
   "main": "visconnect-bundle.js",
   "dependencies": {
     "rxjs": "^6.5.4"

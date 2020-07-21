@@ -1,7 +1,7 @@
 (function() {
 	const inject = () => {
 		// Code from https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js
-		// and from https://michaschwab.github.io/DESCVis/descvis-bundle.js
+		// and from https://michaschwab.github.io/VisConnect/visconnect-bundle.js
 		const sources = ['peerjs.1.0.4.min.js', 'visconnect-bundle.js'];
 
 		for(const source of sources) {
