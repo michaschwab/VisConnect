@@ -13,6 +13,7 @@ const leaderId = parts ? parts[1] : ownId;
     drag: VisConnectUtil.drag,
     brush: VisConnectUtil.brush,
     mouse: VisConnectUtil.mouse,
+    lasso: VisConnectUtil.lasso,
     random: VisConnectUtil.random(leaderId)
 };
 

@@ -1,3 +1,5 @@
+import {lasso as d3lasso} from "d3-lasso";
+
 export class VisConnectUtil {
     static drag() {
         const data = {
@@ -153,6 +155,56 @@ export class VisConnectUtil {
         return brush;
     }
 
+    static lasso() {
+        const data = {
+            svg: {} as D3Selection,
+            onStart: () => {},
+            onDraw: () => {},
+            onEnd: () => {},
+        }
+        const collaboratorLassos: {[collaboratorId: string]: any} = {};
+
+        const d3l = d3lasso()
+            .on('draw', () => {
+                const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId}};
+                const event = new CustomEvent('draw-message', evtData);
+                document.body.dispatchEvent(event);
+                data.onDraw();
+            });
+
+        document.body.addEventListener('draw-message', (e) => {
+
+        });
+
+        const lasso = function(svg: any) {
+            data.svg = svg;
+            (d3l as any).call(d3l, svg);
+            return lasso;
+        };
+
+        wrapFct(lasso, d3l, 'items');
+        wrapFct(lasso, d3l, 'closePathDistance');
+        wrapFct(lasso, d3l, 'closePathSelect');
+        wrapFct(lasso, d3l, 'targetArea');
+        wrapFct(lasso, d3l, 'selectedItems');
+        wrapFct(lasso, d3l, 'notSelectedItems');
+
+        lasso.on = (type: string, callback: () => void) => {
+            if(type === 'start') {
+                data.onStart = callback;
+            } else if(type === 'draw') {
+                data.onDraw = callback;
+            } else if(type === 'end') {
+                data.onEnd = callback;
+            } else {
+                console.error('Lasso type ', type, ' not defined.');
+            }
+            return lasso;
+        };
+
+        return lasso;
+    }
+
     static mouse(node: HTMLElement) {
         const coords = (window as any)['d3'].mouse(node);
         return [coords[0] - window.scrollX, coords[1] - window.scrollY];
@@ -213,4 +265,11 @@ interface D3Selection {
     append: (elementType: string) => D3Selection;
     attr: (name: string, value?: string) => D3Selection;
     style: (name: string, value?: string) => D3Selection;
+}
+
+function wrapFct(wrap: any, inner: any, fctName: string) {
+    wrap[fctName] = () => {
+        inner[fctName].apply(inner, arguments as any);
+        return wrap;
+    };
 }
