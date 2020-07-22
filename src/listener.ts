@@ -27,7 +27,9 @@ export class VcListener {
         const custom = this.customEvents ? this.customEvents : [];
         const eventTypes = ['mousemove', 'mouseup', 'mousedown', 'touchmove', 'mouseenter', 'mouseout', 'mouseover',
             'mouseleave', 'click', 'dblclick', 'touchstart', 'touchend', 'selectstart', 'dragstart']
-            .filter(type => !this.ignoreEvents || (this.ignoreEvents[0] !== 'all' && !this.ignoreEvents.includes(type))).concat(custom);
+            .filter(type => !this.ignoreEvents || (this.ignoreEvents[0] !== 'all' && !this.ignoreEvents.includes(type)))
+            .concat(custom)
+            .concat(['brush-message']);
 
         for(const type of eventTypes) {
             element.addEventListener(type, boundCapture);
