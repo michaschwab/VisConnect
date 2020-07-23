@@ -163,6 +163,7 @@ export class VisConnectUtil {
             start: {} as {[collId: string]: [number, number]},
             positions: {} as {[collId: string]: [number, number][]},
             items: null as D3Selection|null,
+            mode: 'divide' as 'divide'|'join',
             getItemPos: (() => [0, 0]) as (item: D3Selection) => [number, number],
             possibleItems: [] as any[],
             notPossibleItems: [] as any[],
@@ -204,7 +205,7 @@ export class VisConnectUtil {
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
 
-                if(collId === vc.ownId) {
+                if(collId === vc.ownId || data.mode === 'join') {
                     data.onStart();
                 }
             });
@@ -221,7 +222,7 @@ export class VisConnectUtil {
                             .map(pos => `${pos[0]},${pos[1]}`)
                             .reduce((a, b) => `${a} L${b}`) + 'Z');
 
-                    if(collId === vc.ownId) {
+                    if(collId === vc.ownId || data.mode === 'join') {
                         data.onDraw();
                     }
                 }
@@ -233,11 +234,11 @@ export class VisConnectUtil {
                 data.drawing[collId] = false;
                 data.start[collId] = [0, 0];
 
-                const lassoG = data.lassoGs[collId];
-                lassoG.selectAll('path').remove();
-                lassoG.selectAll('circle').remove();
+                //const lassoG = data.lassoGs[collId];
+                //lassoG.selectAll('path').remove();
+                //lassoG.selectAll('circle').remove();
 
-                if(collId === vc.ownId) {
+                if(collId === vc.ownId || data.mode === 'join') {
                     data.onEnd();
                 }
             });
@@ -253,17 +254,26 @@ export class VisConnectUtil {
             return data.items;
         };
 
+        const getItemScore = (d: any) => {
+            if(!data.positions[vc.ownId]) {
+                return 1;
+            }
+            const pos = data.getItemPos(d);
+            const collIds = Object.keys(data.positions);
+
+            if(data.mode === 'divide') {
+                return classifyPoint(data.positions[vc.ownId], pos);
+            } else {
+                return Math.min(...collIds.map(collId => classifyPoint(data.positions[collId], pos)));
+            }
+        }
+
         const getInside = () => {
             if(!data.items) {
                 return null;
             }
             return data.items.filter(function(d) {
-                if(!data.positions[vc.ownId]) {
-                    return false;
-                }
-                const pos = data.getItemPos(d);
-                const score = classifyPoint(data.positions[vc.ownId], pos);
-                return score <= 0;
+                return getItemScore(d) <= 0;
             });
         };
 
@@ -272,12 +282,7 @@ export class VisConnectUtil {
                 return null;
             }
             return data.items.filter(function(d) {
-                if(!data.positions[vc.ownId]) {
-                    return true;
-                }
-                const pos = data.getItemPos(d);
-                const score = classifyPoint(data.positions[vc.ownId], pos);
-                return score > 0;
+                return getItemScore(d) > 0;
             });
         };
 
@@ -285,6 +290,14 @@ export class VisConnectUtil {
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
+        lasso.mode = ((mode?: 'divide'|'join') => {
+            if(mode) {
+                data.mode = mode;
+                return lasso;
+            } else {
+                return data.mode;
+            }
+        });
 
         lasso.getItemPos = (cb: (item: D3Selection) => [number, number]) => {
             data.getItemPos = cb;

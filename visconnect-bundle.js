@@ -926,6 +926,7 @@ var VisConnectUtil = /** @class */ (function () {
             start: {},
             positions: {},
             items: null,
+            mode: 'divide',
             getItemPos: (function () { return [0, 0]; }),
             possibleItems: [],
             notPossibleItems: [],
@@ -959,7 +960,7 @@ var VisConnectUtil = /** @class */ (function () {
                     .attr('cy', data.start[collId][1])
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
-                if (collId === vc.ownId) {
+                if (collId === vc.ownId || data.mode === 'join') {
                     data.onStart();
                 }
             });
@@ -972,7 +973,7 @@ var VisConnectUtil = /** @class */ (function () {
                         .attr('d', function () { return 'M' + data.positions[collId]
                         .map(function (pos) { return pos[0] + "," + pos[1]; })
                         .reduce(function (a, b) { return a + " L" + b; }) + 'Z'; });
-                    if (collId === vc.ownId) {
+                    if (collId === vc.ownId || data.mode === 'join') {
                         data.onDraw();
                     }
                 }
@@ -981,10 +982,10 @@ var VisConnectUtil = /** @class */ (function () {
                 var collId = d3.event.sourceEvent.collaboratorId;
                 data.drawing[collId] = false;
                 data.start[collId] = [0, 0];
-                var lassoG = data.lassoGs[collId];
-                lassoG.selectAll('path').remove();
-                lassoG.selectAll('circle').remove();
-                if (collId === vc.ownId) {
+                //const lassoG = data.lassoGs[collId];
+                //lassoG.selectAll('path').remove();
+                //lassoG.selectAll('circle').remove();
+                if (collId === vc.ownId || data.mode === 'join') {
                     data.onEnd();
                 }
             });
@@ -997,17 +998,25 @@ var VisConnectUtil = /** @class */ (function () {
             }
             return data.items;
         };
+        var getItemScore = function (d) {
+            if (!data.positions[vc.ownId]) {
+                return 1;
+            }
+            var pos = data.getItemPos(d);
+            var collIds = Object.keys(data.positions);
+            if (data.mode === 'divide') {
+                return robustPnp(data.positions[vc.ownId], pos);
+            }
+            else {
+                return Math.min.apply(Math, collIds.map(function (collId) { return robustPnp(data.positions[collId], pos); }));
+            }
+        };
         var getInside = function () {
             if (!data.items) {
                 return null;
             }
             return data.items.filter(function (d) {
-                if (!data.positions[vc.ownId]) {
-                    return false;
-                }
-                var pos = data.getItemPos(d);
-                var score = robustPnp(data.positions[vc.ownId], pos);
-                return score <= 0;
+                return getItemScore(d) <= 0;
             });
         };
         var getOutside = function () {
@@ -1015,18 +1024,22 @@ var VisConnectUtil = /** @class */ (function () {
                 return null;
             }
             return data.items.filter(function (d) {
-                if (!data.positions[vc.ownId]) {
-                    return true;
-                }
-                var pos = data.getItemPos(d);
-                var score = robustPnp(data.positions[vc.ownId], pos);
-                return score > 0;
+                return getItemScore(d) > 0;
             });
         };
         lasso.selectedItems = getInside;
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
+        lasso.mode = (function (mode) {
+            if (mode) {
+                data.mode = mode;
+                return lasso;
+            }
+            else {
+                return data.mode;
+            }
+        });
         lasso.getItemPos = function (cb) {
             data.getItemPos = cb;
             return lasso;

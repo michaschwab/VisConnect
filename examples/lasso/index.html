@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <title>D3 Lasso selection</title>
-<body>
-<svg width=600 height=400></svg>
+<body collaboration>
+<svg width=600 height=400></svg><br />
+<a id="modeSwitchButton"><input type="checkbox" id="modeCheck" style="pointer-events: none" /> Include Collaborators' Selection</a>
 <script src="https://d3js.org/d3.v5.js"></script>
 
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
 <script src="../../visconnect-bundle.js"></script>
 
 <script>
-    // https://observablehq.com/@bumbeishvili/d3-lasso-selection@147
-    const svgNode =  d3.select('svg');
+    const svgNode = d3.select('svg');
 
     var data = new Array(100).fill(null).map(m=>[vc.random()*600,vc.random()*400]);
 
@@ -61,6 +61,16 @@
         .on("end",lasso_end);
 
     svgNode.call(lasso);
+
+    document.getElementById('modeSwitchButton').addEventListener('click', (evt) => {
+        if(evt.type !== 'click') return;
+        lasso.mode() === 'divide' ? lasso.mode('join') : lasso.mode('divide');
+        const modeCheck = document.getElementById('modeCheck');
+        modeCheck.getAttribute('checked') === 'checked' ? modeCheck.removeAttribute('checked')
+            : modeCheck.setAttribute('checked', 'checked');
+        evt.stopPropagation();
+        lasso_end();
+    });
 
 
 </script>
