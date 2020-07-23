@@ -171,7 +171,8 @@ export class VisConnectUtil {
             const drag = vc.drag();
 
             drag.on('start', () => {
-                const collId = d3.event.collaboratorId;
+                const collId = d3.event.sourceEvent.collaboratorId;
+                console.log(collId, d3.event);
 
                 data.drawing[collId] = true;
                 data.start[collId] = [d3.event.x, d3.event.y];
@@ -186,18 +187,19 @@ export class VisConnectUtil {
                 lassoG.selectAll('path').remove();
                 lassoG.append('path')
                     .attr('stroke', 'grey')
-                    .attr('fill', 'rgba(150,150,150,0.5)');
+                    .attr('opacity', '0.5')
+                    .attr('fill', d3.event.sourceEvent.collaboratorColor);
 
                 lassoG.selectAll('circle').remove();
                 lassoG.append('circle')
-                    .attr('r', 5)
+                    .attr('r', 4)
                     .attr('cx', data.start[collId][0])
                     .attr('cy', data.start[collId][1])
-                    .attr('fill', 'grey');
+                    .attr('fill', d3.event.sourceEvent.collaboratorColor);
             });
 
             drag.on('drag', () => {
-                const collId = d3.event.collaboratorId;
+                const collId = d3.event.sourceEvent.collaboratorId;
 
                 if(data.drawing[collId]) {
                     data.positions[collId].push([d3.event.x, d3.event.y]);
@@ -211,15 +213,15 @@ export class VisConnectUtil {
             });
 
             drag.on('end', () => {
-                const collId = d3.event.collaboratorId;
+                const collId = d3.event.sourceEvent.collaboratorId;
 
                 data.drawing[collId] = false;
                 data.start[collId] = [0, 0];
                 data.positions[collId] = [];
 
                 const lassoG = data.lassoGs[collId];
-                //lassoG.selectAll('path').remove(); //
-                //lassoG.selectAll('circle').remove();
+                lassoG.selectAll('path').remove();
+                lassoG.selectAll('circle').remove();
             });
 
             svg.call(drag);

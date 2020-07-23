@@ -232,7 +232,8 @@ var VisConnectUtil = /** @class */ (function () {
             data.svg = svg;
             var drag = vc.drag();
             drag.on('start', function () {
-                var collId = d3.event.collaboratorId;
+                var collId = d3.event.sourceEvent.collaboratorId;
+                console.log(collId, d3.event);
                 data.drawing[collId] = true;
                 data.start[collId] = [d3.event.x, d3.event.y];
                 data.positions[collId] = [];
@@ -244,16 +245,17 @@ var VisConnectUtil = /** @class */ (function () {
                 lassoG.selectAll('path').remove();
                 lassoG.append('path')
                     .attr('stroke', 'grey')
-                    .attr('fill', 'rgba(150,150,150,0.5)');
+                    .attr('opacity', '0.5')
+                    .attr('fill', d3.event.sourceEvent.collaboratorColor);
                 lassoG.selectAll('circle').remove();
                 lassoG.append('circle')
-                    .attr('r', 5)
+                    .attr('r', 4)
                     .attr('cx', data.start[collId][0])
                     .attr('cy', data.start[collId][1])
-                    .attr('fill', 'grey');
+                    .attr('fill', d3.event.sourceEvent.collaboratorColor);
             });
             drag.on('drag', function () {
-                var collId = d3.event.collaboratorId;
+                var collId = d3.event.sourceEvent.collaboratorId;
                 if (data.drawing[collId]) {
                     data.positions[collId].push([d3.event.x, d3.event.y]);
                     var lassoG = data.lassoGs[collId];
@@ -264,12 +266,13 @@ var VisConnectUtil = /** @class */ (function () {
                 }
             });
             drag.on('end', function () {
-                var collId = d3.event.collaboratorId;
+                var collId = d3.event.sourceEvent.collaboratorId;
                 data.drawing[collId] = false;
                 data.start[collId] = [0, 0];
                 data.positions[collId] = [];
-                //lassoG.selectAll('path').remove(); //
-                //lassoG.selectAll('circle').remove();
+                var lassoG = data.lassoGs[collId];
+                lassoG.selectAll('path').remove();
+                lassoG.selectAll('circle').remove();
             });
             svg.call(drag);
         };
