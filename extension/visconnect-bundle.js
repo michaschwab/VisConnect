@@ -2263,7 +2263,7 @@ var VisConnectUtil = /** @class */ (function () {
         var dragStart = function (element) {
             return function (e) {
                 var event = e;
-                if (!setCustomEvent(event)) {
+                if (!VisConnectUtil.setCustomEvent(event)) {
                     return;
                 }
                 data.draggingElements[event.collaboratorId] = element;
@@ -2272,7 +2272,7 @@ var VisConnectUtil = /** @class */ (function () {
         };
         var dragMove = function (e) {
             var event = e;
-            if (!setCustomEvent(event)) {
+            if (!VisConnectUtil.setCustomEvent(event)) {
                 return;
             }
             var element = data.draggingElements[event.collaboratorId];
@@ -2282,7 +2282,7 @@ var VisConnectUtil = /** @class */ (function () {
         };
         var dragEnd = function (e) {
             var event = e;
-            if (!setCustomEvent(event)) {
+            if (!VisConnectUtil.setCustomEvent(event)) {
                 return;
             }
             var element = data.draggingElements[event.collaboratorId];
@@ -2307,18 +2307,6 @@ var VisConnectUtil = /** @class */ (function () {
             window.addEventListener('mouseup', dragEnd);
             window.addEventListener('touchend', dragEnd);
         };
-        var setCustomEvent = function (event) {
-            var pos = point$1(event);
-            if (!pos) {
-                return false;
-            }
-            window['d3'].event = {
-                sourceEvent: event,
-                x: pos.x,
-                y: pos.y,
-            };
-            return true;
-        };
         drag.on = function (type, callback) {
             if (type === 'start') {
                 data.onStart = callback;
@@ -2335,6 +2323,18 @@ var VisConnectUtil = /** @class */ (function () {
             return drag;
         };
         return drag;
+    };
+    VisConnectUtil.setCustomEvent = function (event) {
+        var pos = point$1(event);
+        if (!pos) {
+            return false;
+        }
+        window['d3'].event = {
+            sourceEvent: event,
+            x: pos.x,
+            y: pos.y,
+        };
+        return true;
     };
     VisConnectUtil.brush = function () {
         var data = {
