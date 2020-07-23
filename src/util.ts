@@ -204,7 +204,9 @@ export class VisConnectUtil {
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
 
-                data.onStart();
+                if(collId === vc.ownId) {
+                    data.onStart();
+                }
             });
 
             drag.on('drag', () => {
@@ -219,7 +221,9 @@ export class VisConnectUtil {
                             .map(pos => `${pos[0]},${pos[1]}`)
                             .reduce((a, b) => `${a} L${b}`) + 'Z');
 
-                    data.onDraw();
+                    if(collId === vc.ownId) {
+                        data.onDraw();
+                    }
                 }
             });
 
@@ -233,7 +237,9 @@ export class VisConnectUtil {
                 lassoG.selectAll('path').remove();
                 lassoG.selectAll('circle').remove();
 
-                data.onEnd();
+                if(collId === vc.ownId) {
+                    data.onEnd();
+                }
             });
 
             svg.call(drag);
@@ -252,6 +258,9 @@ export class VisConnectUtil {
                 return null;
             }
             return data.items.filter(function(d) {
+                if(!data.positions[vc.ownId]) {
+                    return false;
+                }
                 const pos = data.getItemPos(d);
                 const score = classifyPoint(data.positions[vc.ownId], pos);
                 return score <= 0;
@@ -263,6 +272,9 @@ export class VisConnectUtil {
                 return null;
             }
             return data.items.filter(function(d) {
+                if(!data.positions[vc.ownId]) {
+                    return true;
+                }
                 const pos = data.getItemPos(d);
                 const score = classifyPoint(data.positions[vc.ownId], pos);
                 return score > 0;

@@ -959,7 +959,9 @@ var VisConnectUtil = /** @class */ (function () {
                     .attr('cy', data.start[collId][1])
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
-                data.onStart();
+                if (collId === vc.ownId) {
+                    data.onStart();
+                }
             });
             drag.on('drag', function () {
                 var collId = d3.event.sourceEvent.collaboratorId;
@@ -970,7 +972,9 @@ var VisConnectUtil = /** @class */ (function () {
                         .attr('d', function () { return 'M' + data.positions[collId]
                         .map(function (pos) { return pos[0] + "," + pos[1]; })
                         .reduce(function (a, b) { return a + " L" + b; }) + 'Z'; });
-                    data.onDraw();
+                    if (collId === vc.ownId) {
+                        data.onDraw();
+                    }
                 }
             });
             drag.on('end', function () {
@@ -980,7 +984,9 @@ var VisConnectUtil = /** @class */ (function () {
                 var lassoG = data.lassoGs[collId];
                 lassoG.selectAll('path').remove();
                 lassoG.selectAll('circle').remove();
-                data.onEnd();
+                if (collId === vc.ownId) {
+                    data.onEnd();
+                }
             });
             svg.call(drag);
         };
@@ -996,6 +1002,9 @@ var VisConnectUtil = /** @class */ (function () {
                 return null;
             }
             return data.items.filter(function (d) {
+                if (!data.positions[vc.ownId]) {
+                    return false;
+                }
                 var pos = data.getItemPos(d);
                 var score = robustPnp(data.positions[vc.ownId], pos);
                 return score <= 0;
@@ -1006,6 +1015,9 @@ var VisConnectUtil = /** @class */ (function () {
                 return null;
             }
             return data.items.filter(function (d) {
+                if (!data.positions[vc.ownId]) {
+                    return true;
+                }
                 var pos = data.getItemPos(d);
                 var score = robustPnp(data.positions[vc.ownId], pos);
                 return score > 0;
