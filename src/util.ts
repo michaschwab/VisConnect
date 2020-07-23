@@ -1,5 +1,3 @@
-import {lasso as d3lasso} from "d3-lasso";
-
 export class VisConnectUtil {
     static drag() {
         const data = {
@@ -158,13 +156,79 @@ export class VisConnectUtil {
     static lasso() {
         const data = {
             svg: {} as D3Selection,
+            lassoGs: {} as {[collId: string]: D3Selection},
+            drawing: false,
+            start: [0, 0] as [number, number],
+            positions: [] as [number, number][],
             onStart: () => {},
             onDraw: () => {},
             onEnd: () => {},
         }
         const collaboratorLassos: {[collaboratorId: string]: any} = {};
 
-        const d3l = d3lasso()
+        const lasso = (svg: D3Selection) => {
+            data.svg = svg;
+
+            const drag = vc.drag();
+
+            drag.on('start', () => {
+                data.drawing = true;
+                data.start = [d3.event.x, d3.event.y];
+                data.positions = [];
+
+                let lassoG = data.lassoGs[d3.event.collaboratorId];
+                if(!lassoG) {
+                    lassoG = svg.append('g');
+                    data.lassoGs[d3.event.collaboratorId] = lassoG;
+                }
+
+                lassoG.selectAll('path').remove();
+                lassoG.append('path')
+                    .attr('stroke', 'grey')
+                    .attr('fill', 'rgba(150,150,150,0.5)');
+
+                lassoG.selectAll('circle').remove();
+                lassoG.append('circle')
+                    .attr('r', 5)
+                    .attr('cx', data.start[0])
+                    .attr('cy', data.start[1])
+                    .attr('fill', 'grey');
+            });
+
+            drag.on('drag', () => {
+                if(data.drawing) {
+                    data.positions.push([d3.event.x, d3.event.y]);
+
+                    const lassoG = data.lassoGs[d3.event.collaboratorId];
+                    lassoG.select('path')
+                        .attr('d', () => 'M' + data.positions
+                            .map(pos => `${pos[0]},${pos[1]}`)
+                            .reduce((a, b) => `${a} L${b}`) + 'Z');
+                }
+            });
+
+            drag.on('end', () => {
+                data.drawing = false;
+                data.start = [0, 0];
+                data.positions = [];
+
+                const lassoG = data.lassoGs[d3.event.collaboratorId];
+                lassoG.selectAll('path').remove();
+                lassoG.selectAll('circle').remove();
+            });
+
+            svg.call(drag);
+        };
+
+        lasso.items = () => { return lasso; };
+        lasso.closePathDistance = () => { return lasso; };
+        lasso.closePathSelect = () => { return lasso; };
+        lasso.targetArea = () => { return lasso; };
+        lasso.selectedItems = () => { return lasso; };
+        lasso.notSelectedItems = () => { return lasso; };
+        lasso.on = () => { return lasso; };
+
+        /*const d3l = d3lasso()
             .on('draw', () => {
                 const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId}};
                 const event = new CustomEvent('draw-message', evtData);
@@ -175,19 +239,6 @@ export class VisConnectUtil {
         document.body.addEventListener('draw-message', (e) => {
 
         });
-
-        const lasso = function(svg: any) {
-            data.svg = svg;
-            (d3l as any).call(d3l, svg);
-            return lasso;
-        };
-
-        wrapFct(lasso, d3l, 'items');
-        wrapFct(lasso, d3l, 'closePathDistance');
-        wrapFct(lasso, d3l, 'closePathSelect');
-        wrapFct(lasso, d3l, 'targetArea');
-        wrapFct(lasso, d3l, 'selectedItems');
-        wrapFct(lasso, d3l, 'notSelectedItems');
 
         lasso.on = (type: string, callback: () => void) => {
             if(type === 'start') {
@@ -200,7 +251,7 @@ export class VisConnectUtil {
                 console.error('Lasso type ', type, ' not defined.');
             }
             return lasso;
-        };
+        };*/
 
         return lasso;
     }
@@ -263,8 +314,13 @@ function point(event: MouseEvent|TouchEvent) {
 
 interface D3Selection {
     append: (elementType: string) => D3Selection;
-    attr: (name: string, value?: string) => D3Selection;
+    attr: (name: string, value?: string|number|((d: any) => string|number)) => D3Selection;
+    call: (fct: () => void) => D3Selection;
+    on: (name: string, callback?: (event: any) => void) => D3Selection;
+    select: (name: string) => D3Selection;
+    selectAll: (name: string) => D3Selection;
     style: (name: string, value?: string) => D3Selection;
+    remove: () => void;
 }
 
 function wrapFct(wrap: any, inner: any, fctName: string) {

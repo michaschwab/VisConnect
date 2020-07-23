@@ -4,7 +4,6 @@
   "description": "Collaborate on data visualizations! Demo at https://michaschwab.github.io/VisConnect/",
   "main": "visconnect-bundle.js",
   "dependencies": {
-    "d3-lasso": "github:michaschwab/d3-lasso",
     "rxjs": "^6.5.4"
   },
   "devDependencies": {
