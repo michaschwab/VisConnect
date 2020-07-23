@@ -1,9 +1,10 @@
 {
   "name": "visconnect",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Collaborate on data visualizations! Demo at https://michaschwab.github.io/VisConnect/",
   "main": "visconnect-bundle.js",
   "dependencies": {
+    "robust-point-in-polygon": "^1.0.3",
     "rxjs": "^6.5.4"
   },
   "devDependencies": {

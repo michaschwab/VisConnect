@@ -14,7 +14,9 @@ const leaderId = parts ? parts[1] : ownId;
     brush: VisConnectUtil.brush,
     mouse: VisConnectUtil.mouse,
     lasso: VisConnectUtil.lasso,
-    random: VisConnectUtil.random(leaderId)
+    random: VisConnectUtil.random(leaderId),
+    leaderId: leaderId,
+    ownId: ownId,
 };
 
 console.log('init vislink');

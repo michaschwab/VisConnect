@@ -1,3 +1,5 @@
+import classifyPoint from "robust-point-in-polygon";
+
 export class VisConnectUtil {
     static drag() {
         const data = {
@@ -160,6 +162,10 @@ export class VisConnectUtil {
             drawing: {} as {[collId: string]: boolean},
             start: {} as {[collId: string]: [number, number]},
             positions: {} as {[collId: string]: [number, number][]},
+            items: null as D3Selection|null,
+            getItemPos: (() => [0, 0]) as (item: D3Selection) => [number, number],
+            possibleItems: [] as any[],
+            notPossibleItems: [] as any[],
             onStart: () => {},
             onDraw: () => {},
             onEnd: () => {},
@@ -172,7 +178,6 @@ export class VisConnectUtil {
 
             drag.on('start', () => {
                 const collId = d3.event.sourceEvent.collaboratorId;
-                console.log(collId, d3.event);
 
                 data.drawing[collId] = true;
                 data.start[collId] = [d3.event.x, d3.event.y];
@@ -188,6 +193,7 @@ export class VisConnectUtil {
                 lassoG.append('path')
                     .attr('stroke', 'grey')
                     .attr('opacity', '0.5')
+                    .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
 
                 lassoG.selectAll('circle').remove();
@@ -195,7 +201,10 @@ export class VisConnectUtil {
                     .attr('r', 4)
                     .attr('cx', data.start[collId][0])
                     .attr('cy', data.start[collId][1])
+                    .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
+
+                data.onStart();
             });
 
             drag.on('drag', () => {
@@ -209,6 +218,8 @@ export class VisConnectUtil {
                         .attr('d', () => 'M' + data.positions[collId]
                             .map(pos => `${pos[0]},${pos[1]}`)
                             .reduce((a, b) => `${a} L${b}`) + 'Z');
+
+                    data.onDraw();
                 }
             });
 
@@ -217,35 +228,56 @@ export class VisConnectUtil {
 
                 data.drawing[collId] = false;
                 data.start[collId] = [0, 0];
-                data.positions[collId] = [];
 
                 const lassoG = data.lassoGs[collId];
                 lassoG.selectAll('path').remove();
                 lassoG.selectAll('circle').remove();
+
+                data.onEnd();
             });
 
             svg.call(drag);
         };
 
-        lasso.items = () => { return lasso; };
-        lasso.closePathDistance = () => { return lasso; };
-        lasso.closePathSelect = () => { return lasso; };
-        lasso.targetArea = () => { return lasso; };
-        lasso.selectedItems = () => { return lasso; };
-        lasso.notSelectedItems = () => { return lasso; };
-        lasso.on = () => { return lasso; };
+        lasso.items = (items?: D3Selection) => {
+            if(items) {
+                data.items = items;
+                return lasso;
+            }
+            return data.items;
+        };
 
-        /*const d3l = d3lasso()
-            .on('draw', () => {
-                const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId}};
-                const event = new CustomEvent('draw-message', evtData);
-                document.body.dispatchEvent(event);
-                data.onDraw();
+        const getInside = () => {
+            if(!data.items) {
+                return null;
+            }
+            return data.items.filter(function(d) {
+                const pos = data.getItemPos(d);
+                const score = classifyPoint(data.positions[vc.ownId], pos);
+                return score <= 0;
             });
+        };
 
-        document.body.addEventListener('draw-message', (e) => {
+        const getOutside = () => {
+            if(!data.items) {
+                return null;
+            }
+            return data.items.filter(function(d) {
+                const pos = data.getItemPos(d);
+                const score = classifyPoint(data.positions[vc.ownId], pos);
+                return score > 0;
+            });
+        };
 
-        });
+        lasso.selectedItems = getInside;
+        lasso.notSelectedItems = getOutside;
+        lasso.possibleItems = getInside;
+        lasso.notPossibleItems = getOutside;
+
+        lasso.getItemPos = (cb: (item: D3Selection) => [number, number]) => {
+            data.getItemPos = cb;
+            return lasso;
+        };
 
         lasso.on = (type: string, callback: () => void) => {
             if(type === 'start') {
@@ -258,7 +290,7 @@ export class VisConnectUtil {
                 console.error('Lasso type ', type, ' not defined.');
             }
             return lasso;
-        };*/
+        };
 
         return lasso;
     }
@@ -323,6 +355,9 @@ interface D3Selection {
     append: (elementType: string) => D3Selection;
     attr: (name: string, value?: string|number|((d: any) => string|number)) => D3Selection;
     call: (fct: () => void) => D3Selection;
+    each: (fct: (d: any) => void) => D3Selection;
+    filter: (fct: (d: any) => boolean) => D3Selection;
+    nodes: () => Element[];
     on: (name: string, callback?: (event: any) => void) => D3Selection;
     select: (name: string) => D3Selection;
     selectAll: (name: string) => D3Selection;

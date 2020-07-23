@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <title>D3 Lasso selection</title>
-<link rel="stylesheet" type="text/css" href="./inspector.css">
 <body>
 <svg width=600 height=400></svg>
 <script src="https://d3js.org/d3.v5.js"></script>
@@ -55,10 +54,8 @@
     };
 
     const lasso = vc.lasso()
-        .closePathDistance(305)
-        .closePathSelect(true)
-        .targetArea(svgNode)
         .items(circles)
+        .getItemPos((d) => d)
         .on("start",lasso_start)
         .on("draw",lasso_draw)
         .on("end",lasso_end);
