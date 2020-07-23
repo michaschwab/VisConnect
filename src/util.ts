@@ -218,8 +218,8 @@ export class VisConnectUtil {
                 data.positions[collId] = [];
 
                 const lassoG = data.lassoGs[collId];
-                lassoG.selectAll('path').remove();
-                lassoG.selectAll('circle').remove();
+                //lassoG.selectAll('path').remove();
+                //lassoG.selectAll('circle').remove();
             });
 
             svg.call(drag);
