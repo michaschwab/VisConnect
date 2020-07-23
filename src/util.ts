@@ -157,14 +157,13 @@ export class VisConnectUtil {
         const data = {
             svg: {} as D3Selection,
             lassoGs: {} as {[collId: string]: D3Selection},
-            drawing: false,
-            start: [0, 0] as [number, number],
-            positions: [] as [number, number][],
+            drawing: {} as {[collId: string]: boolean},
+            start: {} as {[collId: string]: [number, number]},
+            positions: {} as {[collId: string]: [number, number][]},
             onStart: () => {},
             onDraw: () => {},
             onEnd: () => {},
         }
-        const collaboratorLassos: {[collaboratorId: string]: any} = {};
 
         const lasso = (svg: D3Selection) => {
             data.svg = svg;
@@ -172,14 +171,16 @@ export class VisConnectUtil {
             const drag = vc.drag();
 
             drag.on('start', () => {
-                data.drawing = true;
-                data.start = [d3.event.x, d3.event.y];
-                data.positions = [];
+                const collId = d3.event.collaboratorId;
 
-                let lassoG = data.lassoGs[d3.event.collaboratorId];
+                data.drawing[collId] = true;
+                data.start[collId] = [d3.event.x, d3.event.y];
+                data.positions[collId] = [];
+
+                let lassoG = data.lassoGs[collId];
                 if(!lassoG) {
                     lassoG = svg.append('g');
-                    data.lassoGs[d3.event.collaboratorId] = lassoG;
+                    data.lassoGs[collId] = lassoG;
                 }
 
                 lassoG.selectAll('path').remove();
@@ -190,29 +191,33 @@ export class VisConnectUtil {
                 lassoG.selectAll('circle').remove();
                 lassoG.append('circle')
                     .attr('r', 5)
-                    .attr('cx', data.start[0])
-                    .attr('cy', data.start[1])
+                    .attr('cx', data.start[collId][0])
+                    .attr('cy', data.start[collId][1])
                     .attr('fill', 'grey');
             });
 
             drag.on('drag', () => {
-                if(data.drawing) {
-                    data.positions.push([d3.event.x, d3.event.y]);
+                const collId = d3.event.collaboratorId;
 
-                    const lassoG = data.lassoGs[d3.event.collaboratorId];
+                if(data.drawing[collId]) {
+                    data.positions[collId].push([d3.event.x, d3.event.y]);
+
+                    const lassoG = data.lassoGs[collId];
                     lassoG.select('path')
-                        .attr('d', () => 'M' + data.positions
+                        .attr('d', () => 'M' + data.positions[collId]
                             .map(pos => `${pos[0]},${pos[1]}`)
                             .reduce((a, b) => `${a} L${b}`) + 'Z');
                 }
             });
 
             drag.on('end', () => {
-                data.drawing = false;
-                data.start = [0, 0];
-                data.positions = [];
+                const collId = d3.event.collaboratorId;
 
-                const lassoG = data.lassoGs[d3.event.collaboratorId];
+                data.drawing[collId] = false;
+                data.start[collId] = [0, 0];
+                data.positions[collId] = [];
+
+                const lassoG = data.lassoGs[collId];
                 lassoG.selectAll('path').remove();
                 lassoG.selectAll('circle').remove();
             });

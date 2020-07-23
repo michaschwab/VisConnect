@@ -221,9 +221,9 @@ var VisConnectUtil = /** @class */ (function () {
         var data = {
             svg: {},
             lassoGs: {},
-            drawing: false,
-            start: [0, 0],
-            positions: [],
+            drawing: {},
+            start: {},
+            positions: {},
             onStart: function () { },
             onDraw: function () { },
             onEnd: function () { },
@@ -232,13 +232,14 @@ var VisConnectUtil = /** @class */ (function () {
             data.svg = svg;
             var drag = vc.drag();
             drag.on('start', function () {
-                data.drawing = true;
-                data.start = [d3.event.x, d3.event.y];
-                data.positions = [];
-                var lassoG = data.lassoGs[d3.event.collaboratorId];
+                var collId = d3.event.collaboratorId;
+                data.drawing[collId] = true;
+                data.start[collId] = [d3.event.x, d3.event.y];
+                data.positions[collId] = [];
+                var lassoG = data.lassoGs[collId];
                 if (!lassoG) {
                     lassoG = svg.append('g');
-                    data.lassoGs[d3.event.collaboratorId] = lassoG;
+                    data.lassoGs[collId] = lassoG;
                 }
                 lassoG.selectAll('path').remove();
                 lassoG.append('path')
@@ -247,25 +248,27 @@ var VisConnectUtil = /** @class */ (function () {
                 lassoG.selectAll('circle').remove();
                 lassoG.append('circle')
                     .attr('r', 5)
-                    .attr('cx', data.start[0])
-                    .attr('cy', data.start[1])
+                    .attr('cx', data.start[collId][0])
+                    .attr('cy', data.start[collId][1])
                     .attr('fill', 'grey');
             });
             drag.on('drag', function () {
-                if (data.drawing) {
-                    data.positions.push([d3.event.x, d3.event.y]);
-                    var lassoG = data.lassoGs[d3.event.collaboratorId];
+                var collId = d3.event.collaboratorId;
+                if (data.drawing[collId]) {
+                    data.positions[collId].push([d3.event.x, d3.event.y]);
+                    var lassoG = data.lassoGs[collId];
                     lassoG.select('path')
-                        .attr('d', function () { return 'M' + data.positions
+                        .attr('d', function () { return 'M' + data.positions[collId]
                         .map(function (pos) { return pos[0] + "," + pos[1]; })
                         .reduce(function (a, b) { return a + " L" + b; }) + 'Z'; });
                 }
             });
             drag.on('end', function () {
-                data.drawing = false;
-                data.start = [0, 0];
-                data.positions = [];
-                var lassoG = data.lassoGs[d3.event.collaboratorId];
+                var collId = d3.event.collaboratorId;
+                data.drawing[collId] = false;
+                data.start[collId] = [0, 0];
+                data.positions[collId] = [];
+                var lassoG = data.lassoGs[collId];
                 lassoG.selectAll('path').remove();
                 lassoG.selectAll('circle').remove();
             });
