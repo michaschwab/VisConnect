@@ -268,9 +268,8 @@ var VisConnectUtil = /** @class */ (function () {
                 data.drawing[collId] = false;
                 data.start[collId] = [0, 0];
                 data.positions[collId] = [];
-                var lassoG = data.lassoGs[collId];
-                lassoG.selectAll('path').remove();
-                lassoG.selectAll('circle').remove();
+                //lassoG.selectAll('path').remove(); //
+                //lassoG.selectAll('circle').remove();
             });
             svg.call(drag);
         };
