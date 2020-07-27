@@ -865,33 +865,28 @@ var VisConnectUtil = /** @class */ (function () {
     VisConnectUtil.brush = function () {
         var data = {
             svg: {},
-            onStart: function () { },
-            onBrush: function () { },
-            onEnd: function () { },
+            onStart: (function () { }),
+            onBrush: (function () { }),
+            onEnd: (function () { }),
         };
         var collaboratorBrushes = {};
-        var d3b = d3.brush()
-            .on('brush', function () {
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId } };
-            var event = new CustomEvent('brush-message', evtData);
-            document.body.dispatchEvent(event);
-            data.onBrush();
-        });
         document.body.addEventListener('brush-message', function (e) {
             var event = e;
-            if (!collaboratorBrushes[event.collaboratorId]) {
-                collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
-                    .attr('fill', event.collaboratorColor)
-                    .attr('opacity', '0.4')
-                    .style('pointer-events', 'none');
+            if (event.type === 'brush') {
+                if (!collaboratorBrushes[event.collaboratorId]) {
+                    collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+                        .attr('fill', event.collaboratorColor)
+                        .attr('opacity', '0.4')
+                        .style('pointer-events', 'none');
+                }
+                var rect = collaboratorBrushes[event.collaboratorId];
+                var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
+                rect
+                    .attr('x', x0)
+                    .attr('y', y0)
+                    .attr('width', "" + (x1 - x0))
+                    .attr('height', "" + (y1 - y0));
             }
-            var rect = collaboratorBrushes[event.collaboratorId];
-            var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
-            rect
-                .attr('x', x0)
-                .attr('y', y0)
-                .attr('width', "" + (x1 - x0))
-                .attr('height', "" + (y1 - y0));
         });
         var brush = function (svg) {
             data.svg = svg;
@@ -900,6 +895,27 @@ var VisConnectUtil = /** @class */ (function () {
         brush.extent = function () {
             d3b.extent.apply(d3b, arguments);
             return brush;
+        };
+        brush.start = function (p) {
+            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
+                    type: 'start' } };
+            document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
+            data.onStart.call(this, p);
+        };
+        brush.move = function (p, t) {
+            if (this === null) {
+                d3b.move.call(null, p);
+            }
+            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
+                    type: 'brush' } };
+            document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
+            data.onBrush.call(this, p);
+        };
+        brush.end = function (p) {
+            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
+                    type: 'end' } };
+            document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
+            data.onEnd.call(this, p);
         };
         brush.on = function (type, callback) {
             if (type === 'start') {
@@ -916,6 +932,10 @@ var VisConnectUtil = /** @class */ (function () {
             }
             return brush;
         };
+        var d3b = d3.brush()
+            .on('start', brush.start)
+            .on('brush', brush.move)
+            .on('end', brush.end);
         return brush;
     };
     VisConnectUtil.lasso = function () {

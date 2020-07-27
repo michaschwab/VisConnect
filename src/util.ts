@@ -96,48 +96,64 @@ export class VisConnectUtil {
     static brush() {
         const data = {
             svg: {} as D3Selection,
-            onStart: () => {},
-            onBrush: () => {},
-            onEnd: () => {},
-        }
+            onStart: (() => {}) as (data?: any) => void,
+            onBrush: (() => {}) as (data?: any) => void,
+            onEnd: (() => {}) as (data?: any) => void,
+        };
         const collaboratorBrushes: {[collaboratorId: string]: any} = {};
 
-        const d3b = d3.brush()
-            .on('brush', () => {
-                const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId}};
-                const event = new CustomEvent('brush-message', evtData);
-                document.body.dispatchEvent(event);
-                data.onBrush();
-            });
-
         document.body.addEventListener('brush-message', (e) => {
-            const event = e as Event & {detail: {event: any}, collaboratorId: string, collaboratorColor: string};
+            const event = e as Event & {detail: {event: any}, collaboratorId: string, collaboratorColor: string,
+                type: string};
 
-            if(!collaboratorBrushes[event.collaboratorId]) {
-                collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
-                    .attr('fill', event.collaboratorColor)
-                    .attr('opacity', '0.4')
-                    .style('pointer-events', 'none');
+            if(event.type === 'brush') {
+                if(!collaboratorBrushes[event.collaboratorId]) {
+                    collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+                        .attr('fill', event.collaboratorColor)
+                        .attr('opacity', '0.4')
+                        .style('pointer-events', 'none');
+                }
+                const rect = collaboratorBrushes[event.collaboratorId];
+                const [[x0, y0], [x1, y1]] = event.detail.event;
+
+                rect
+                    .attr('x', x0)
+                    .attr('y', y0)
+                    .attr('width', `${x1 - x0}`)
+                    .attr('height', `${y1 - y0}`);
             }
-            const rect = collaboratorBrushes[event.collaboratorId];
-            const [[x0, y0], [x1, y1]] = event.detail.event;
-
-            rect
-                .attr('x', x0)
-                .attr('y', y0)
-                .attr('width', `${x1 - x0}`)
-                .attr('height', `${y1 - y0}`);
         });
 
         const brush = function(svg: any) {
             data.svg = svg;
-
             return d3b.call(d3b, svg);
         };
+
         brush.extent = () => {
             d3b.extent.apply(d3b, arguments);
             return brush;
-        }
+        };
+        brush.start = function(this: HTMLElement, p: any) {
+            const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
+                    type: 'start'}};
+            document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
+            data.onStart.call(this, p);
+        };
+        brush.move = function(this: HTMLElement, p: any, t?:any) {
+            if(this === null) {
+                d3b.move.call(null, p);
+            }
+            const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
+                    type: 'brush'}};
+            document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
+            data.onBrush.call(this, p);
+        };
+        brush.end = function(this: HTMLElement, p: any) {
+            const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
+                    type: 'end'}};
+            document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
+            data.onEnd.call(this, p);
+        };
 
         brush.on = (type: string, callback: () => void) => {
             if(type === 'start') {
@@ -151,6 +167,11 @@ export class VisConnectUtil {
             }
             return brush;
         };
+
+        const d3b = d3.brush()
+            .on('start', brush.start)
+            .on('brush', brush.move)
+            .on('end', brush.end);
 
         return brush;
     }
