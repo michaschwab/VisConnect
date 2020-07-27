@@ -33,9 +33,7 @@ const force = d3.forceSimulation()
   .on('tick', tick);
 
 // init D3 drag support
-const drag = d3.drag()
-  // Mac Firefox doesn't distinguish between left/right click when Ctrl is held... 
-  .filter(() => d3.event.button === 0 || d3.event.button === 2)
+const drag = vc.drag()
   .on('start', (d) => {
     if (!d3.event.active) force.alphaTarget(0.3).restart();
 
