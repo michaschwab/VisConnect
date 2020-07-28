@@ -64,7 +64,7 @@
 
     document.getElementById('modeSwitchButton').addEventListener('click', (evt) => {
         if(evt.type !== 'click') return;
-        lasso.mode() === 'divide' ? lasso.mode('join') : lasso.mode('divide');
+        lasso.collaborationMode() === 'divide' ? lasso.collaborationMode('join') : lasso.collaborationMode('divide');
         const modeCheck = document.getElementById('modeCheck');
         modeCheck.getAttribute('checked') === 'checked' ? modeCheck.removeAttribute('checked')
             : modeCheck.setAttribute('checked', 'checked');
