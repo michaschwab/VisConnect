@@ -311,7 +311,7 @@ export class VisConnectUtil {
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
-        lasso.mode = ((mode?: 'divide'|'join') => {
+        lasso.collaborationMode = ((mode?: 'divide'|'join') => {
             if(mode) {
                 data.mode = mode;
                 return lasso;

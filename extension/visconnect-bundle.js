@@ -1051,7 +1051,7 @@ var VisConnectUtil = /** @class */ (function () {
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
-        lasso.mode = (function (mode) {
+        lasso.collaborationMode = (function (mode) {
             if (mode) {
                 data.mode = mode;
                 return lasso;
