@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    #left {
+        float: left;
+        width: 400px;
+    }
+    #right {
+        float: left;
+        width: 400px;
+        margin-left: 10px;
+    }
+    #overview svg {
+        left: 0;
+        top: 0;
+        border: 1px solid #000;
+    }
+    #detail {
+        position: relative;
+    }
+    #detail-view {
+        width: 400px;
+        height: 250px;
+    }
+    .marker-button {
+        margin: 10px 10px 0 0;
+        padding: 8px;
+        border: none;
+    }
+    #noWaldoButton {
+        background: #99ff99;
+    }
+    #waldoButton {
+        background: #ff9999;
+    }
+    #title {
+        position: relative;
+    }
+    #squareLogo {
+        position: absolute;
+        top: 5px;
+        left: 300px;
+        display: block;
+        width: 30px;
+        height: 30px;
+        background: #0ff;
+    }
+    #recommendedBrush {
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        background: #dbdbdb;
+        border: 1px solid #6a6a6a;
+    }
+    .detail-crop {
+        position: absolute;
+        background: #eee;
+    }
+    #detail-crop-left {
+        left: 0;
+    }
+    #detail-crop-right {
+        right: 0;
+    }
+    #detail-crop-top {
+        top: 0;
+    }
+    #detail-crop-bottom {
+        bottom: 0;
+    }
+    #detail-crop-left, #detail-crop-right {
+        height: 100%;
+        top: 0;
+    }
+    #detail-crop-top, #detail-crop-bottom {
+        width: 100%;
+        left: 0;
+    }
+</style>
+<body collaboration="live" custom-events="brush-message, label-message" ignore-events="all">
+<h1 id="title">Where's the Square?<div id="squareLogo"></div></h1>
+<div id="left">
+    <h2>Overview</h2>
+    <div id="overview">
+
+    </div>
+
+    Recommended brush size: <div id="recommendedBrush"></div>
+</div>
+<div id="right">
+    <h2>Detail</h2>
+    <div id="detail">
+        <svg id="detail-view" width="400" height="250"></svg>
+        <div id="crop">
+            <div id="detail-crop-left" class="detail-crop"></div>
+            <div id="detail-crop-right" class="detail-crop"></div>
+            <div id="detail-crop-top" class="detail-crop"></div>
+            <div id="detail-crop-bottom" class="detail-crop"></div>
+        </div>
+    </div>
+    <button id="noWaldoButton" class="marker-button">No Square Here (Shortcut: &lt;N&gt;)</button>
+    <button id="waldoButton" class="marker-button">Found Square! (Shortcut: &lt;S&gt;)</button>
+    <!--<button id="removeLabelButton" class="marker-button">Remove Label (Shortcut: &lt;R&gt;)</button>-->
+</div>
+<script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+<script src="../../visconnect-bundle.js"></script>
+<script src="//d3js.org/d3.v5.js"></script>
+<script>
+    const width = 400;
+    const height = 250;
+    const dataCount = 1000;
+
+    const overviewWrap = d3.select('#overview');
+    const overviewSvg = overviewWrap.append("svg").attr("width", width).attr("height", height);
+    const overviewDataG = overviewSvg.append('g');
+    const overviewLabels = overviewSvg.append('g').style('opacity', '0.5');
+    const detail = d3.select('#detail-view').append('g');
+    let x0, y0, x1, y1;
+    const cropLeft = d3.select('#detail-crop-left');
+    const cropRight = d3.select('#detail-crop-right');
+    const cropTop = d3.select('#detail-crop-top');
+    const cropBottom = d3.select('#detail-crop-bottom');
+
+    const data = new Array(dataCount).fill(0).map(() => {
+         return {
+             x: Math.round(width*vc.random()),
+             y: Math.round(height*vc.random()),
+             type: 'circle',
+         };
+    });
+    data[Math.round(dataCount * vc.random())].type = 'rect';
+    overviewDataG.selectAll('*').data(data).enter()
+        .append(d => document.createElementNS("http://www.w3.org/2000/svg", d.type))
+        .attr('fill', d => d.type === 'circle' ? '#00f' : '#0ff')
+        .attr('x', d => d.x).attr('y', d => d.y).attr('cx', d => d.x).attr('cy', d => d.y)
+        .attr('r', 0.75).attr('width', 1.5).attr('height', 1.5);
+
+    detail.selectAll('*').data(data).enter()
+        .append(d => document.createElementNS("http://www.w3.org/2000/svg", d.type))
+        .attr('fill', d => d.type === 'circle' ? '#00f' : '#0ff')
+        .attr('x', d => d.x).attr('y', d => d.y).attr('cx', d => d.x).attr('cy', d => d.y)
+        .attr('r', 0.75).attr('width', 1.5).attr('height', 1.5);
+
+    const updateDetailView = () => {
+        [[x0, y0], [x1, y1]] = d3.event.selection;
+        let [selWidth, selHeight] = [x1 - x0, y1 - y0];
+        let cropPercent;
+        let cropXoffset = 0;
+        let cropYoffset = 0;
+        if(selWidth < selHeight) {
+            cropPercent = 1 - selWidth / selHeight;
+            selWidth = selHeight;
+            cropXoffset = 400*cropPercent/2;
+            cropLeft.style('width', `${400*cropPercent/2}px`);
+            cropRight.style('width', `${400*cropPercent/2}px`);
+            cropTop.style('height', `0`);
+            cropBottom.style('height', `0`);
+        } else {
+            cropPercent = 1 - selHeight / selWidth;
+            selHeight = selWidth;
+            cropLeft.style('width', `0`);
+            cropRight.style('width', `0`);
+            cropYoffset = 250*cropPercent/2;
+            cropTop.style('height', `${250*cropPercent/2}px`);
+            cropBottom.style('height', `${250*cropPercent/2}px`);
+        }
+
+        const scale = width / selWidth;
+        //const [imageWidth, imageHeight] = [400*widthOrig/selWidth, 250*heightOrig/selHeight];
+
+        detail.attr('transform', `scale(${scale}) translate(${-x0+cropXoffset/scale} ${-y0+cropYoffset/scale})`);
+
+        /*detail.selectAll('rect')
+            .attr('width', scale*2).attr('height', scale*2)
+            .attr('x', d => -x0+scale*d.x)
+            .attr('y', d => -y0+scale*d.y);
+
+        detail.selectAll('circle')
+            .attr('r', scale)
+            .attr('cx', d => -x0+scale*d.x)
+            .attr('cy', d => -y0+scale*d.y);*/
+
+        //detail.style('background-size', `${imageWidth}px ${imageHeight}px`);
+        //detail.style('background-position', `${-x0*imageWidth/widthOrig+cropXoffset}px ${-y0*imageHeight/heightOrig+cropYoffset}px`);
+    };
+
+    const brush = vc.brush()
+        .extent([[0,0], [width, height]])
+        .on("brush", updateDetailView);
+
+    overviewSvg.call(brush);
+
+    const onLabel = (color) => {
+        return () => {
+            const event = new CustomEvent('label-message', {detail: {positions: [x0, y0, x1, y1], color}});
+            document.body.dispatchEvent(event);
+        }
+    }
+
+    document.body.addEventListener('label-message', (e) => {
+        const [x0, y0, x1, y1] = e.detail.positions;
+        overviewLabels.append('rect')
+            .attr('x', x0)
+            .attr('y', y0)
+            .attr('width', (x1 - x0))
+            .attr('height', (y1 - y0))
+            .attr('fill', e.detail.color)
+            .style('pointer-events', 'none');
+    });
+
+    const onWaldo = onLabel('#ff3333');
+    const onNoWaldo = onLabel('#99ff99');
+    document.getElementById('noWaldoButton').addEventListener('click', onNoWaldo);
+    document.getElementById('waldoButton').addEventListener('click', onWaldo);
+
+    window.addEventListener('keydown', (event) => {
+        if(event.key === 'n') { onNoWaldo(); }
+        if(event.key === 's') { onWaldo(); }
+    })
+</script>
