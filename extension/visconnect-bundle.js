@@ -2848,9 +2848,12 @@ var Visconnect = /** @class */ (function () {
         this.listener = new VcListener(this.svg, this.localEvent.bind(this), customEvents, ignoreEvents);
     }
     Visconnect.prototype.localEvent = function (stripped, event) {
+        var _this = this;
         stopPropagation(event);
         event.preventDefault();
-        this.protocol.localEvent(stripped);
+        var debugDelay = window['visconnect-event-delay'];
+        var handleLocalEvent = function () { return _this.protocol.localEvent(stripped); };
+        debugDelay ? setTimeout(handleLocalEvent, debugDelay) : handleLocalEvent();
     };
     Visconnect.prototype.cancelEvent = function (event) {
         this.onEventCancelled(event);

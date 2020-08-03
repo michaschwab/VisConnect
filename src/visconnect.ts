@@ -30,7 +30,9 @@ export class Visconnect {
     localEvent(stripped: StrippedEvent, event: Event) {
         stopPropagation(event);
         event.preventDefault();
-        this.protocol.localEvent(stripped);
+        const debugDelay = (window as any)['visconnect-event-delay'];
+        const handleLocalEvent = () => this.protocol.localEvent(stripped);
+        debugDelay ? setTimeout(handleLocalEvent, debugDelay) : handleLocalEvent();
     }
 
     cancelEvent(event: StrippedEvent) {
