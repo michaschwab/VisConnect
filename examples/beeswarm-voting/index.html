@@ -1,0 +1,166 @@
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body {
+    margin: 0;
+}
+.nodes circle {
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+</style>
+</head>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://unpkg.com/d3-marcon/build/d3-marcon.min.js"></script>
+<script>
+
+    const questions = [{
+        q: 'In what areas would collaborative visualization be useful?',
+        a: [{a: 'Art', logo: 'art.png'}, {a: 'Health Care', logo: 'health-care.png'},
+            {a: 'Science', logo: 'science.png'}, {a: 'Education', logo: 'education.png'}]
+    }, {
+        q: 'Have you been interested in making any of your visualizations collaborative?',
+        a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up making it collaborative.'},
+            {a: 'No, I haven\'t thought about collaboration in my visualizations.'},
+            {a: 'No, I don\'t think collaboration would be helpful in my visualizations.'}]
+    }, {
+        q: 'What are challenges to making visualizations collaborative?',
+        a: [{a: 'Implementation'}, {a: 'Strategies to divide the work'}, {a: 'Interaction'},
+            {a: 'Conflict Resolution'}]
+    }];
+
+
+    var m = d3.marcon().width(window.innerWidth).height(window.innerHeight);
+    m.render();
+    var width = m.innerWidth(),
+        height = m.innerHeight(),
+        svg = m.svg();
+
+    const numberItems = 100;
+    var nodes = d3.range(numberItems).map(function(i) {
+        return { index: i, x: Math.random() * width, y: Math.random() * height };
+    });
+
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+    const numberAnswers = 3;
+    const gridWidth = Math.round(width / (numberAnswers + 1));
+    let centerPoints = [];
+    for(let i = 1; i <= numberAnswers; i++) {
+        centerPoints.push({x: i * gridWidth, y: height / 2});
+    }
+
+    const gravity = (function(centerPoints) {
+        const force = (alpha) => {
+            if(force.savedNodes && force.savedNodes.length) {
+                for(const node of force.savedNodes) {
+
+                    const dragCoefficient = -0.3;
+                    const drag = !node.gravitySpeed ? {x:0, y:0} : {
+                        x: node.gravitySpeed.x * dragCoefficient,
+                        y: node.gravitySpeed.y * dragCoefficient
+                    };
+                    node.x += drag.x;
+                    node.y += drag.y;
+                    node.gravitySpeed = {x: drag.x, y: drag.y};
+
+                    for(const centerPoint of centerPoints) {
+                        const difference = {
+                            x: centerPoint.x - node.x,
+                            y: centerPoint.y - node.y
+                        };
+                        const differenceLength = Math.sqrt(Math.pow(difference.x, 2) + Math.pow(difference.y, 2));
+
+                        const boundaryRadius = Math.sqrt(numberItems) * 15;
+                        let speed = {x: 0, y: 0};
+
+                        if(differenceLength < boundaryRadius) {
+                            speed = {
+                                x: difference.x * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
+                                y: difference.y * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
+                            };
+                        } else {
+                            speed = {
+                                x: difference.x / Math.pow(differenceLength, 3) * alpha * force.currentStrength,
+                                y: difference.y / Math.pow(differenceLength, 3) * alpha * force.currentStrength
+                            };
+                        }
+
+                        node.x += speed.x;
+                        node.y += speed.y;
+
+                        node.gravitySpeed.x += speed.x;
+                        node.gravitySpeed.y += speed.y;
+                    }
+
+
+                }
+            }
+        };
+
+        force.savedNodes = [];
+        force.currentStrength = 1;
+
+        force.initialize = (nodes) => {
+            if(!nodes || !nodes.length) {
+                return;
+            }
+            force.savedNodes = nodes;
+        };
+
+        force.strength = (strength) => {
+            force.currentStrength = strength;
+            return force;
+        };
+
+        return force;
+    });
+
+    var simulation = d3.forceSimulation().alphaDecay(0.000002)
+        .force("gravity", gravity(centerPoints).strength(200000))
+        .force('collision', d3.forceCollide().radius(10))
+        //.force("center", d3.forceCenter(width / 2, height / 2));
+
+    var node = svg.append("g")
+        .attr("class", "nodes")
+        .selectAll("circle")
+        .data(nodes)
+        .enter().append("circle")
+        .attr("r", function(d) { return 8 })
+        .attr("fill", function(d) { return color(Math.floor(Math.sqrt(d.index))); })
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+
+    simulation
+        .nodes(nodes)
+        .on("tick", ticked);
+
+    function ticked() {
+        node
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    }
+
+    function dragstarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(d) {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+    }
+
+    function dragended(d) {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+</script>
+</body>
+</html>
