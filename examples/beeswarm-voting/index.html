@@ -10,15 +10,31 @@ body {
     stroke: #fff;
     stroke-width: 1.5px;
 }
+#wrap {
+    width: 20000px;
+    height: 100%;
+}
+.question-container {
+    width: 100vw;
+    height: 100%;
+    float: left;
+    top: 0;
+}
 </style>
 <meta name="viewport" content="user-scalable=no" />
 </head>
-<body collaboration="safe" ignore-events="all" custom-events="dot-created,dot-moved,dot-moved-finished">
+<body collaboration="safe" ignore-events="all" custom-events="dot-created,dot-moved,dot-moved-finished,next-question">
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://unpkg.com/d3-marcon/build/d3-marcon.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
 <script src="../../visconnect-bundle.js"></script>
 <script src="gravity.js"></script>
+
+<div id="wrap" style="margin-left: 0">
+    <div id="q1" class="question-container"></div>
+    <div id="q2" class="question-container"></div>
+    <div id="q3" class="question-container"></div>
+</div>
 <script>
 
 const questions = [{
@@ -28,7 +44,7 @@ const questions = [{
         {a: 'Otherwise Boring \n Conference Talks', icon: 'micha-transparent.png'}]
 }, {
     q: 'Have you been interested in \n making any of your visualizations collaborative?',
-    a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up \n making it collaborative.'},
+    a: [{a: 'Yes, and we added collaboration.'}, {a: 'Yes, but we did not end up \n making it collaborative.'},
         {a: 'No, I haven\'t thought about \n collaboration in my visualizations.'},
         {a: 'No, I don\'t think collaboration \n would be helpful in my visualizations.'}]
 }, {
@@ -37,10 +53,10 @@ const questions = [{
         {a: 'Conflict Resolution'}]
 }];
 
-const votingBeeswarm = function(question) {
+const votingBeeswarm = function(question, container) {
     const beeSwarm = {};
 
-    const m = d3.marcon().width(window.innerWidth).height(window.innerHeight);
+    const m = d3.marcon().width(window.innerWidth).height(window.innerHeight).element(container);
     m.render();
     const width = m.innerWidth();
     const height = m.innerHeight();
@@ -237,9 +253,8 @@ const votingBeeswarm = function(question) {
     });
 
     const qEl = svg.append('text')
-
         .attr('x', width / 2)
-        .attr('y', 100)
+        .attr('y', 50)
         .attr('text-anchor', 'middle')
         .attr('font-size', '40')
         .selectAll('tspan').data(question.q.split('\n'))
@@ -263,9 +278,25 @@ const votingBeeswarm = function(question) {
     return beeSwarm;
 };
 
-const swarm = votingBeeswarm(questions[0]);
+let questionIndex = 0;
+votingBeeswarm(questions[questionIndex], document.getElementById(`q${questionIndex+1}`));
 
-setTimeout(swarm.getVotes, 10000);
+function nextQuestion() {
+    const event = new CustomEvent('next-question', {detail: {}});
+    document.body.dispatchEvent(event);
+}
+
+document.body.addEventListener('next-question', () => {
+    questionIndex++;
+    votingBeeswarm(questions[questionIndex], document.getElementById(`q${questionIndex+1}`));
+
+    const prevMargin = parseInt(d3.select('#wrap').style('margin-left'));
+
+    d3.select('#wrap')
+        .transition()
+        .duration(2000)
+        .style('margin-left', `${prevMargin-100}vw`);
+});
 
 </script>
 </body>
