@@ -4,6 +4,7 @@
 <style>
 body {
     margin: 0;
+    user-select: none;
 }
 .nodes circle {
     stroke: #fff;
@@ -18,8 +19,8 @@ body {
 
     const questions = [{
         q: 'In what areas would collaborative visualization be useful?',
-        a: [{a: 'Art', logo: 'art.png'}, {a: 'Health Care', logo: 'health-care.png'},
-            {a: 'Science', logo: 'science.png'}, {a: 'Education', logo: 'education.png'}]
+        a: [{a: 'Art', icon: 'art.png'}, {a: 'Health Care', icon: 'health-care.png'},
+            {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'}]
     }, {
         q: 'Have you been interested in making any of your visualizations collaborative?',
         a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up making it collaborative.'},
@@ -32,73 +33,124 @@ body {
     }];
 
 
+
+const votingBeeswarm = function(question) {
+
     var m = d3.marcon().width(window.innerWidth).height(window.innerHeight);
     m.render();
     var width = m.innerWidth(),
         height = m.innerHeight(),
         svg = m.svg();
 
+
+
     const numberItems = 100;
-    var nodes = d3.range(numberItems).map(function(i) {
+    var nodes = []; /*d3.range(numberItems).map(function(i) {
         return { index: i, x: Math.random() * width, y: Math.random() * height };
-    });
+    });*/
 
     var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    const numberAnswers = 3;
+    const linesG = svg.append('g')
+        .attr('class', 'lines');
+
+    const answers = svg.append('g')
+        .attr('class', 'answers');
+
+    const numberAnswers = question.a.length;
     const gridWidth = Math.round(width / (numberAnswers + 1));
     let centerPoints = [];
-    for(let i = 1; i <= numberAnswers; i++) {
-        centerPoints.push({x: i * gridWidth, y: height / 2});
+    for(let i = 0; i < numberAnswers; i++) {
+        const x = (i + 1) * gridWidth;
+        centerPoints.push({x, y: height / 2 + 100});
+        const answer = question.a[i];
+
+        /*const rectWidth = gridWidth - 80;
+        answers.append('rect')
+            .attr('x', x - rectWidth / 2)
+            .attr('y', 150)
+            .attr('width', rectWidth)
+            .attr('height', height - 300)
+            .attr('rx', 30)
+            .attr('ry', 30)
+            .attr('fill-opacity', '0.3')
+            .attr('fill', '#ddc4aa')
+            .style('cursor', 'pointer')
+            .on('mouseenter', function() {
+                d3.select(this).attr('fill', '#e7aa6d')
+            }).on('mouseleave', function() {
+                d3.select(this).attr('fill', '#ddc4aa')
+            });*/
+
+        answers.append('text')
+            .html(answer.a)
+            .attr('x', x)
+            .attr('y', 220)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '30');
+
+        if(answer.icon) {
+            answers.append('image')
+                .attr('href', 'img/' + answer.icon)
+                .attr('x', x - 75)
+                .attr('y', 240)
+                .attr('width', 150)
+        }
+
+        nodes.push({x, y: height - 250});
     }
 
-    const gravity = (function(centerPoints) {
+    const gravityForce = (function(centerPoints) {
+
         const force = (alpha) => {
             if(force.savedNodes && force.savedNodes.length) {
                 for(const node of force.savedNodes) {
-
-                    const dragCoefficient = -0.3;
-                    const drag = !node.gravitySpeed ? {x:0, y:0} : {
-                        x: node.gravitySpeed.x * dragCoefficient,
-                        y: node.gravitySpeed.y * dragCoefficient
-                    };
-                    node.x += drag.x;
-                    node.y += drag.y;
-                    node.gravitySpeed = {x: drag.x, y: drag.y};
-
-                    for(const centerPoint of centerPoints) {
-                        const difference = {
-                            x: centerPoint.x - node.x,
-                            y: centerPoint.y - node.y
-                        };
-                        const differenceLength = Math.sqrt(Math.pow(difference.x, 2) + Math.pow(difference.y, 2));
-
-                        const boundaryRadius = Math.sqrt(numberItems) * 15;
-                        let speed = {x: 0, y: 0};
-
-                        if(differenceLength < boundaryRadius) {
-                            speed = {
-                                x: difference.x * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
-                                y: difference.y * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
-                            };
-                        } else {
-                            speed = {
-                                x: difference.x / Math.pow(differenceLength, 3) * alpha * force.currentStrength,
-                                y: difference.y / Math.pow(differenceLength, 3) * alpha * force.currentStrength
-                            };
-                        }
-
-                        node.x += speed.x;
-                        node.y += speed.y;
-
-                        node.gravitySpeed.x += speed.x;
-                        node.gravitySpeed.y += speed.y;
-                    }
-
-
+                    force.applyGravityToNode(alpha, node);
                 }
             }
         };
+
+        force.applyGravityToNode = (alpha, node) => {
+            node.lastPos = {x: node.x, y: node.y};
+
+            const dragCoefficient = -0.3;
+            const drag = !node.gravitySpeed ? {x:0, y:0} : {
+                x: node.gravitySpeed.x * dragCoefficient,
+                y: node.gravitySpeed.y * dragCoefficient
+            };
+            node.x += drag.x;
+            node.y += drag.y;
+            node.gravitySpeed = {x: drag.x, y: drag.y};
+
+            for(const centerPoint of centerPoints) {
+                const difference = {
+                    x: centerPoint.x - node.x,
+                    y: centerPoint.y - node.y
+                };
+                const differenceLength = Math.sqrt(Math.pow(difference.x, 2) + Math.pow(difference.y, 2));
+
+                const boundaryRadius = Math.sqrt(numberItems) * 15;
+                let speed = {x: 0, y: 0};
+
+                if(differenceLength < boundaryRadius) {
+                    speed = {
+                        x: difference.x * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
+                        y: difference.y * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
+                    };
+                } else {
+                    speed = {
+                        x: difference.x / Math.pow(differenceLength, 3) * alpha * force.currentStrength,
+                        y: difference.y / Math.pow(differenceLength, 3) * alpha * force.currentStrength
+                    };
+                }
+
+                node.x += speed.x;
+                node.y += speed.y;
+
+                node.gravitySpeed.x += speed.x;
+                node.gravitySpeed.y += speed.y;
+            }
+        }
 
         force.savedNodes = [];
         force.currentStrength = 1;
@@ -117,30 +169,72 @@ body {
 
         return force;
     });
+    const gravity = gravityForce(centerPoints).strength(200000);
+
+    const lineGen = d3.line();
+
+    const lineStarts = [];
+
+    // Top
+    for(let i = 0; i < 100; i++) {
+        lineStarts.push({x: 50 + i * (width-100) / 100, y: 50});
+    }
+    // Bottom
+    for(let i = 0; i < 100; i++) {
+        lineStarts.push({x: 50 + i * (width-100) / 100, y: height - 50});
+    }
+    // Left
+    for(let i = 0; i < 50; i++) {
+        lineStarts.push({x: 50, y: 50 + i * (height-100) / 50});
+    }
+    // Right
+    for(let i = 0; i < 50; i++) {
+        lineStarts.push({x: width - 50, y: 50 + i * (height-100) / 50});
+    }
+
+    for(const lineStart of lineStarts) {
+        const positions = [[lineStart.x, lineStart.y]];
+        for(let step = 0; step < 300; step++) {
+            gravity.applyGravityToNode(1, lineStart);
+            positions.push([lineStart.x, lineStart.y]);
+        }
+        linesG.append('path')
+            .attr('d', lineGen(positions))
+            .attr('stroke', '#e5e5e5')
+            .attr('fill', 'none');
+    }
 
     var simulation = d3.forceSimulation().alphaDecay(0.000002)
-        .force("gravity", gravity(centerPoints).strength(200000))
+        .force("gravity", gravity)
         .force('collision', d3.forceCollide().radius(10))
-        //.force("center", d3.forceCenter(width / 2, height / 2));
-
-    var node = svg.append("g")
-        .attr("class", "nodes")
-        .selectAll("circle")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("r", function(d) { return 8 })
-        .attr("fill", function(d) { return color(Math.floor(Math.sqrt(d.index))); })
-        .call(d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended));
-
-    simulation
-        .nodes(nodes)
         .on("tick", ticked);
 
+    var nodesG = svg.append("g")
+        .attr("class", "nodes");
+
+    const drag = d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended);
+
+    const updateVis = () => {
+        nodesG
+            .selectAll("circle")
+            .data(nodes)
+            .enter().append("circle")
+            .attr("r", function(d) { return 8 })
+            .attr("fill", function(d) { return color(Math.floor(Math.sqrt(d.index))); })
+            .call(drag);
+
+        simulation
+            .nodes(nodes)
+            .restart();
+    }
+    updateVis();
+
     function ticked() {
-        node
+        nodesG
+            .selectAll("circle")
             .attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
     }
@@ -161,6 +255,22 @@ body {
         d.fx = null;
         d.fy = null;
     }
+
+    d3.select('body').on('click', () => {
+        nodes.push({ x: d3.event.x, y: d3.event.y });
+        updateVis();
+    });
+
+    svg.append('text')
+        .html(question.q)
+        .attr('x', width / 2)
+        .attr('y', 100)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '40');
+};
+
+votingBeeswarm(questions[0]);
+
 </script>
 </body>
 </html>
