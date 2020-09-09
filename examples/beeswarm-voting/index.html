@@ -194,7 +194,7 @@ const votingBeeswarm = function(question) {
 
     for(const lineStart of lineStarts) {
         const positions = [[lineStart.x, lineStart.y]];
-        for(let step = 0; step < 300; step++) {
+        for(let step = 0; step < 500; step++) {
             gravity.applyGravityToNode(1, lineStart);
             positions.push([lineStart.x, lineStart.y]);
         }
