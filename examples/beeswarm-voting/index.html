@@ -24,13 +24,13 @@ const questions = [{
     a: [{a: 'Art', icon: 'art.png'}, {a: 'Health Care', icon: 'health-care.png'},
         {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'}]
 }, {
-    q: 'Have you been interested in making any of your visualizations collaborative?',
-    a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up making it collaborative.'},
-        {a: 'No, I haven\'t thought about collaboration in my visualizations.'},
-        {a: 'No, I don\'t think collaboration would be helpful in my visualizations.'}]
+    q: 'Have you been interested in \n making any of your visualizations collaborative?',
+    a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up \n making it collaborative.'},
+        {a: 'No, I haven\'t thought about \n collaboration in my visualizations.'},
+        {a: 'No, I don\'t think collaboration \n would be helpful in my visualizations.'}]
 }, {
-    q: 'What are challenges to making visualizations collaborative?',
-    a: [{a: 'Implementation'}, {a: 'Strategies to divide the work'}, {a: 'Interaction'},
+    q: 'What are challenges to \n making visualizations collaborative?',
+    a: [{a: 'Implementation'}, {a: 'Strategies to \n divide the work'}, {a: 'Interaction'},
         {a: 'Conflict Resolution'}]
 }];
 
@@ -80,11 +80,17 @@ const votingBeeswarm = function(question) {
             });*/
 
         answers.append('text')
-            .html(answer.a)
+            //.html(answer.a)
             .attr('x', width / 2 - 250)
             .attr('y', y)
             .attr('text-anchor', 'middle')
-            .attr('font-size', '30');
+            .attr('font-size', '30')
+            .selectAll('tspan').data(answer.a.split('\n'))
+            .enter()
+            .append('tspan')
+            .attr('x', width / 2 - 250)
+            .attr('dy', function(d, i) { return `${i*30}pt`;})
+            .html(function(d, i) { return d});
 
         if(answer.icon) {
             answers.append('image')
@@ -165,7 +171,7 @@ console.log(height);
 
         return force;
     });
-    const gravity = gravityForce(centerPoints).strength(300 * height);
+    const gravity = gravityForce(centerPoints).strength(200 * height);
 
     const lineGen = d3.line();
 
@@ -316,12 +322,18 @@ console.log(height);
         }
     });
 
-    svg.append('text')
-        .html(question.q)
+    const qEl = svg.append('text')
+
         .attr('x', width / 2)
         .attr('y', 100)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '40');
+        .attr('font-size', '40')
+        .selectAll('tspan').data(question.q.split('\n'))
+        .enter()
+        .append('tspan')
+        .attr('x', width / 2)
+        .attr('dy', function(d, i) { return `${i*30}pt`;})
+        .html(function(d, i) { return d});
 };
 
 votingBeeswarm(questions[0]);
