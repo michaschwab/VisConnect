@@ -39,7 +39,7 @@ body {
 
 const questions = [{
     q: 'In what areas would collaborative visualization be useful?',
-    a: [{a: 'Art', icon: 'art.png'}, {a: 'Health Care', icon: 'health-care.png'},
+    a: [/*{a: 'Art', icon: 'art.png'}, */{a: 'Health Care', icon: 'health-care.png'},
         {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'},
         {a: 'Otherwise Boring \n Conference Talks', icon: 'micha-transparent.png'}]
 }, {
@@ -49,8 +49,8 @@ const questions = [{
         {a: 'No, I don\'t think collaboration \n would be helpful in my visualizations.'}]
 }, {
     q: 'What are challenges to \n making visualizations collaborative?',
-    a: [{a: 'Implementation'}, {a: 'Strategies to \n divide the work'}, {a: 'Interaction'},
-        {a: 'Conflict Resolution'}]
+    a: [{a: 'Communication', icon: 'speechbubble.png'}, {a: 'Strategies to \n divide the work', icon: 'direction.png'},
+        {a: 'Interaction', icon: 'interaction.png'}, {a: 'Implementation', icon: 'gears.png'}]
 }];
 
 const votingBeeswarm = function(question, container) {
@@ -80,14 +80,14 @@ const votingBeeswarm = function(question, container) {
 
         answers.append('text')
             //.html(answer.a)
-            .attr('x', width / 2 - 250)
+            .attr('x', width / 2 - 300)
             .attr('y', y)
             .attr('text-anchor', 'middle')
             .attr('font-size', '30')
             .selectAll('tspan').data(answer.a.split('\n'))
             .enter()
             .append('tspan')
-            .attr('x', width / 2 - 250)
+            .attr('x', width / 2 - 300)
             .attr('dy', function(d, i) { return `${i*30}pt`;})
             .html(function(d, i) { return d});
 
@@ -102,7 +102,7 @@ const votingBeeswarm = function(question, container) {
         nodes.push({x: width / 2 + 150, y, id: vc.random().toString(36).substr(2, 9)});
     }
 
-    const gravity = gravityForce(centerPoints, height).strength(200 * height);
+    const gravity = gravityForce(centerPoints, height).strength(60 * height);
 
     // Potential Lines
     const lineGen = d3.line();
@@ -136,7 +136,7 @@ const votingBeeswarm = function(question, container) {
 
         for(const lineStart of lineStarts) {
             const positions = [[lineStart.x, lineStart.y]];
-            for(let step = 0; step < 900; step++) {
+            for(let step = 0; step < 3000; step++) {
                 gravity.applyGravityToNode(1, lineStart);
                 positions.push([lineStart.x, lineStart.y]);
             }
@@ -148,9 +148,9 @@ const votingBeeswarm = function(question, container) {
     }
     drawPotentialLines();
 
-    var simulation = d3.forceSimulation().alphaDecay(0.000002)
+    var simulation = d3.forceSimulation().alphaDecay(0)
         .force("gravity", gravity)
-        .force('collision', d3.forceCollide().radius(10))
+        .force('collision', d3.forceCollide().radius(7))
         .on("tick", ticked);
 
     var nodesG = svg.append("g")
@@ -170,7 +170,7 @@ const votingBeeswarm = function(question, container) {
 
         nodesSelection
             .enter().append("circle")
-            .attr("r", function(d) { return 8 })
+            .attr("r", function(d) { return 6 })
             .attr('id', function(d) { return 'node-' + d.id; })
             .attr("fill", function(d) { return d.color ? d.color : '#777'; })
             .call(drag);
@@ -252,7 +252,7 @@ const votingBeeswarm = function(question, container) {
         }
     });
 
-    const qEl = svg.append('text')
+    svg.append('text')
         .attr('x', width / 2)
         .attr('y', 50)
         .attr('text-anchor', 'middle')
@@ -297,6 +297,10 @@ document.body.addEventListener('next-question', () => {
         .duration(2000)
         .style('margin-left', `${prevMargin-100}vw`);
 });
+
+// to prevent horizontal drag on mobile
+document.addEventListener("touchmove",function(event){event.preventDefault();}, {passive: false});
+
 
 </script>
 </body>

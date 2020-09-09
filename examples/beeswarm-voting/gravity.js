@@ -10,7 +10,7 @@ const gravityForce = (function(centerPoints, height) {
     force.applyGravityToNode = (alpha, node) => {
         node.lastPos = {x: node.x, y: node.y};
 
-        const dragCoefficient = -0.3;
+        const dragCoefficient = -.1;
         const drag = !node.gravitySpeed ? {x:0, y:0} : {
             x: node.gravitySpeed.x * dragCoefficient,
             y: node.gravitySpeed.y * dragCoefficient
@@ -27,7 +27,7 @@ const gravityForce = (function(centerPoints, height) {
             const differenceLength = Math.sqrt(Math.pow(difference.x, 2) + Math.pow(difference.y, 2));
 
             const numberItems = 100;
-            const boundaryRadius = Math.sqrt(numberItems) * height * 0.005;
+            const boundaryRadius = Math.sqrt(numberItems) * height * 0.008;
             let speed = {x: 0, y: 0};
 
             if(differenceLength < boundaryRadius) {
