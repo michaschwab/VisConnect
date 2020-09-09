@@ -11,18 +11,21 @@ body {
     stroke-width: 1.5px;
 }
 </style>
+<meta name="viewport" content="user-scalable=no" />
 </head>
 <body collaboration="safe" ignore-events="all" custom-events="dot-created,dot-moved,dot-moved-finished">
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://unpkg.com/d3-marcon/build/d3-marcon.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
 <script src="../../visconnect-bundle.js"></script>
+<script src="gravity.js"></script>
 <script>
 
 const questions = [{
     q: 'In what areas would collaborative visualization be useful?',
     a: [{a: 'Art', icon: 'art.png'}, {a: 'Health Care', icon: 'health-care.png'},
-        {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'}]
+        {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'},
+        {a: 'Otherwise Boring \n Conference Talks', icon: 'micha-transparent.png'}]
 }, {
     q: 'Have you been interested in \n making any of your visualizations collaborative?',
     a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up \n making it collaborative.'},
@@ -35,18 +38,15 @@ const questions = [{
 }];
 
 const votingBeeswarm = function(question) {
+    const beeSwarm = {};
 
-    var m = d3.marcon().width(window.innerWidth).height(window.innerHeight);
+    const m = d3.marcon().width(window.innerWidth).height(window.innerHeight);
     m.render();
     const width = m.innerWidth();
     const height = m.innerHeight();
     const ratio = width / height;
     const svg = m.svg();
-
-    const numberItems = 100;
-    var nodes = []; /*d3.range(numberItems).map(function(i) {
-        return { index: i, x: Math.random() * width, y: Math.random() * height };
-    });*/
+    const nodes = [];
 
     const linesG = svg.append('g')
         .attr('class', 'lines');
@@ -61,23 +61,6 @@ const votingBeeswarm = function(question) {
         const y = (i + 1) * gridSize;
         centerPoints.push({x: width / 2 + 100, y});
         const answer = question.a[i];
-
-        /*const rectWidth = gridWidth - 80;
-        answers.append('rect')
-            .attr('x', x - rectWidth / 2)
-            .attr('y', 150)
-            .attr('width', rectWidth)
-            .attr('height', height - 300)
-            .attr('rx', 30)
-            .attr('ry', 30)
-            .attr('fill-opacity', '0.3')
-            .attr('fill', '#ddc4aa')
-            .style('cursor', 'pointer')
-            .on('mouseenter', function() {
-                d3.select(this).attr('fill', '#e7aa6d')
-            }).on('mouseleave', function() {
-                d3.select(this).attr('fill', '#ddc4aa')
-            });*/
 
         answers.append('text')
             //.html(answer.a)
@@ -102,121 +85,52 @@ const votingBeeswarm = function(question) {
 
         nodes.push({x: width / 2 + 150, y, id: vc.random().toString(36).substr(2, 9)});
     }
-console.log(height);
-    const gravityForce = (function(centerPoints) {
-        const force = (alpha) => {
-            if(force.savedNodes && force.savedNodes.length) {
-                for(const node of force.savedNodes) {
-                    force.applyGravityToNode(alpha, node);
-                }
-            }
-        };
 
-        force.applyGravityToNode = (alpha, node) => {
-            node.lastPos = {x: node.x, y: node.y};
-
-            const dragCoefficient = -0.3;
-            const drag = !node.gravitySpeed ? {x:0, y:0} : {
-                x: node.gravitySpeed.x * dragCoefficient,
-                y: node.gravitySpeed.y * dragCoefficient
-            };
-            node.x += drag.x;
-            node.y += drag.y;
-            node.gravitySpeed = {x: drag.x, y: drag.y};
-
-            for(const centerPoint of centerPoints) {
-                const difference = {
-                    x: centerPoint.x - node.x,
-                    y: centerPoint.y - node.y
-                };
-                const differenceLength = Math.sqrt(Math.pow(difference.x, 2) + Math.pow(difference.y, 2));
-
-                const boundaryRadius = Math.sqrt(numberItems) * height * 0.009;
-                let speed = {x: 0, y: 0};
-
-                if(differenceLength < boundaryRadius) {
-                    speed = {
-                        x: difference.x * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
-                        y: difference.y * alpha * force.currentStrength / Math.pow(boundaryRadius, 3),
-                    };
-                } else {
-                    speed = {
-                        x: difference.x / Math.pow(differenceLength, 3) * alpha * force.currentStrength,
-                        y: difference.y / Math.pow(differenceLength, 3) * alpha * force.currentStrength
-                    };
-                }
-
-                node.x += speed.x;
-                node.y += speed.y;
-
-                node.gravitySpeed.x += speed.x;
-                node.gravitySpeed.y += speed.y;
-            }
-        }
-
-        force.savedNodes = [];
-        force.currentStrength = 1;
-
-        force.initialize = (nodes) => {
-            if(!nodes || !nodes.length) {
-                return;
-            }
-            force.savedNodes = nodes;
-        };
-
-        force.strength = (strength) => {
-            force.currentStrength = strength;
-            return force;
-        };
-
-        return force;
-    });
-    const gravity = gravityForce(centerPoints).strength(200 * height);
-
-    const lineGen = d3.line();
-
-    const lineStarts = [];
-
+    const gravity = gravityForce(centerPoints, height).strength(200 * height);
 
     // Potential Lines
-
-    let xSteps, ySteps;
-    if(width > height) {
-        xSteps = 100;
-        ySteps = xSteps / ratio;
-    } else {
-        ySteps = 100;
-        xSteps = ySteps * ratio;
-    }
-
-    // Top
-    for(let i = 0; i < xSteps; i++) {
-        lineStarts.push({x: 50 + i * (width-100) / xSteps, y: 50});
-    }
-    // Bottom
-    for(let i = 0; i < xSteps; i++) {
-        lineStarts.push({x: 50 + i * (width-100) / xSteps, y: height - 50});
-    }
-    // Left
-    for(let i = 0; i < ySteps; i++) {
-        lineStarts.push({x: 50, y: 50 + i * (height-100) / ySteps});
-    }
-    // Right
-    for(let i = 0; i < ySteps; i++) {
-        lineStarts.push({x: width - 50, y: 50 + i * (height-100) / ySteps});
-    }
-
-    for(const lineStart of lineStarts) {
-        const positions = [[lineStart.x, lineStart.y]];
-        for(let step = 0; step < 900; step++) {
-            gravity.applyGravityToNode(1, lineStart);
-            positions.push([lineStart.x, lineStart.y]);
+    const lineGen = d3.line();
+    function drawPotentialLines() {
+        const lineStarts = [];
+        let xSteps, ySteps;
+        if(width > height) {
+            xSteps = 100;
+            ySteps = xSteps / ratio;
+        } else {
+            ySteps = 100;
+            xSteps = ySteps * ratio;
         }
-        linesG.append('path')
-            .attr('d', lineGen(positions))
-            .attr('stroke', '#e5e5e5')
-            .attr('fill', 'none');
+
+        // Top
+        for(let i = 0; i < xSteps; i++) {
+            lineStarts.push({x: 50 + i * (width-100) / xSteps, y: 50});
+        }
+        // Bottom
+        for(let i = 0; i < xSteps; i++) {
+            lineStarts.push({x: 50 + i * (width-100) / xSteps, y: height - 50});
+        }
+        // Left
+        for(let i = 0; i < ySteps; i++) {
+            lineStarts.push({x: 50, y: 50 + i * (height-100) / ySteps});
+        }
+        // Right
+        for(let i = 0; i < ySteps; i++) {
+            lineStarts.push({x: width - 50, y: 50 + i * (height-100) / ySteps});
+        }
+
+        for(const lineStart of lineStarts) {
+            const positions = [[lineStart.x, lineStart.y]];
+            for(let step = 0; step < 900; step++) {
+                gravity.applyGravityToNode(1, lineStart);
+                positions.push([lineStart.x, lineStart.y]);
+            }
+            linesG.append('path')
+                .attr('d', lineGen(positions))
+                .attr('stroke', '#e5e5e5')
+                .attr('fill', 'none');
+        }
     }
+    drawPotentialLines();
 
     var simulation = d3.forceSimulation().alphaDecay(0.000002)
         .force("gravity", gravity)
@@ -334,9 +248,24 @@ console.log(height);
         .attr('x', width / 2)
         .attr('dy', function(d, i) { return `${i*30}pt`;})
         .html(function(d, i) { return d});
+
+    beeSwarm.getVotes = () => {
+        let votes = {};
+        let i = 0;
+        for(const center of centerPoints) {
+            votes[i] = nodes.filter(n => height * 0.1 > Math.sqrt(Math.pow(n.x - center.x, 2) + Math.pow(n.y - center.y, 2)));
+            i++;
+        }
+        console.log(votes);
+        return votes;
+    };
+
+    return beeSwarm;
 };
 
-votingBeeswarm(questions[0]);
+const swarm = votingBeeswarm(questions[0]);
+
+setTimeout(swarm.getVotes, 10000);
 
 </script>
 </body>
