@@ -2279,7 +2279,7 @@ var PeerjsNetwork = /** @class */ (function () {
         this.onOpen = onOpen;
         this.peer = new Peer(id, {
             host: 'michaschwab.de',
-            port: 9000,
+            port: 9099,
             secure: true,
             path: '/visconnect',
             config: { 'iceServers': [
