@@ -12,29 +12,27 @@ body {
 }
 </style>
 </head>
-<body>
+<body collaboration="safe" ignore-events="all" custom-events="dot-created,dot-moved">
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://unpkg.com/d3-marcon/build/d3-marcon.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
 <script src="../../visconnect-bundle.js"></script>
 <script>
 
-    const questions = [{
-        q: 'In what areas would collaborative visualization be useful?',
-        a: [{a: 'Art', icon: 'art.png'}, {a: 'Health Care', icon: 'health-care.png'},
-            {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'}]
-    }, {
-        q: 'Have you been interested in making any of your visualizations collaborative?',
-        a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up making it collaborative.'},
-            {a: 'No, I haven\'t thought about collaboration in my visualizations.'},
-            {a: 'No, I don\'t think collaboration would be helpful in my visualizations.'}]
-    }, {
-        q: 'What are challenges to making visualizations collaborative?',
-        a: [{a: 'Implementation'}, {a: 'Strategies to divide the work'}, {a: 'Interaction'},
-            {a: 'Conflict Resolution'}]
-    }];
-
-
+const questions = [{
+    q: 'In what areas would collaborative visualization be useful?',
+    a: [{a: 'Art', icon: 'art.png'}, {a: 'Health Care', icon: 'health-care.png'},
+        {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'}]
+}, {
+    q: 'Have you been interested in making any of your visualizations collaborative?',
+    a: [{a: 'Yes, and we did it.'}, {a: 'Yes, but we did not end up making it collaborative.'},
+        {a: 'No, I haven\'t thought about collaboration in my visualizations.'},
+        {a: 'No, I don\'t think collaboration would be helpful in my visualizations.'}]
+}, {
+    q: 'What are challenges to making visualizations collaborative?',
+    a: [{a: 'Implementation'}, {a: 'Strategies to divide the work'}, {a: 'Interaction'},
+        {a: 'Conflict Resolution'}]
+}];
 
 const votingBeeswarm = function(question) {
 
@@ -44,14 +42,10 @@ const votingBeeswarm = function(question) {
         height = m.innerHeight(),
         svg = m.svg();
 
-
-
     const numberItems = 100;
     var nodes = []; /*d3.range(numberItems).map(function(i) {
         return { index: i, x: Math.random() * width, y: Math.random() * height };
     });*/
-
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
     const linesG = svg.append('g')
         .attr('class', 'lines');
@@ -99,11 +93,10 @@ const votingBeeswarm = function(question) {
                 .attr('width', 150)
         }
 
-        nodes.push({x, y: height - 250});
+        nodes.push({x, y: height - 250, id: vc.random().toString(36).substr(2, 9)});
     }
 
     const gravityForce = (function(centerPoints) {
-
         const force = (alpha) => {
             if(force.savedNodes && force.savedNodes.length) {
                 for(const node of force.savedNodes) {
@@ -220,12 +213,17 @@ const votingBeeswarm = function(question) {
         .on("end", dragended);
 
     const updateVis = () => {
-        nodesG
+        const nodesSelection = nodesG
             .selectAll("circle")
-            .data(nodes)
+            .data(nodes, d => d.id);
+
+        nodesSelection.exit().remove();
+
+        nodesSelection
             .enter().append("circle")
             .attr("r", function(d) { return 8 })
-            .attr("fill", function(d) { return color(Math.floor(Math.sqrt(d.index))); })
+            .attr('id', function(d) { return 'node-' + d.id; })
+            .attr("fill", function(d) { return d.color ? d.color : '#777'; })
             .call(drag);
 
         simulation
@@ -256,12 +254,51 @@ const votingBeeswarm = function(question) {
         if (!d3.event.active) simulation.alphaTarget(0);
         d.fx = null;
         d.fy = null;
+        const event = new CustomEvent('dot-moved', {detail: { x: d3.event.x / width, y: d3.event.y / height, id: d.id }});
+        document.body.dispatchEvent(event);
     }
 
     d3.select('body').on('click', () => {
-        nodes.push({ x: d3.event.x, y: d3.event.y });
+        if(d3.event.target === svg.node().parentNode) {
+            const event = new CustomEvent('dot-created', {detail: { x: d3.event.x / width, y: d3.event.y / height, id: Math.random().toString(36).substr(2, 9) }});
+            document.body.dispatchEvent(event);
+        }
+    });
+
+    document.body.addEventListener('dot-created', (e) => {
+        //console.log(e);
+        nodes.push({x: e.detail.x * width, y: e.detail.y * height, color: e.collaboratorColor, id: e.detail.id});
         updateVis();
     });
+
+    document.body.addEventListener('dot-moved', (e) => {
+        console.log(e);
+        if(!e.isLocalEvent) {
+            const id = e.detail.id;
+            console.log(id);
+            const node = nodes.filter(n => n.id === id);
+            if(node) {
+                //nodes.splice(nodes.indexOf(node), 1);
+                //console.log('fixing node pos');
+
+                node.x = e.detail.x * width;
+                node.y = e.detail.y * height;
+                node.fx = node.x;
+                node.fy = node.y;
+
+                //ticked();
+                //console.log(node.x, node.y);
+                //updateVis();
+
+                //nodes.push({x: e.detail.x * width, y: e.detail.y * height, color: e.collaboratorColor, id: id});
+                //updateVis();
+            }
+        }
+        /*if(e.)
+        nodes.push({x: e.detail.x * width, y: e.detail.y * height, color: e.collaboratorColor, id: e.detail.id});
+        updateVis();*/
+    });
+
 
     svg.append('text')
         .html(question.q)
