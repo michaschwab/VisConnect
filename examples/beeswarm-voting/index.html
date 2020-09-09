@@ -38,9 +38,10 @@ const votingBeeswarm = function(question) {
 
     var m = d3.marcon().width(window.innerWidth).height(window.innerHeight);
     m.render();
-    var width = m.innerWidth(),
-        height = m.innerHeight(),
-        svg = m.svg();
+    const width = m.innerWidth();
+    const height = m.innerHeight();
+    const ratio = width / height;
+    const svg = m.svg();
 
     const numberItems = 100;
     var nodes = []; /*d3.range(numberItems).map(function(i) {
@@ -54,11 +55,11 @@ const votingBeeswarm = function(question) {
         .attr('class', 'answers');
 
     const numberAnswers = question.a.length;
-    const gridWidth = Math.round(width / (numberAnswers + 1));
+    const gridSize = Math.round(height / (numberAnswers + 1));
     let centerPoints = [];
     for(let i = 0; i < numberAnswers; i++) {
-        const x = (i + 1) * gridWidth;
-        centerPoints.push({x, y: height / 2 + 100});
+        const y = (i + 1) * gridSize;
+        centerPoints.push({x: width / 2 + 100, y});
         const answer = question.a[i];
 
         /*const rectWidth = gridWidth - 80;
@@ -80,22 +81,22 @@ const votingBeeswarm = function(question) {
 
         answers.append('text')
             .html(answer.a)
-            .attr('x', x)
-            .attr('y', 220)
+            .attr('x', width / 2 - 250)
+            .attr('y', y)
             .attr('text-anchor', 'middle')
             .attr('font-size', '30');
 
         if(answer.icon) {
             answers.append('image')
                 .attr('href', 'img/' + answer.icon)
-                .attr('x', x - 75)
-                .attr('y', 240)
-                .attr('width', 150)
+                .attr('x', width / 2 - 150)
+                .attr('y', y - 75)
+                .attr('height', 150)
         }
 
-        nodes.push({x, y: height - 250, id: vc.random().toString(36).substr(2, 9)});
+        nodes.push({x: width / 2 + 150, y, id: vc.random().toString(36).substr(2, 9)});
     }
-
+console.log(height);
     const gravityForce = (function(centerPoints) {
         const force = (alpha) => {
             if(force.savedNodes && force.savedNodes.length) {
@@ -124,7 +125,7 @@ const votingBeeswarm = function(question) {
                 };
                 const differenceLength = Math.sqrt(Math.pow(difference.x, 2) + Math.pow(difference.y, 2));
 
-                const boundaryRadius = Math.sqrt(numberItems) * 15;
+                const boundaryRadius = Math.sqrt(numberItems) * height * 0.009;
                 let speed = {x: 0, y: 0};
 
                 if(differenceLength < boundaryRadius) {
@@ -164,32 +165,44 @@ const votingBeeswarm = function(question) {
 
         return force;
     });
-    const gravity = gravityForce(centerPoints).strength(200000);
+    const gravity = gravityForce(centerPoints).strength(300 * height);
 
     const lineGen = d3.line();
 
     const lineStarts = [];
 
+
+    // Potential Lines
+
+    let xSteps, ySteps;
+    if(width > height) {
+        xSteps = 100;
+        ySteps = xSteps / ratio;
+    } else {
+        ySteps = 100;
+        xSteps = ySteps * ratio;
+    }
+
     // Top
-    for(let i = 0; i < 100; i++) {
-        lineStarts.push({x: 50 + i * (width-100) / 100, y: 50});
+    for(let i = 0; i < xSteps; i++) {
+        lineStarts.push({x: 50 + i * (width-100) / xSteps, y: 50});
     }
     // Bottom
-    for(let i = 0; i < 100; i++) {
-        lineStarts.push({x: 50 + i * (width-100) / 100, y: height - 50});
+    for(let i = 0; i < xSteps; i++) {
+        lineStarts.push({x: 50 + i * (width-100) / xSteps, y: height - 50});
     }
     // Left
-    for(let i = 0; i < 50; i++) {
-        lineStarts.push({x: 50, y: 50 + i * (height-100) / 50});
+    for(let i = 0; i < ySteps; i++) {
+        lineStarts.push({x: 50, y: 50 + i * (height-100) / ySteps});
     }
     // Right
-    for(let i = 0; i < 50; i++) {
-        lineStarts.push({x: width - 50, y: 50 + i * (height-100) / 50});
+    for(let i = 0; i < ySteps; i++) {
+        lineStarts.push({x: width - 50, y: 50 + i * (height-100) / ySteps});
     }
 
     for(const lineStart of lineStarts) {
         const positions = [[lineStart.x, lineStart.y]];
-        for(let step = 0; step < 500; step++) {
+        for(let step = 0; step < 900; step++) {
             gravity.applyGravityToNode(1, lineStart);
             positions.push([lineStart.x, lineStart.y]);
         }
