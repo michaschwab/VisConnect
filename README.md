@@ -7,3 +7,5 @@ The two wepages should now be sync'd.
 
 For development, to recompile the bundle, run
 `npm run compile` after running `npm i`.
+
+More info can be found in the preprint of our research paper at [osf.io/ut7e6](https://osf.io/ut7e6/).
