@@ -779,42 +779,49 @@ var VisConnectUtil = /** @class */ (function () {
     function VisConnectUtil() {
     }
     VisConnectUtil.drag = function () {
+        var _this = this;
         var data = {
             elements: null,
             draggingElements: {},
+            offset: {},
             onStart: function (data) { },
             onEnd: function (data) { },
             onDrag: function (data) { }
         };
         var dragStart = function (element) {
-            return function (e) {
-                var event = e;
+            return function (event) {
                 if (!VisConnectUtil.setCustomEvent(event)) {
                     return;
                 }
+                var mousePos = _this.mouse(event.target);
+                var dataX = element.__data__.x || 0;
+                var dataY = element.__data__.y || 0;
+                data.offset[event.collaboratorId] = [mousePos[0] - dataX, mousePos[1] - dataY];
                 data.draggingElements[event.collaboratorId] = element;
-                data.onStart.call(element, element['__data__']);
+                data.onStart.call(element, element.__data__);
             };
         };
-        var dragMove = function (e) {
-            var event = e;
-            if (!VisConnectUtil.setCustomEvent(event)) {
+        var dragMove = function (event) {
+            var d3Event;
+            if (!(d3Event = VisConnectUtil.setCustomEvent(event))) {
                 return;
             }
             var element = data.draggingElements[event.collaboratorId];
-            if (element) {
-                data.onDrag.call(element, element['__data__']);
+            if (!element) {
+                return;
             }
+            d3Event.x -= data.offset[event.collaboratorId][0];
+            d3Event.y -= data.offset[event.collaboratorId][1];
+            data.onDrag.call(element, element.__data__);
         };
-        var dragEnd = function (e) {
-            var event = e;
+        var dragEnd = function (event) {
             if (!VisConnectUtil.setCustomEvent(event)) {
                 return;
             }
             var element = data.draggingElements[event.collaboratorId];
             if (element) {
                 delete data.draggingElements[event.collaboratorId];
-                data.onEnd.call(element, element['__data__']);
+                data.onEnd.call(element, element.__data__);
             }
         };
         var drag = function (selection) {
@@ -823,15 +830,18 @@ var VisConnectUtil = /** @class */ (function () {
                 return;
             }
             data.elements = elements;
+            var _loop_1 = function (element) {
+                element.addEventListener('mousedown', function (e) { return dragStart(element)(e); });
+                element.addEventListener('touchstart', function (e) { return dragStart(element)(e); });
+            };
             for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
                 var element = _a[_i];
-                element.addEventListener('mousedown', dragStart(element));
-                element.addEventListener('touchstart', dragStart(element));
+                _loop_1(element);
             }
-            window.addEventListener('mousemove', dragMove);
-            window.addEventListener('touchmove', dragMove);
-            window.addEventListener('mouseup', dragEnd);
-            window.addEventListener('touchend', dragEnd);
+            window.addEventListener('mousemove', function (e) { return dragMove(e); });
+            window.addEventListener('touchmove', function (e) { return dragMove(e); });
+            window.addEventListener('mouseup', function (e) { return dragEnd(e); });
+            window.addEventListener('touchend', function (e) { return dragEnd(e); });
         };
         drag.on = function (type, callback) {
             if (type === 'start') {
@@ -853,14 +863,11 @@ var VisConnectUtil = /** @class */ (function () {
     VisConnectUtil.setCustomEvent = function (event) {
         var pos = point(event);
         if (!pos) {
-            return false;
+            return null;
         }
-        window['d3'].event = {
-            sourceEvent: event,
-            x: pos.x,
-            y: pos.y,
-        };
-        return true;
+        var newEvent = { sourceEvent: event, x: pos.x, y: pos.y };
+        window['d3'].event = newEvent;
+        return newEvent;
     };
     VisConnectUtil.brush = function () {
         var data = {

@@ -3,7 +3,7 @@
 <head>
   <title>VisConnect Demo</title>
   <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
-  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3.v4.js"></script>
 </head>
 <body>
 
@@ -36,28 +36,9 @@ var node = svg.append("g")
         .attr("cy", (d) => d.y)
         .attr('stroke-width', 3)
         .attr("fill", function(d) { return color(d.group); })
-        .on('mouseenter', function() { d3.select(this).attr('stroke', stringToHex(d3.event.collaboratorId))})
+        .on('mouseenter', function() { d3.select(this).attr('stroke', d3.event.collaboratorColor)})
         .on('mouseout', function() { d3.select(this).attr('stroke', '')})
         .call(drag);
-
-// From https://gist.github.com/0x263b/2bdd90886c2036a1ad5bcf06d6e6fb37
-if(stringToHex === undefined) {
-  var stringToHex = (string) => {
-    var hash = 0;
-    if (string.length === 0) return '#000000';
-    for (let i = 0; i < string.length; i++) {
-      hash = string.charCodeAt(i) + ((hash << 5) - hash);
-      hash = hash & hash;
-    }
-    let color = '#';
-    for (let i = 0; i < 3; i++) {
-      const value = (hash >> (i * 8)) & 255;
-      color += ('00' + value.toString(16)).substr(-2);
-    }
-    return color;
-  };
-}
-
 </script>
 </body>
 </html>

@@ -1,50 +1,64 @@
 import classifyPoint from "robust-point-in-polygon";
 
+type D3Element = HTMLElement & {'__data__': any};
+type VcPointerEvent = (MouseEvent|TouchEvent) & {collaboratorId: string, isLocalEvent: boolean};
+
 export class VisConnectUtil {
     static drag() {
         const data = {
-            elements: null as HTMLElement[]|null,
-            draggingElements: {} as {[collaborator: string]: HTMLElement},
+            elements: null as D3Element[]|null,
+            draggingElements: {} as {[collaborator: string]: D3Element},
+            offset: {} as {[collaborator: string]: [number, number]},
             onStart: (data: any) => {},
             onEnd: (data: any) => {},
             onDrag: (data: any) => {}
         };
 
-        const dragStart = (element: HTMLElement) => {
-            return (e: MouseEvent|TouchEvent) => {
-                const event = e as (MouseEvent|TouchEvent) & {collaboratorId: string, isLocalEvent: boolean};
+        const dragStart = (element: D3Element) => {
+            return (event: VcPointerEvent) => {
+
                 if(!VisConnectUtil.setCustomEvent(event)) {
                     return;
                 }
+
+                const mousePos = this.mouse(event.target as D3Element);
+                const dataX = element.__data__.x || 0;
+                const dataY = element.__data__.y || 0;
+                data.offset[event.collaboratorId] = [mousePos[0] - dataX, mousePos[1] - dataY];
                 data.draggingElements[event.collaboratorId] = element;
-                data.onStart.call(element, (element as any)['__data__']);
+                data.onStart.call(element, element.__data__);
             };
         };
 
-        const dragMove = (e: MouseEvent|TouchEvent) => {
-            const event = e as (MouseEvent|TouchEvent) & {collaboratorId: string, isLocalEvent: boolean};
-            if(!VisConnectUtil.setCustomEvent(event)) {
+        const dragMove = (event: VcPointerEvent) => {
+
+            let d3Event;
+            if(!(d3Event = VisConnectUtil.setCustomEvent(event))) {
                 return;
             }
             const element = data.draggingElements[event.collaboratorId];
-            if(element) {
-                data.onDrag.call(element, (element as any)['__data__']);
+            if(!element) {
+                return;
             }
+
+            d3Event.x -= data.offset[event.collaboratorId][0];
+            d3Event.y -= data.offset[event.collaboratorId][1];
+
+            data.onDrag.call(element, element.__data__);
         };
 
-        const dragEnd = (e: MouseEvent|TouchEvent) => {
-            const event = e as (MouseEvent|TouchEvent) & {collaboratorId: string, isLocalEvent: boolean};
+        const dragEnd = (event: VcPointerEvent) => {
             if(!VisConnectUtil.setCustomEvent(event)) {
                 return;
             }
             const element = data.draggingElements[event.collaboratorId];
             if(element) {
                 delete data.draggingElements[event.collaboratorId];
-                data.onEnd.call(element, (element as any)['__data__']);
+                data.onEnd.call(element, element.__data__);
             }
         };
 
-        const drag = function(selection: {_groups: [[HTMLElement]]}) {
+        const drag = function(selection: {_groups: [[D3Element]]}) {
             const elements = selection._groups[0].filter((element: any) => element);
             if(!elements.length) {
                 return;
@@ -53,14 +67,14 @@ export class VisConnectUtil {
             data.elements = elements;
 
             for(const element of data.elements) {
-                element.addEventListener('mousedown', dragStart(element));
-                element.addEventListener('touchstart', dragStart(element));
+                element.addEventListener('mousedown', e => dragStart(element)(e as VcPointerEvent));
+                element.addEventListener('touchstart', e => dragStart(element)(e as VcPointerEvent));
             }
 
-            window.addEventListener('mousemove', dragMove);
-            window.addEventListener('touchmove', dragMove);
-            window.addEventListener('mouseup', dragEnd);
-            window.addEventListener('touchend', dragEnd);
+            window.addEventListener('mousemove', e => dragMove(e as VcPointerEvent));
+            window.addEventListener('touchmove', e => dragMove(e as VcPointerEvent));
+            window.addEventListener('mouseup', e => dragEnd(e as VcPointerEvent));
+            window.addEventListener('touchend', e => dragEnd(e as VcPointerEvent));
         };
 
         drag.on = (type: string, callback: (data: any) => void) => {
@@ -79,18 +93,15 @@ export class VisConnectUtil {
         return drag;
     }
 
-    static setCustomEvent(event: (MouseEvent|TouchEvent) & {collaboratorId: string, isLocalEvent: boolean}) {
+    static setCustomEvent(event: VcPointerEvent) {
         const pos = point(event);
         if(!pos) {
-            return false;
+            return null;
         }
+        const newEvent = {sourceEvent: event, x: pos.x, y: pos.y};
+        (window as any)['d3'].event = newEvent;
 
-        (window as any)['d3'].event = {
-            sourceEvent: event,
-            x: pos.x,
-            y: pos.y,
-        };
-        return true;
+        return newEvent;
     };
 
     static brush() {
@@ -341,7 +352,7 @@ export class VisConnectUtil {
         return lasso;
     }
 
-    static mouse(node: HTMLElement) {
+    static mouse(node: HTMLElement): [number, number] {
         const coords = (window as any)['d3'].mouse(node);
         return [coords[0] - window.scrollX, coords[1] - window.scrollY];
     }
