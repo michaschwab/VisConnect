@@ -1249,7 +1249,9 @@ var VisConnectUi = /** @class */ (function () {
             }, 1000);
             return;
         }
-        var url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
+        var url = leaderId === communication.id
+            ? location.href + '?visconnectid=' + leaderId
+            : location.href;
         copyToClipboard(url);
         var inviteLinkCopied = document.getElementById('visconnect-link-copied');
         logo.style.display = 'none';
@@ -1307,9 +1309,26 @@ var VcListener = /** @class */ (function () {
         var _this = this;
         var boundCapture = this.captureEvent(element).bind(this);
         var custom = this.customEvents ? this.customEvents : [];
-        var eventTypes = ['mousemove', 'mouseup', 'mousedown', 'touchmove', 'mouseenter', 'mouseout', 'mouseover',
-            'mouseleave', 'click', 'dblclick', 'touchstart', 'touchend', 'selectstart', 'dragstart']
-            .filter(function (type) { return !_this.ignoreEvents || (_this.ignoreEvents[0] !== 'all' && !_this.ignoreEvents.includes(type)); })
+        var eventTypes = [
+            'mousemove',
+            'mouseup',
+            'mousedown',
+            'touchmove',
+            'mouseenter',
+            'mouseout',
+            'mouseover',
+            'mouseleave',
+            'click',
+            'dblclick',
+            'touchstart',
+            'touchend',
+            'selectstart',
+            'dragstart',
+        ]
+            .filter(function (type) {
+            return !_this.ignoreEvents ||
+                (_this.ignoreEvents[0] !== 'all' && !_this.ignoreEvents.includes(type));
+        })
             .concat(custom)
             .concat(['brush-message']);
         for (var _i = 0, eventTypes_1 = eventTypes; _i < eventTypes_1.length; _i++) {
@@ -1346,7 +1365,14 @@ var VcListener = /** @class */ (function () {
         };
     };
     VcListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', targetType: '', touches: [], timeStamp: -1, collaboratorId: '' };
+        var obj = {
+            type: '',
+            target: '',
+            targetType: '',
+            touches: [],
+            timeStamp: -1,
+            collaboratorId: '',
+        };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
@@ -1368,7 +1394,10 @@ var VcListener = /** @class */ (function () {
         if (window.TouchEvent && e instanceof TouchEvent && e.touches && e.touches.length) {
             for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
                 var touch = _a[_i];
-                obj.touches.push({ clientX: touch.clientX + window.scrollX, clientY: touch.clientY + window.scrollX });
+                obj.touches.push({
+                    clientX: touch.clientX + window.scrollX,
+                    clientY: touch.clientY + window.scrollX,
+                });
             }
         }
         if (e.detail) {
@@ -1421,7 +1450,8 @@ function delayAddEventListener() {
 }
 function disableStopPropagation() {
     // Prevent d3 from blocking VisConnect and other code to have access to events.
-    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
+    Event.prototype['stopImmediatePropagationBackup'] =
+        Event.prototype.stopImmediatePropagation;
     Event.prototype.stopImmediatePropagation = function () { };
 }
 function stopPropagation(event) {
@@ -2320,14 +2350,16 @@ var PeerjsNetwork = /** @class */ (function () {
             port: 9099,
             secure: true,
             path: '/visconnect',
-            config: { 'iceServers': [
+            config: {
+                iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     {
-                        'urls': 'turn:numb.viagenie.ca',
-                        'credential': "a/j'/9CmxTCa",
-                        'username': 'saffo.d@husky.neu.edu'
-                    }
-                ] }
+                        urls: 'turn:numb.viagenie.ca',
+                        credential: "a/j'/9CmxTCa",
+                        username: 'saffo.d@husky.neu.edu',
+                    },
+                ],
+            },
         });
         if (this.peer._open) {
             this.onOpen(); // In case it was done too fast.
@@ -2336,13 +2368,13 @@ var PeerjsNetwork = /** @class */ (function () {
             this.peer.on('open', this.onOpen);
         }
         this.peer.on('connection', function (connection) {
-            console.log("connection!");
+            console.log('connection!');
             onConnection(new PeerjsConnection(connection));
         });
         this.peer.on('disconnected', function () {
             onDisconnection();
         });
-        window.addEventListener("beforeunload", function () { return onDisconnection(); });
+        window.addEventListener('beforeunload', function () { return onDisconnection(); });
     };
     PeerjsNetwork.prototype.getId = function () {
         return this.peer.id;
@@ -2423,7 +2455,7 @@ var VcCommunication = /** @class */ (function () {
             targetSelector: targetSelector,
             owner: owner,
             sender: this.id,
-            seqNum: seqNum
+            seqNum: seqNum,
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
@@ -2532,8 +2564,8 @@ var VcCommunication = /** @class */ (function () {
     VcCommunication.prototype.broadcastEvent = function (e) {
         if (!this.eventsMsg) {
             this.eventsMsg = {
-                'type': VC_MESSAGE_TYPE.EVENT,
-                'sender': this.id,
+                type: VC_MESSAGE_TYPE.EVENT,
+                sender: this.id,
                 data: [],
             };
         }
@@ -2562,10 +2594,10 @@ var VcCommunication = /** @class */ (function () {
     VcCommunication.prototype.sendNewConnection = function (conn) {
         //console.log("Sending new connection message");
         var decoratedMessage = {
-            'type': VC_MESSAGE_TYPE.NEW_CONNECTION,
-            'sender': this.id,
-            'peers': this.peers,
-            'eventsLedger': this.getPastEvents(),
+            type: VC_MESSAGE_TYPE.NEW_CONNECTION,
+            sender: this.id,
+            peers: this.peers,
+            eventsLedger: this.getPastEvents(),
         };
         conn.send(decoratedMessage);
     };
@@ -2573,7 +2605,7 @@ var VcCommunication = /** @class */ (function () {
         //console.log("New connection message", data);
         for (var i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
-                console.log("connecting to new peer", data.peers[i]);
+                console.log('connecting to new peer', data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
         }
@@ -2581,8 +2613,8 @@ var VcCommunication = /** @class */ (function () {
     };
     VcCommunication.prototype.sendDisconnectMessage = function () {
         var decoratedMessage = {
-            'type': VC_MESSAGE_TYPE.DISCONNECTION,
-            'sender': this.id
+            type: VC_MESSAGE_TYPE.DISCONNECTION,
+            sender: this.id,
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
@@ -2590,12 +2622,12 @@ var VcCommunication = /** @class */ (function () {
         }
     };
     VcCommunication.prototype.recieveDisconnectMessage = function (msg) {
-        console.log("Peer", msg.sender, "is disconnecting");
+        console.log('Peer', msg.sender, 'is disconnecting');
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
             //console.log('Requesting lock', msg);
             if (conn.getPeer() === msg.sender) {
-                console.log("Removing peer and connection");
+                console.log('Removing peer and connection');
                 this.peers.splice(this.peers.indexOf(msg.sender), 1);
                 this.connections.splice(this.connections.indexOf(conn), 1);
             }
@@ -2635,7 +2667,7 @@ var VcProtocol = /** @class */ (function () {
             onNewLockOwner: this.lockOwnerChanged.bind(this),
             getPastEvents: this.getPastEvents.bind(this),
             onLockRequested: this.receiveLockRequest.bind(this),
-            onOpenCallback: this.init.bind(this)
+            onOpenCallback: this.init.bind(this),
         });
         this.communication.init();
     }
@@ -2707,6 +2739,7 @@ var VcProtocol = /** @class */ (function () {
         this.requestedLocks.delete(selector);
         if (!owner) {
             this.lockOwners.delete(selector);
+            this.heldEvents.delete(selector);
             return;
         }
         this.lockOwners.set(selector, owner);
@@ -2724,7 +2757,7 @@ var VcProtocol = /** @class */ (function () {
                     }
                 }
             }
-            //this.heldEvents.delete(selector);
+            this.heldEvents.delete(selector);
         }
         else if (this.heldRemoteEvents.has(selector)) {
             this.playHeldRemoteEvents(selector, seqNum);
@@ -2779,7 +2812,7 @@ var VcProtocol = /** @class */ (function () {
         return {
             seqNum: seqNum,
             event: stripped,
-            sender: this.collaboratorId
+            sender: this.collaboratorId,
         };
     };
     VcProtocol.prototype.addEventToLedger = function (event, sender, catchup) {
@@ -2806,12 +2839,23 @@ var VcProtocol = /** @class */ (function () {
         }
         else {
             // The order is not right.
-            //console.log('cant execute this', event.seqNum);
+            safeErrorLog('cant execute event because the sequence number is wrong', event.seqNum);
             return false;
         }
     };
     return VcProtocol;
 }());
+var safeLogCount = 0;
+function safeErrorLog() {
+    var logContents = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        logContents[_i] = arguments[_i];
+    }
+    if (safeLogCount < 200) {
+        safeLogCount++;
+        console.error.apply(console, logContents);
+    }
+}
 
 var LockService = /** @class */ (function () {
     function LockService(communication) {
@@ -2902,7 +2946,8 @@ var Visconnect = /** @class */ (function () {
         event['visconnect-received'] = true;
         event['collaboratorId'] = stripped.collaboratorId;
         event['collaboratorColor'] = VisConnectUtil.stringToHex(stripped.collaboratorId);
-        event['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
+        event['isLocalEvent'] =
+            stripped.collaboratorId === this.protocol.communication.getId();
         if (event.target) {
             event.target.dispatchEvent(event);
             if (event.type === 'click') {
@@ -2962,3 +3007,4 @@ delayAddEventListener().then(function () {
     visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
 });
+//# sourceMappingURL=visconnect-bundle.js.map

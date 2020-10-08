@@ -107,6 +107,7 @@ export class VcProtocol {
 
         if (!owner) {
             this.lockOwners.delete(selector);
+            this.heldEvents.delete(selector);
             return;
         }
         this.lockOwners.set(selector, owner);
@@ -124,7 +125,7 @@ export class VcProtocol {
                     }
                 }
             }
-            //this.heldEvents.delete(selector);
+            this.heldEvents.delete(selector);
         } else if (this.heldRemoteEvents.has(selector)) {
             this.playHeldRemoteEvents(selector, seqNum);
         }
@@ -217,8 +218,23 @@ export class VcProtocol {
             return true;
         } else {
             // The order is not right.
-            //console.log('cant execute this', event.seqNum);
+            safeErrorLog('cant execute event because the sequence number is wrong', event.seqNum);
             return false;
         }
+    }
+}
+
+let safeLogCount = 0;
+
+function safeLog(...logContents: any) {
+    if (safeLogCount < 200) {
+        safeLogCount++;
+        console.log(...logContents);
+    }
+}
+function safeErrorLog(...logContents: any) {
+    if (safeLogCount < 200) {
+        safeLogCount++;
+        console.error(...logContents);
     }
 }

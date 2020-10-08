@@ -1,0 +1,43 @@
+<style>
+    button {
+        display: block;
+        padding: 6px 20px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        outline: none;
+    }
+    button:hover {
+        background: #f3f3f3;
+        cursor: pointer;
+    }
+</style>
+<iframe src="index.html" width="800" height="650" id="left-frame"></iframe>
+
+<iframe src="" width="800" height="650" id="right-frame"></iframe>
+
+<button id="joinButton">Join</button>
+<button id="compareButton">Compare</button>
+
+<script>
+    const leftFrame = document.getElementById('left-frame');
+    const rightFrame = document.getElementById('right-frame');
+
+    document.getElementById('joinButton').onclick = () => {
+        const leaderId = leftFrame.contentWindow.vc.leaderId;
+        rightFrame.setAttribute('src', `index.html?visconnectid=${leaderId}`);
+    };
+
+    document.getElementById('compareButton').onclick = () => {
+        const leftLedgers = leftFrame.contentWindow.visconnect.protocol.ledgers;
+        const rightLedgers = leftFrame.contentWindow.visconnect.protocol.ledgers;
+
+        for(const key of Object.keys(leftLedgers)) {
+            const leftEvents = leftLedgers[key];
+            const rightEvents = rightLedgers[key];
+
+            const unmatchedLeft = leftEvents
+        }
+    };
+</script>
