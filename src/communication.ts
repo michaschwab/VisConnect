@@ -13,6 +13,8 @@ export interface VcCommunicationI {
     leaderId: string;
     onConnectionCallback: () => void;
     init: () => void;
+    onLoading?: (message: string) => void;
+    onDoneLoading?: () => void;
 }
 
 export interface VcCommunicationConstructorData {
@@ -47,6 +49,8 @@ export class VcCommunication implements VcCommunicationI {
     private readonly getPastEvents: () => VcEvent[];
     private readonly onLockRequested: (selector: string, requester: string) => void;
     private readonly onOpenCallback: () => void;
+    onLoading?: (message: string) => void;
+    onDoneLoading?: () => void;
 
     constructor(data: VcCommunicationConstructorData) {
         this.leaderId = data.leaderId;
@@ -64,8 +68,8 @@ export class VcCommunication implements VcCommunicationI {
         this.peer.init(
             this.id,
             this.onOpen.bind(this),
-            this.onConnection.bind(this),
-            this.onDisconnection.bind(this)
+            this.onConnected.bind(this),
+            this.onDisconnected.bind(this)
         );
     }
 
@@ -126,9 +130,6 @@ export class VcCommunication implements VcCommunicationI {
             this.leaderId = this.id;
         }
 
-        //console.log("originID", this.leaderId);
-        //console.log("myID", this.id);
-
         this.connectToPeer(this.id);
 
         if (this.leaderId && this.leaderId !== this.id) {
@@ -142,7 +143,7 @@ export class VcCommunication implements VcCommunicationI {
         return this.connections.length;
     }
 
-    async onConnection(connection: VcConnection) {
+    async onConnected(connection: VcConnection) {
         // Incoming connection: Leader or client receives connection from client.
         const peer = connection.getPeer();
 
@@ -153,8 +154,11 @@ export class VcCommunication implements VcCommunicationI {
         this.onConnectionCallback();
 
         if (peer === this.leaderId) {
-            // This is in case this client is the leader.
+            // This is in case the incoming connection is the leader.
             this.leaderConnection = connection;
+            if (this.onDoneLoading) {
+                this.onDoneLoading();
+            }
         }
 
         await connection.open();
@@ -165,7 +169,7 @@ export class VcCommunication implements VcCommunicationI {
         }
     }
 
-    async onDisconnection() {
+    async onDisconnected() {
         this.sendDisconnectMessage();
     }
 
@@ -240,7 +244,6 @@ export class VcCommunication implements VcCommunicationI {
     }
 
     sendNewConnection(conn: VcConnection) {
-        //console.log("Sending new connection message");
         const decoratedMessage: InitMessage = {
             type: VC_MESSAGE_TYPE.NEW_CONNECTION,
             sender: this.id,
@@ -248,7 +251,7 @@ export class VcCommunication implements VcCommunicationI {
             eventsLedger: this.getPastEvents(),
         };
 
-        conn.send(decoratedMessage);
+        this.loadTask(() => conn.send(decoratedMessage), 'Updating newly joined collaborators..');
     }
 
     receiveNewConnection(data: InitMessage) {
@@ -260,6 +263,9 @@ export class VcCommunication implements VcCommunicationI {
             }
         }
 
+        if (this.onDoneLoading) {
+            this.onDoneLoading();
+        }
         this.onEventReceived(data.eventsLedger, data.sender, true);
     }
 
@@ -286,6 +292,20 @@ export class VcCommunication implements VcCommunicationI {
             }
         }
         this.onConnectionCallback();
+    }
+
+    private loadTask(task: () => void, loadMessage: string) {
+        if (this.onLoading) {
+            this.onLoading(loadMessage);
+            window.setTimeout(() => {
+                task();
+                if (this.onDoneLoading) {
+                    this.onDoneLoading();
+                }
+            }, 10);
+        } else {
+            task();
+        }
     }
 }
 

@@ -9,9 +9,14 @@ export class VisConnectUi {
         this.addTemplate();
         this.initiateCursors();
 
-        this.visconnect.protocol.communication.onConnectionCallback = this.updateConnections.bind(
-            this
-        );
+        const protocol = this.visconnect.protocol;
+        protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        protocol.onLoading = this.showLoadingScreen.bind(this);
+        protocol.onDoneLoading = this.hideLoadingScreen.bind(this);
+        protocol.communication.onLoading = this.showLoadingScreen.bind(this);
+        protocol.communication.onDoneLoading = this.hideLoadingScreen.bind(this);
+
+        this.showLoadingScreen('Setting up..');
         this.updateConnections();
     }
 
@@ -108,6 +113,49 @@ export class VisConnectUi {
             logo.style.display = 'block';
             inviteLinkCopied.style.display = 'none';
         }, 2000);
+    }
+
+    showLoadingScreen(message: string) {
+        this.hideLoadingScreen();
+
+        const container = document.createElement('div');
+        container.id = 'visconnect-loadingscreen';
+        document.body.appendChild(container);
+
+        container.innerHTML = `
+<style>
+#background {
+    background: #f5f5f5;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+p {
+    text-align: center;
+    position: fixed;
+    top: 40%;
+    width: 100%;
+    left: 0;
+}
+</style>
+<div id="background">
+    <p>
+        <b>VisConnect Loading:</b>
+        <br /><br />
+        ${message}
+    </p>
+</div>
+    `;
+    }
+
+    hideLoadingScreen() {
+        const loadingscreen = document.getElementById('visconnect-loadingscreen');
+        if (!loadingscreen) {
+            return;
+        }
+        loadingscreen.parentNode!.removeChild(loadingscreen);
     }
 
     addTemplate() {

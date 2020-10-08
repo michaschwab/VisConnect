@@ -10,6 +10,8 @@ export class VcProtocol {
     protected heldRemoteEvents = new Map<string, VcEvent[]>();
     communication: VcCommunicationI;
     protected collaboratorId = '';
+    onLoading?: (message: string) => void;
+    onDoneLoading?: () => void;
 
     constructor(
         protected leaderId: string,
@@ -29,6 +31,7 @@ export class VcProtocol {
             onLockRequested: this.receiveLockRequest.bind(this),
             onOpenCallback: this.init.bind(this),
         });
+
         this.communication.init();
     }
 
@@ -72,6 +75,23 @@ export class VcProtocol {
     }
 
     receiveRemoteEvents(events: VcEvent[], sender: string, catchup = false) {
+        if (events.length > 100 && this.onLoading) {
+            this.onLoading(`Catching up to collaborators by re-playing ${events.length} events..`);
+
+            // Wait one frame to give the browser time to display a loading screen.
+            setTimeout(() => {
+                this.replayEvents(events, sender, catchup);
+
+                if (this.onDoneLoading) {
+                    this.onDoneLoading();
+                }
+            }, 10);
+        } else {
+            this.replayEvents(events, sender, catchup);
+        }
+    }
+
+    private replayEvents(events: VcEvent[], sender: string, catchup = false) {
         for (const event of events) {
             const ledger = this.ledgers.get(event.event.target);
             let lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
@@ -137,6 +157,7 @@ export class VcProtocol {
             return;
         }
         const filtered = held.filter((e) => e.seqNum >= seqNum).sort((a, b) => a.seqNum - b.seqNum);
+
         for (const event of filtered) {
             this.addEventToLedger(event, event.sender, false);
         }
@@ -218,7 +239,7 @@ export class VcProtocol {
             return true;
         } else {
             // The order is not right.
-            safeErrorLog('cant execute event because the sequence number is wrong', event.seqNum);
+            //safeErrorLog('cant execute event with wrong sequence number', event.seqNum, event);
             return false;
         }
     }
@@ -227,13 +248,13 @@ export class VcProtocol {
 let safeLogCount = 0;
 
 function safeLog(...logContents: any) {
-    if (safeLogCount < 200) {
+    if (safeLogCount < 100) {
         safeLogCount++;
         console.log(...logContents);
     }
 }
 function safeErrorLog(...logContents: any) {
-    if (safeLogCount < 200) {
+    if (safeLogCount < 100) {
         safeLogCount++;
         console.error(...logContents);
     }

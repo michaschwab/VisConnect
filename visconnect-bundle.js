@@ -1177,7 +1177,13 @@ var VisConnectUi = /** @class */ (function () {
         this.cursorResetTimeout = 0;
         this.addTemplate();
         this.initiateCursors();
-        this.visconnect.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        var protocol = this.visconnect.protocol;
+        protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        protocol.onLoading = this.showLoadingScreen.bind(this);
+        protocol.onDoneLoading = this.hideLoadingScreen.bind(this);
+        protocol.communication.onLoading = this.showLoadingScreen.bind(this);
+        protocol.communication.onDoneLoading = this.hideLoadingScreen.bind(this);
+        this.showLoadingScreen('Setting up..');
         this.updateConnections();
     }
     VisConnectUi.prototype.initiateCursors = function () {
@@ -1260,6 +1266,20 @@ var VisConnectUi = /** @class */ (function () {
             logo.style.display = 'block';
             inviteLinkCopied.style.display = 'none';
         }, 2000);
+    };
+    VisConnectUi.prototype.showLoadingScreen = function (message) {
+        this.hideLoadingScreen();
+        var container = document.createElement('div');
+        container.id = 'visconnect-loadingscreen';
+        document.body.appendChild(container);
+        container.innerHTML = "\n<style>\n#background {\n    background: #f5f5f5;\n    position: fixed;\n    left: 0;\n    top: 0;\n    width: 100%;\n    height: 100%;\n}\np {\n    text-align: center;\n    position: fixed;\n    top: 40%;\n    width: 100%;\n    left: 0;\n}\n</style>\n<div id=\"background\">\n    <p>\n        <b>VisConnect Loading:</b>\n        <br /><br />\n        " + message + "\n    </p>\n</div>\n    ";
+    };
+    VisConnectUi.prototype.hideLoadingScreen = function () {
+        var loadingscreen = document.getElementById('visconnect-loadingscreen');
+        if (!loadingscreen) {
+            return;
+        }
+        loadingscreen.parentNode.removeChild(loadingscreen);
     };
     VisConnectUi.prototype.addTemplate = function () {
         var container = document.createElement('div');
@@ -2368,7 +2388,6 @@ var PeerjsNetwork = /** @class */ (function () {
             this.peer.on('open', this.onOpen);
         }
         this.peer.on('connection', function (connection) {
-            console.log('connection!');
             onConnection(new PeerjsConnection(connection));
         });
         this.peer.on('disconnected', function () {
@@ -2418,7 +2437,7 @@ var VcCommunication = /** @class */ (function () {
         this.peer = new PeerjsNetwork();
     }
     VcCommunication.prototype.init = function () {
-        this.peer.init(this.id, this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
+        this.peer.init(this.id, this.onOpen.bind(this), this.onConnected.bind(this), this.onDisconnected.bind(this));
     };
     /**
      * Requests all clients to vote to agree that this client gets the lock on the element.
@@ -2471,8 +2490,6 @@ var VcCommunication = /** @class */ (function () {
         if (!this.leaderId) {
             this.leaderId = this.id;
         }
-        //console.log("originID", this.leaderId);
-        //console.log("myID", this.id);
         this.connectToPeer(this.id);
         if (this.leaderId && this.leaderId !== this.id) {
             this.connectToPeer(this.leaderId);
@@ -2483,7 +2500,7 @@ var VcCommunication = /** @class */ (function () {
     VcCommunication.prototype.getNumberOfConnections = function () {
         return this.connections.length;
     };
-    VcCommunication.prototype.onConnection = function (connection) {
+    VcCommunication.prototype.onConnected = function (connection) {
         return __awaiter(this, void 0, void 0, function () {
             var peer;
             return __generator(this, function (_a) {
@@ -2495,8 +2512,11 @@ var VcCommunication = /** @class */ (function () {
                         //console.log("New incoming connection", this.peers, this.connections.length);
                         this.onConnectionCallback();
                         if (peer === this.leaderId) {
-                            // This is in case this client is the leader.
+                            // This is in case the incoming connection is the leader.
                             this.leaderConnection = connection;
+                            if (this.onDoneLoading) {
+                                this.onDoneLoading();
+                            }
                         }
                         return [4 /*yield*/, connection.open()];
                     case 1:
@@ -2510,7 +2530,7 @@ var VcCommunication = /** @class */ (function () {
             });
         });
     };
-    VcCommunication.prototype.onDisconnection = function () {
+    VcCommunication.prototype.onDisconnected = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 this.sendDisconnectMessage();
@@ -2592,14 +2612,13 @@ var VcCommunication = /** @class */ (function () {
         window.requestAnimationFrame(onSend);
     };
     VcCommunication.prototype.sendNewConnection = function (conn) {
-        //console.log("Sending new connection message");
         var decoratedMessage = {
             type: VC_MESSAGE_TYPE.NEW_CONNECTION,
             sender: this.id,
             peers: this.peers,
             eventsLedger: this.getPastEvents(),
         };
-        conn.send(decoratedMessage);
+        this.loadTask(function () { return conn.send(decoratedMessage); }, 'Updating newly joined collaborators..');
     };
     VcCommunication.prototype.receiveNewConnection = function (data) {
         //console.log("New connection message", data);
@@ -2608,6 +2627,9 @@ var VcCommunication = /** @class */ (function () {
                 console.log('connecting to new peer', data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
+        }
+        if (this.onDoneLoading) {
+            this.onDoneLoading();
         }
         this.onEventReceived(data.eventsLedger, data.sender, true);
     };
@@ -2633,6 +2655,21 @@ var VcCommunication = /** @class */ (function () {
             }
         }
         this.onConnectionCallback();
+    };
+    VcCommunication.prototype.loadTask = function (task, loadMessage) {
+        var _this = this;
+        if (this.onLoading) {
+            this.onLoading(loadMessage);
+            window.setTimeout(function () {
+                task();
+                if (_this.onDoneLoading) {
+                    _this.onDoneLoading();
+                }
+            }, 10);
+        }
+        else {
+            task();
+        }
     };
     return VcCommunication;
 }());
@@ -2706,6 +2743,23 @@ var VcProtocol = /** @class */ (function () {
         }
     };
     VcProtocol.prototype.receiveRemoteEvents = function (events, sender, catchup) {
+        var _this = this;
+        if (catchup === void 0) { catchup = false; }
+        if (events.length > 100 && this.onLoading) {
+            this.onLoading("Catching up to collaborators by re-playing " + events.length + " events..");
+            // Wait one frame to give the browser time to display a loading screen.
+            setTimeout(function () {
+                _this.replayEvents(events, sender, catchup);
+                if (_this.onDoneLoading) {
+                    _this.onDoneLoading();
+                }
+            }, 10);
+        }
+        else {
+            this.replayEvents(events, sender, catchup);
+        }
+    };
+    VcProtocol.prototype.replayEvents = function (events, sender, catchup) {
         if (catchup === void 0) { catchup = false; }
         for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
             var event = events_1[_i];
@@ -2839,23 +2893,12 @@ var VcProtocol = /** @class */ (function () {
         }
         else {
             // The order is not right.
-            safeErrorLog('cant execute event because the sequence number is wrong', event.seqNum);
+            //safeErrorLog('cant execute event with wrong sequence number', event.seqNum, event);
             return false;
         }
     };
     return VcProtocol;
 }());
-var safeLogCount = 0;
-function safeErrorLog() {
-    var logContents = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        logContents[_i] = arguments[_i];
-    }
-    if (safeLogCount < 200) {
-        safeLogCount++;
-        console.error.apply(console, logContents);
-    }
-}
 
 var LockService = /** @class */ (function () {
     function LockService(communication) {
