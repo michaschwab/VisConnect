@@ -775,6 +775,7 @@ function robustPointInPolygon(vs, point) {
   return 2 * inside - 1
 }
 
+// @ts-ignore
 var VisConnectUtil = /** @class */ (function () {
     function VisConnectUtil() {
     }
@@ -786,7 +787,7 @@ var VisConnectUtil = /** @class */ (function () {
             offset: {},
             onStart: function (data) { },
             onEnd: function (data) { },
-            onDrag: function (data) { }
+            onDrag: function (data) { },
         };
         var dragStart = function (element) {
             return function (event) {
@@ -831,8 +832,12 @@ var VisConnectUtil = /** @class */ (function () {
             }
             data.elements = elements;
             var _loop_1 = function (element) {
-                element.addEventListener('mousedown', function (e) { return dragStart(element)(e); });
-                element.addEventListener('touchstart', function (e) { return dragStart(element)(e); });
+                element.addEventListener('mousedown', function (e) {
+                    return dragStart(element)(e);
+                });
+                element.addEventListener('touchstart', function (e) {
+                    return dragStart(element)(e);
+                });
             };
             for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
                 var element = _a[_i];
@@ -881,15 +886,15 @@ var VisConnectUtil = /** @class */ (function () {
             var event = e;
             if (event.type === 'brush') {
                 if (!collaboratorBrushes[event.collaboratorId]) {
-                    collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+                    collaboratorBrushes[event.collaboratorId] = data.svg
+                        .append('rect')
                         .attr('fill', event.collaboratorColor)
                         .attr('opacity', '0.4')
                         .style('pointer-events', 'none');
                 }
                 var rect = collaboratorBrushes[event.collaboratorId];
                 var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
-                rect
-                    .attr('x', x0)
+                rect.attr('x', x0)
                     .attr('y', y0)
                     .attr('width', "" + (x1 - x0))
                     .attr('height', "" + (y1 - y0));
@@ -904,8 +909,13 @@ var VisConnectUtil = /** @class */ (function () {
             return brush;
         };
         brush.start = function (p) {
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'start' } };
+            var evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'start',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onStart.call(this, p);
         };
@@ -913,14 +923,24 @@ var VisConnectUtil = /** @class */ (function () {
             if (this === null) {
                 d3b.move.call(null, p);
             }
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'brush' } };
+            var evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'brush',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onBrush.call(this, p);
         };
         brush.end = function (p) {
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'end' } };
+            var evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'end',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onEnd.call(this, p);
         };
@@ -939,7 +959,8 @@ var VisConnectUtil = /** @class */ (function () {
             }
             return brush;
         };
-        var d3b = d3.brush()
+        var d3b = d3
+            .brush()
             .on('start', brush.start)
             .on('brush', brush.move)
             .on('end', brush.end);
@@ -975,13 +996,15 @@ var VisConnectUtil = /** @class */ (function () {
                     data.lassoGs[collId] = lassoG;
                 }
                 lassoG.selectAll('path').remove();
-                lassoG.append('path')
+                lassoG
+                    .append('path')
                     .attr('stroke', 'grey')
                     .attr('opacity', '0.5')
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
                 lassoG.selectAll('circle').remove();
-                lassoG.append('circle')
+                lassoG
+                    .append('circle')
                     .attr('r', 4)
                     .attr('cx', data.start[collId][0])
                     .attr('cy', data.start[collId][1])
@@ -996,10 +1019,15 @@ var VisConnectUtil = /** @class */ (function () {
                 if (data.drawing[collId]) {
                     data.positions[collId].push([d3.event.x, d3.event.y]);
                     var lassoG = data.lassoGs[collId];
-                    lassoG.select('path')
-                        .attr('d', function () { return 'M' + data.positions[collId]
-                        .map(function (pos) { return pos[0] + "," + pos[1]; })
-                        .reduce(function (a, b) { return a + " L" + b; }) + 'Z'; });
+                    lassoG
+                        .select('path')
+                        .attr('d', function () {
+                        return 'M' +
+                            data.positions[collId]
+                                .map(function (pos) { return pos[0] + "," + pos[1]; })
+                                .reduce(function (a, b) { return a + " L" + b; }) +
+                            'Z';
+                    });
                     if (collId === vc.ownId || data.mode === 'join') {
                         data.onDraw();
                     }
@@ -1058,7 +1086,7 @@ var VisConnectUtil = /** @class */ (function () {
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
-        lasso.collaborationMode = (function (mode) {
+        lasso.collaborationMode = function (mode) {
             if (mode) {
                 data.mode = mode;
                 return lasso;
@@ -1066,7 +1094,7 @@ var VisConnectUtil = /** @class */ (function () {
             else {
                 return data.mode;
             }
-        });
+        };
         lasso.getItemPos = function (cb) {
             data.getItemPos = cb;
             return lasso;
@@ -1094,7 +1122,7 @@ var VisConnectUtil = /** @class */ (function () {
     };
     VisConnectUtil.random = function (leaderId) {
         // string to int hash from https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0.
-        var seed = Array.from(leaderId).reduce(function (s, c) { return Math.imul(31, s) + c.charCodeAt(0) | 0; }, 0);
+        var seed = Array.from(leaderId).reduce(function (s, c) { return (Math.imul(31, s) + c.charCodeAt(0)) | 0; }, 0);
         return function () {
             // Bad but seeded random function
             var x = Math.sin(seed++) * 10000;
@@ -1136,7 +1164,10 @@ function point(event) {
         return { x: point_1.x, y: point_1.y };
     }
     var rect = node.getBoundingClientRect();
-    return { x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop };
+    return {
+        x: position.clientX - rect.left - node.clientLeft,
+        y: position.clientY - rect.top - node.clientTop,
+    };
 }
 
 var VisConnectUi = /** @class */ (function () {
@@ -1218,7 +1249,9 @@ var VisConnectUi = /** @class */ (function () {
             }, 1000);
             return;
         }
-        var url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
+        var url = leaderId === communication.id
+            ? location.href + '?visconnectid=' + leaderId
+            : location.href;
         copyToClipboard(url);
         var inviteLinkCopied = document.getElementById('visconnect-link-copied');
         logo.style.display = 'none';
@@ -1276,9 +1309,26 @@ var VcListener = /** @class */ (function () {
         var _this = this;
         var boundCapture = this.captureEvent(element).bind(this);
         var custom = this.customEvents ? this.customEvents : [];
-        var eventTypes = ['mousemove', 'mouseup', 'mousedown', 'touchmove', 'mouseenter', 'mouseout', 'mouseover',
-            'mouseleave', 'click', 'dblclick', 'touchstart', 'touchend', 'selectstart', 'dragstart']
-            .filter(function (type) { return !_this.ignoreEvents || (_this.ignoreEvents[0] !== 'all' && !_this.ignoreEvents.includes(type)); })
+        var eventTypes = [
+            'mousemove',
+            'mouseup',
+            'mousedown',
+            'touchmove',
+            'mouseenter',
+            'mouseout',
+            'mouseover',
+            'mouseleave',
+            'click',
+            'dblclick',
+            'touchstart',
+            'touchend',
+            'selectstart',
+            'dragstart',
+        ]
+            .filter(function (type) {
+            return !_this.ignoreEvents ||
+                (_this.ignoreEvents[0] !== 'all' && !_this.ignoreEvents.includes(type));
+        })
             .concat(custom)
             .concat(['brush-message']);
         for (var _i = 0, eventTypes_1 = eventTypes; _i < eventTypes_1.length; _i++) {
@@ -1315,7 +1365,14 @@ var VcListener = /** @class */ (function () {
         };
     };
     VcListener.prototype.getStrippedEvent = function (e) {
-        var obj = { type: '', target: '', targetType: '', touches: [], timeStamp: -1, collaboratorId: '' };
+        var obj = {
+            type: '',
+            target: '',
+            targetType: '',
+            touches: [],
+            timeStamp: -1,
+            collaboratorId: '',
+        };
         for (var key in e) {
             var val = e[key];
             if (typeof val !== 'object' && typeof val !== 'function') {
@@ -1337,7 +1394,10 @@ var VcListener = /** @class */ (function () {
         if (window.TouchEvent && e instanceof TouchEvent && e.touches && e.touches.length) {
             for (var _i = 0, _a = e.touches; _i < _a.length; _i++) {
                 var touch = _a[_i];
-                obj.touches.push({ clientX: touch.clientX + window.scrollX, clientY: touch.clientY + window.scrollX });
+                obj.touches.push({
+                    clientX: touch.clientX + window.scrollX,
+                    clientY: touch.clientY + window.scrollX,
+                });
             }
         }
         if (e.detail) {
@@ -1390,7 +1450,8 @@ function delayAddEventListener() {
 }
 function disableStopPropagation() {
     // Prevent d3 from blocking VisConnect and other code to have access to events.
-    Event.prototype['stopImmediatePropagationBackup'] = Event.prototype.stopImmediatePropagation;
+    Event.prototype['stopImmediatePropagationBackup'] =
+        Event.prototype.stopImmediatePropagation;
     Event.prototype.stopImmediatePropagation = function () { };
 }
 function stopPropagation(event) {
@@ -2289,14 +2350,16 @@ var PeerjsNetwork = /** @class */ (function () {
             port: 9099,
             secure: true,
             path: '/visconnect',
-            config: { 'iceServers': [
+            config: {
+                iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     {
-                        'urls': 'turn:numb.viagenie.ca',
-                        'credential': "a/j'/9CmxTCa",
-                        'username': 'saffo.d@husky.neu.edu'
-                    }
-                ] }
+                        urls: 'turn:numb.viagenie.ca',
+                        credential: "a/j'/9CmxTCa",
+                        username: 'saffo.d@husky.neu.edu',
+                    },
+                ],
+            },
         });
         if (this.peer._open) {
             this.onOpen(); // In case it was done too fast.
@@ -2305,13 +2368,13 @@ var PeerjsNetwork = /** @class */ (function () {
             this.peer.on('open', this.onOpen);
         }
         this.peer.on('connection', function (connection) {
-            console.log("connection!");
+            console.log('connection!');
             onConnection(new PeerjsConnection(connection));
         });
         this.peer.on('disconnected', function () {
             onDisconnection();
         });
-        window.addEventListener("beforeunload", function () { return onDisconnection(); });
+        window.addEventListener('beforeunload', function () { return onDisconnection(); });
     };
     PeerjsNetwork.prototype.getId = function () {
         return this.peer.id;
@@ -2392,7 +2455,7 @@ var VcCommunication = /** @class */ (function () {
             targetSelector: targetSelector,
             owner: owner,
             sender: this.id,
-            seqNum: seqNum
+            seqNum: seqNum,
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
@@ -2501,8 +2564,8 @@ var VcCommunication = /** @class */ (function () {
     VcCommunication.prototype.broadcastEvent = function (e) {
         if (!this.eventsMsg) {
             this.eventsMsg = {
-                'type': VC_MESSAGE_TYPE.EVENT,
-                'sender': this.id,
+                type: VC_MESSAGE_TYPE.EVENT,
+                sender: this.id,
                 data: [],
             };
         }
@@ -2531,10 +2594,10 @@ var VcCommunication = /** @class */ (function () {
     VcCommunication.prototype.sendNewConnection = function (conn) {
         //console.log("Sending new connection message");
         var decoratedMessage = {
-            'type': VC_MESSAGE_TYPE.NEW_CONNECTION,
-            'sender': this.id,
-            'peers': this.peers,
-            'eventsLedger': this.getPastEvents(),
+            type: VC_MESSAGE_TYPE.NEW_CONNECTION,
+            sender: this.id,
+            peers: this.peers,
+            eventsLedger: this.getPastEvents(),
         };
         conn.send(decoratedMessage);
     };
@@ -2542,7 +2605,7 @@ var VcCommunication = /** @class */ (function () {
         //console.log("New connection message", data);
         for (var i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
-                console.log("connecting to new peer", data.peers[i]);
+                console.log('connecting to new peer', data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
         }
@@ -2550,8 +2613,8 @@ var VcCommunication = /** @class */ (function () {
     };
     VcCommunication.prototype.sendDisconnectMessage = function () {
         var decoratedMessage = {
-            'type': VC_MESSAGE_TYPE.DISCONNECTION,
-            'sender': this.id
+            type: VC_MESSAGE_TYPE.DISCONNECTION,
+            sender: this.id,
         };
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
@@ -2559,12 +2622,12 @@ var VcCommunication = /** @class */ (function () {
         }
     };
     VcCommunication.prototype.recieveDisconnectMessage = function (msg) {
-        console.log("Peer", msg.sender, "is disconnecting");
+        console.log('Peer', msg.sender, 'is disconnecting');
         for (var _i = 0, _a = this.connections; _i < _a.length; _i++) {
             var conn = _a[_i];
             //console.log('Requesting lock', msg);
             if (conn.getPeer() === msg.sender) {
-                console.log("Removing peer and connection");
+                console.log('Removing peer and connection');
                 this.peers.splice(this.peers.indexOf(msg.sender), 1);
                 this.connections.splice(this.connections.indexOf(conn), 1);
             }
@@ -2604,7 +2667,7 @@ var VcProtocol = /** @class */ (function () {
             onNewLockOwner: this.lockOwnerChanged.bind(this),
             getPastEvents: this.getPastEvents.bind(this),
             onLockRequested: this.receiveLockRequest.bind(this),
-            onOpenCallback: this.init.bind(this)
+            onOpenCallback: this.init.bind(this),
         });
         this.communication.init();
     }
@@ -2676,6 +2739,7 @@ var VcProtocol = /** @class */ (function () {
         this.requestedLocks.delete(selector);
         if (!owner) {
             this.lockOwners.delete(selector);
+            this.heldEvents.delete(selector);
             return;
         }
         this.lockOwners.set(selector, owner);
@@ -2693,7 +2757,7 @@ var VcProtocol = /** @class */ (function () {
                     }
                 }
             }
-            //this.heldEvents.delete(selector);
+            this.heldEvents.delete(selector);
         }
         else if (this.heldRemoteEvents.has(selector)) {
             this.playHeldRemoteEvents(selector, seqNum);
@@ -2748,7 +2812,7 @@ var VcProtocol = /** @class */ (function () {
         return {
             seqNum: seqNum,
             event: stripped,
-            sender: this.collaboratorId
+            sender: this.collaboratorId,
         };
     };
     VcProtocol.prototype.addEventToLedger = function (event, sender, catchup) {
@@ -2775,12 +2839,23 @@ var VcProtocol = /** @class */ (function () {
         }
         else {
             // The order is not right.
-            //console.log('cant execute this', event.seqNum);
+            safeErrorLog('cant execute event because the sequence number is wrong', event.seqNum);
             return false;
         }
     };
     return VcProtocol;
 }());
+var safeLogCount = 0;
+function safeErrorLog() {
+    var logContents = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        logContents[_i] = arguments[_i];
+    }
+    if (safeLogCount < 200) {
+        safeLogCount++;
+        console.error.apply(console, logContents);
+    }
+}
 
 var LockService = /** @class */ (function () {
     function LockService(communication) {
@@ -2871,7 +2946,8 @@ var Visconnect = /** @class */ (function () {
         event['visconnect-received'] = true;
         event['collaboratorId'] = stripped.collaboratorId;
         event['collaboratorColor'] = VisConnectUtil.stringToHex(stripped.collaboratorId);
-        event['isLocalEvent'] = stripped.collaboratorId === this.protocol.communication.getId();
+        event['isLocalEvent'] =
+            stripped.collaboratorId === this.protocol.communication.getId();
         if (event.target) {
             event.target.dispatchEvent(event);
             if (event.type === 'click') {
@@ -2931,3 +3007,4 @@ delayAddEventListener().then(function () {
     visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
 });
+//# sourceMappingURL=visconnect-bundle.js.map
