@@ -1,6 +1,6 @@
 import {VcEvent} from './visconnect';
-import {VcNetwork, PeerjsNetwork} from "./peerjs-network";
-import {VcConnection} from "./peerjs-connection";
+import {VcNetwork, PeerjsNetwork} from './peerjs-network';
+import {VcConnection} from './peerjs-connection';
 
 // This file should know all the message types and create the messages
 export interface VcCommunicationI {
@@ -16,17 +16,17 @@ export interface VcCommunicationI {
 }
 
 export interface VcCommunicationConstructorData {
-    leaderId: string,
-    ownId: string,
-    onEventReceived: (e: VcEvent[], sender: string, catchup?: boolean) => void,
-    onNewLockOwner: (selector: string, owner: string, seqNum: number) => void,
-    getPastEvents: () => VcEvent[],
-    onLockRequested: (selector: string, requester: string) => void,
-    onOpenCallback: () => void
+    leaderId: string;
+    ownId: string;
+    onEventReceived: (e: VcEvent[], sender: string, catchup?: boolean) => void;
+    onNewLockOwner: (selector: string, owner: string, seqNum: number) => void;
+    getPastEvents: () => VcEvent[];
+    onLockRequested: (selector: string, requester: string) => void;
+    onOpenCallback: () => void;
 }
 
 export interface VcCommunicationConstructor {
-    new(data: VcCommunicationConstructorData): VcCommunicationI;
+    new (data: VcCommunicationConstructorData): VcCommunicationI;
 }
 
 export class VcCommunication implements VcCommunicationI {
@@ -61,17 +61,22 @@ export class VcCommunication implements VcCommunicationI {
     }
 
     init() {
-        this.peer.init(this.id, this.onOpen.bind(this), this.onConnection.bind(this), this.onDisconnection.bind(this));
+        this.peer.init(
+            this.id,
+            this.onOpen.bind(this),
+            this.onConnection.bind(this),
+            this.onDisconnection.bind(this)
+        );
     }
 
     /**
      * Requests all clients to vote to agree that this client gets the lock on the element.
      */
     requestLock(targetSelector: string) {
-        if(!this.id) {
+        if (!this.id) {
             return false;
         }
-        if(!this.leaderConnection && this.id !== this.leaderId) {
+        if (!this.leaderConnection && this.id !== this.leaderId) {
             return false;
         }
 
@@ -82,7 +87,7 @@ export class VcCommunication implements VcCommunicationI {
             sender: this.id,
         };
 
-        if(this.id === this.leaderId) {
+        if (this.id === this.leaderId) {
             // Ask itself, the leader, for permission.
             this.receiveMessage(msg);
         } else {
@@ -101,10 +106,10 @@ export class VcCommunication implements VcCommunicationI {
             targetSelector,
             owner,
             sender: this.id,
-            seqNum
+            seqNum,
         };
 
-        for(const conn of this.connections) {
+        for (const conn of this.connections) {
             conn.send(msg);
         }
         this.receiveMessage(msg); // Tell itself that the lock owner has changed.
@@ -117,7 +122,7 @@ export class VcCommunication implements VcCommunicationI {
     onOpen() {
         this.id = this.getId();
 
-        if(!this.leaderId) {
+        if (!this.leaderId) {
             this.leaderId = this.id;
         }
 
@@ -147,7 +152,7 @@ export class VcCommunication implements VcCommunicationI {
 
         this.onConnectionCallback();
 
-        if(peer === this.leaderId) {
+        if (peer === this.leaderId) {
             // This is in case this client is the leader.
             this.leaderConnection = connection;
         }
@@ -160,7 +165,7 @@ export class VcCommunication implements VcCommunicationI {
         }
     }
 
-    async onDisconnection(){
+    async onDisconnection() {
         this.sendDisconnectMessage();
     }
 
@@ -176,7 +181,7 @@ export class VcCommunication implements VcCommunicationI {
 
         const peer = connection.getPeer();
 
-        if(peer === this.leaderId) {
+        if (peer === this.leaderId) {
             this.leaderConnection = connection;
         }
 
@@ -186,26 +191,26 @@ export class VcCommunication implements VcCommunicationI {
     receiveMessage(data: VcMessage) {
         if (data.type === VC_MESSAGE_TYPE.NEW_CONNECTION) {
             this.receiveNewConnection(data as InitMessage);
-        } else if(data.type === VC_MESSAGE_TYPE.EVENT) {
+        } else if (data.type === VC_MESSAGE_TYPE.EVENT) {
             const msg = data as VcEventsMessage;
             this.onEventReceived(msg.data, msg.sender);
-        } else if(data.type === VC_MESSAGE_TYPE.LOCK_REQUESTED) {
+        } else if (data.type === VC_MESSAGE_TYPE.LOCK_REQUESTED) {
             const msg = data as LockRequestMessage;
             this.onLockRequested(msg.targetSelector, msg.requester);
-        } else if(data.type === VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
+        } else if (data.type === VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED) {
             const msg = data as LockOwnerChangedMessage;
             this.onNewLockOwner(msg.targetSelector, msg.owner, msg.seqNum);
-        } else if(data.type === VC_MESSAGE_TYPE.DISCONNECTION) {
+        } else if (data.type === VC_MESSAGE_TYPE.DISCONNECTION) {
             const msg = data as DisconnectMessage;
             this.recieveDisconnectMessage(msg);
         }
     }
 
     broadcastEvent(e: VcEvent) {
-        if(!this.eventsMsg) {
+        if (!this.eventsMsg) {
             this.eventsMsg = {
-                'type': VC_MESSAGE_TYPE.EVENT,
-                'sender': this.id,
+                type: VC_MESSAGE_TYPE.EVENT,
+                sender: this.id,
                 data: [],
             };
         }
@@ -215,15 +220,15 @@ export class VcCommunication implements VcCommunicationI {
     }
 
     throttledSendEvents() {
-        if(!this.eventsMsg) {
+        if (!this.eventsMsg) {
             return;
         }
 
         const onSend = () => {
-            if(!this.eventsMsg) {
+            if (!this.eventsMsg) {
                 return;
             }
-            for(const conn of this.connections) {
+            for (const conn of this.connections) {
                 conn.send(this.eventsMsg);
             }
             this.lastEventsMessageTime = Date.now();
@@ -237,10 +242,10 @@ export class VcCommunication implements VcCommunicationI {
     sendNewConnection(conn: VcConnection) {
         //console.log("Sending new connection message");
         const decoratedMessage: InitMessage = {
-            'type': VC_MESSAGE_TYPE.NEW_CONNECTION,
-            'sender': this.id,
-            'peers': this.peers as string[],
-            'eventsLedger': this.getPastEvents(),
+            type: VC_MESSAGE_TYPE.NEW_CONNECTION,
+            sender: this.id,
+            peers: this.peers as string[],
+            eventsLedger: this.getPastEvents(),
         };
 
         conn.send(decoratedMessage);
@@ -250,35 +255,35 @@ export class VcCommunication implements VcCommunicationI {
         //console.log("New connection message", data);
         for (let i = 0; i < data.peers.length; i++) {
             if (this.peers.indexOf(data.peers[i]) === -1) {
-                console.log("connecting to new peer", data.peers[i]);
+                console.log('connecting to new peer', data.peers[i]);
                 this.connectToPeer(data.peers[i]);
             }
         }
 
         this.onEventReceived(data.eventsLedger, data.sender, true);
     }
-    
+
     sendDisconnectMessage() {
         const decoratedMessage: DisconnectMessage = {
-            'type': VC_MESSAGE_TYPE.DISCONNECTION,
-            'sender': this.id
+            type: VC_MESSAGE_TYPE.DISCONNECTION,
+            sender: this.id,
         };
 
-        for(const conn of this.connections) {
+        for (const conn of this.connections) {
             conn.send(decoratedMessage);
         }
     }
 
-    recieveDisconnectMessage(msg: DisconnectMessage){
-        console.log("Peer", msg.sender, "is disconnecting");
+    recieveDisconnectMessage(msg: DisconnectMessage) {
+        console.log('Peer', msg.sender, 'is disconnecting');
 
-        for(const conn of this.connections) {
+        for (const conn of this.connections) {
             //console.log('Requesting lock', msg);
-            if (conn.getPeer() === msg.sender){
-                console.log("Removing peer and connection");
+            if (conn.getPeer() === msg.sender) {
+                console.log('Removing peer and connection');
                 this.peers.splice(this.peers.indexOf(msg.sender), 1);
-                this.connections.splice(this.connections.indexOf(conn),1);
-            }   
+                this.connections.splice(this.connections.indexOf(conn), 1);
+            }
         }
         this.onConnectionCallback();
     }
@@ -290,40 +295,40 @@ export enum VC_MESSAGE_TYPE {
     LOCK_REQUESTED,
     LOCK_VOTE,
     LOCK_OWNER_CHANGED,
-    DISCONNECTION
+    DISCONNECTION,
 }
 
 export interface VcMessage {
-    peers?: string[],
-    type: VC_MESSAGE_TYPE,
-    sender: string,
-    data?: any,
+    peers?: string[];
+    type: VC_MESSAGE_TYPE;
+    sender: string;
+    data?: any;
 }
 
 export interface VcEventsMessage extends VcMessage {
-    type: VC_MESSAGE_TYPE.EVENT,
-    data: VcEvent[]
+    type: VC_MESSAGE_TYPE.EVENT;
+    data: VcEvent[];
 }
 
 export interface InitMessage extends VcMessage {
-    type: VC_MESSAGE_TYPE.NEW_CONNECTION,
-    peers: string[],
-    eventsLedger: VcEvent[]
+    type: VC_MESSAGE_TYPE.NEW_CONNECTION;
+    peers: string[];
+    eventsLedger: VcEvent[];
 }
 
 export interface DisconnectMessage extends VcMessage {
-    type: VC_MESSAGE_TYPE.DISCONNECTION,
+    type: VC_MESSAGE_TYPE.DISCONNECTION;
 }
 
 export interface LockRequestMessage extends VcMessage {
-    type: VC_MESSAGE_TYPE.LOCK_REQUESTED,
-    targetSelector: string,
-    requester: string,
+    type: VC_MESSAGE_TYPE.LOCK_REQUESTED;
+    targetSelector: string;
+    requester: string;
 }
 
 export interface LockOwnerChangedMessage extends VcMessage {
-    type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED,
-    targetSelector: string,
-    owner: string,
-    seqNum: number
+    type: VC_MESSAGE_TYPE.LOCK_OWNER_CHANGED;
+    targetSelector: string;
+    owner: string;
+    seqNum: number;
 }

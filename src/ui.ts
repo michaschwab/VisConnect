@@ -1,6 +1,6 @@
-import {Visconnect} from "./visconnect";
-import {VisConnectUtil} from "./util";
-import {StrippedEvent} from "./listener";
+import {Visconnect} from './visconnect';
+import {VisConnectUtil} from './util';
+import {StrippedEvent} from './listener';
 
 export class VisConnectUi {
     private cursorResetTimeout = 0;
@@ -9,7 +9,9 @@ export class VisConnectUi {
         this.addTemplate();
         this.initiateCursors();
 
-        this.visconnect.protocol.communication.onConnectionCallback = this.updateConnections.bind(this);
+        this.visconnect.protocol.communication.onConnectionCallback = this.updateConnections.bind(
+            this
+        );
         this.updateConnections();
     }
 
@@ -24,7 +26,7 @@ export class VisConnectUi {
     getCursor(participant: string) {
         const elementId = `visconnect-cursor-${participant}`;
         let cursor = document.getElementById(elementId);
-        if(!cursor) {
+        if (!cursor) {
             const cursors = document.getElementById('visconnect-cursors')!;
             cursor = document.createElement('div');
             cursor.style.background = VisConnectUtil.stringToHex(participant);
@@ -43,7 +45,7 @@ export class VisConnectUi {
         const event = originalEvent as MouseEvent & {collaboratorId: string};
         const ownId = this.visconnect.protocol.communication.id;
         const collaborator = event['collaboratorId'];
-        if(!collaborator || !ownId || ownId === collaborator) {
+        if (!collaborator || !ownId || ownId === collaborator) {
             return;
         }
         const cursor = this.getCursor(collaborator);
@@ -54,7 +56,7 @@ export class VisConnectUi {
     eventCancelled(event: StrippedEvent) {
         clearTimeout(this.cursorResetTimeout);
         let target: HTMLElement = document.querySelector(event.target) || document.body;
-        target.style.setProperty('cursor','not-allowed', 'important');
+        target.style.setProperty('cursor', 'not-allowed', 'important');
         this.cursorResetTimeout = window.setTimeout(() => {
             target.style.removeProperty('cursor');
         }, 50);
@@ -64,7 +66,7 @@ export class VisConnectUi {
         const connections = this.visconnect.protocol.communication.getNumberOfConnections();
         const collaborators = connections - 1;
 
-        if(collaborators > 0) {
+        if (collaborators > 0) {
             document.getElementById('visconnect-container')!.style.height = '70px';
             document.getElementById('visconnect-collab-notice')!.style.display = 'inline';
             document.getElementById('visconnect-collab-count')!.innerText = String(collaborators);
@@ -79,7 +81,7 @@ export class VisConnectUi {
         const leaderId = communication.leaderId;
         const logo = document.getElementById('visconnect-logo')!;
 
-        if(!leaderId) {
+        if (!leaderId) {
             const errorElement = document.getElementById('visconnect-not-ready')!;
             logo.style.display = 'none';
             errorElement.style.display = 'inline';
@@ -91,7 +93,10 @@ export class VisConnectUi {
             return;
         }
 
-        const url = leaderId === communication.id ? location.href + '?visconnectid=' + leaderId : location.href;
+        const url =
+            leaderId === communication.id
+                ? location.href + '?visconnectid=' + leaderId
+                : location.href;
         copyToClipboard(url);
 
         const inviteLinkCopied = document.getElementById('visconnect-link-copied')!;

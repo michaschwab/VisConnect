@@ -1,16 +1,14 @@
-import {VcCommunicationI} from "./communication";
+import {VcCommunicationI} from './communication';
 
 export class LockService {
     protected lockOwners = new Map<string, string>();
     protected lockTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
     public expireTimeoutMs = 1000;
 
-    constructor(protected communication: VcCommunicationI) {
-
-    }
+    constructor(protected communication: VcCommunicationI) {}
 
     requestLock(selector: string, client: string, seqNum: number) {
-        if(this.lockOwners.has(selector)) {
+        if (this.lockOwners.has(selector)) {
             return;
         }
 
@@ -21,7 +19,7 @@ export class LockService {
     extendLock(selector: string) {
         // Delete any previous timeouts
         const prevTimeout = this.lockTimeouts.get(selector);
-        if(prevTimeout) {
+        if (prevTimeout) {
             clearTimeout(prevTimeout);
         }
         const timeout = setTimeout(this.expireLock(selector), this.expireTimeoutMs);

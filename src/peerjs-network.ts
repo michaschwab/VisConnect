@@ -1,9 +1,14 @@
-import {PeerjsConnection, PeerjsConnectionI} from "./peerjs-connection";
+import {PeerjsConnection, PeerjsConnectionI} from './peerjs-connection';
 
 declare var Peer: any;
 
 export interface VcNetwork {
-    init(id: string, onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void): void;
+    init(
+        id: string,
+        onOpen: () => void,
+        onConnection: (connection: PeerjsConnection) => void,
+        onDisconnection: () => void
+    ): void;
     getId(): string;
     connect(peerId: string): Promise<PeerjsConnection>;
 }
@@ -12,7 +17,12 @@ export class PeerjsNetwork implements VcNetwork {
     private peer: any;
     private onOpen: () => void = () => 0;
 
-    init(id: string, onOpen: () => void, onConnection: (connection: PeerjsConnection) => void, onDisconnection: () => void) {
+    init(
+        id: string,
+        onOpen: () => void,
+        onConnection: (connection: PeerjsConnection) => void,
+        onDisconnection: () => void
+    ) {
         this.onOpen = onOpen;
 
         this.peer = new Peer(id, {
@@ -20,32 +30,34 @@ export class PeerjsNetwork implements VcNetwork {
             port: 9099,
             secure: true,
             path: '/visconnect',
-            config:  {'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },
-                {
-                    'urls': 'turn:numb.viagenie.ca',
-                    'credential': "a/j'/9CmxTCa",
-                    'username': 'saffo.d@husky.neu.edu'
-                  }
-            ]}
+            config: {
+                iceServers: [
+                    {urls: 'stun:stun.l.google.com:19302'},
+                    {
+                        urls: 'turn:numb.viagenie.ca',
+                        credential: "a/j'/9CmxTCa",
+                        username: 'saffo.d@husky.neu.edu',
+                    },
+                ],
+            },
         });
 
-        if(this.peer._open) {
+        if (this.peer._open) {
             this.onOpen(); // In case it was done too fast.
         } else {
             this.peer.on('open', this.onOpen);
         }
 
         this.peer.on('connection', (connection: PeerjsConnectionI) => {
-            console.log("connection!");
+            console.log('connection!');
             onConnection(new PeerjsConnection(connection));
         });
 
-        this.peer.on('disconnected',  () => {
+        this.peer.on('disconnected', () => {
             onDisconnection();
         });
 
-        window.addEventListener("beforeunload", () => onDisconnection());
+        window.addEventListener('beforeunload', () => onDisconnection());
     }
 
     getId(): string {

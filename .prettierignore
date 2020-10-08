@@ -1,0 +1,5 @@
+visconnect-bundle.js
+extension/visconnect-bundle.js
+extension/peerjs*
+examples/*
+d3.*

@@ -775,6 +775,7 @@ function robustPointInPolygon(vs, point) {
   return 2 * inside - 1
 }
 
+// @ts-ignore
 var VisConnectUtil = /** @class */ (function () {
     function VisConnectUtil() {
     }
@@ -786,7 +787,7 @@ var VisConnectUtil = /** @class */ (function () {
             offset: {},
             onStart: function (data) { },
             onEnd: function (data) { },
-            onDrag: function (data) { }
+            onDrag: function (data) { },
         };
         var dragStart = function (element) {
             return function (event) {
@@ -831,8 +832,12 @@ var VisConnectUtil = /** @class */ (function () {
             }
             data.elements = elements;
             var _loop_1 = function (element) {
-                element.addEventListener('mousedown', function (e) { return dragStart(element)(e); });
-                element.addEventListener('touchstart', function (e) { return dragStart(element)(e); });
+                element.addEventListener('mousedown', function (e) {
+                    return dragStart(element)(e);
+                });
+                element.addEventListener('touchstart', function (e) {
+                    return dragStart(element)(e);
+                });
             };
             for (var _i = 0, _a = data.elements; _i < _a.length; _i++) {
                 var element = _a[_i];
@@ -881,15 +886,15 @@ var VisConnectUtil = /** @class */ (function () {
             var event = e;
             if (event.type === 'brush') {
                 if (!collaboratorBrushes[event.collaboratorId]) {
-                    collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+                    collaboratorBrushes[event.collaboratorId] = data.svg
+                        .append('rect')
                         .attr('fill', event.collaboratorColor)
                         .attr('opacity', '0.4')
                         .style('pointer-events', 'none');
                 }
                 var rect = collaboratorBrushes[event.collaboratorId];
                 var _a = event.detail.event, _b = _a[0], x0 = _b[0], y0 = _b[1], _c = _a[1], x1 = _c[0], y1 = _c[1];
-                rect
-                    .attr('x', x0)
+                rect.attr('x', x0)
                     .attr('y', y0)
                     .attr('width', "" + (x1 - x0))
                     .attr('height', "" + (y1 - y0));
@@ -904,8 +909,13 @@ var VisConnectUtil = /** @class */ (function () {
             return brush;
         };
         brush.start = function (p) {
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'start' } };
+            var evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'start',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onStart.call(this, p);
         };
@@ -913,14 +923,24 @@ var VisConnectUtil = /** @class */ (function () {
             if (this === null) {
                 d3b.move.call(null, p);
             }
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'brush' } };
+            var evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'brush',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onBrush.call(this, p);
         };
         brush.end = function (p) {
-            var evtData = { detail: { event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'end' } };
+            var evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'end',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onEnd.call(this, p);
         };
@@ -939,7 +959,8 @@ var VisConnectUtil = /** @class */ (function () {
             }
             return brush;
         };
-        var d3b = d3.brush()
+        var d3b = d3
+            .brush()
             .on('start', brush.start)
             .on('brush', brush.move)
             .on('end', brush.end);
@@ -975,13 +996,15 @@ var VisConnectUtil = /** @class */ (function () {
                     data.lassoGs[collId] = lassoG;
                 }
                 lassoG.selectAll('path').remove();
-                lassoG.append('path')
+                lassoG
+                    .append('path')
                     .attr('stroke', 'grey')
                     .attr('opacity', '0.5')
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
                 lassoG.selectAll('circle').remove();
-                lassoG.append('circle')
+                lassoG
+                    .append('circle')
                     .attr('r', 4)
                     .attr('cx', data.start[collId][0])
                     .attr('cy', data.start[collId][1])
@@ -996,10 +1019,15 @@ var VisConnectUtil = /** @class */ (function () {
                 if (data.drawing[collId]) {
                     data.positions[collId].push([d3.event.x, d3.event.y]);
                     var lassoG = data.lassoGs[collId];
-                    lassoG.select('path')
-                        .attr('d', function () { return 'M' + data.positions[collId]
-                        .map(function (pos) { return pos[0] + "," + pos[1]; })
-                        .reduce(function (a, b) { return a + " L" + b; }) + 'Z'; });
+                    lassoG
+                        .select('path')
+                        .attr('d', function () {
+                        return 'M' +
+                            data.positions[collId]
+                                .map(function (pos) { return pos[0] + "," + pos[1]; })
+                                .reduce(function (a, b) { return a + " L" + b; }) +
+                            'Z';
+                    });
                     if (collId === vc.ownId || data.mode === 'join') {
                         data.onDraw();
                     }
@@ -1058,7 +1086,7 @@ var VisConnectUtil = /** @class */ (function () {
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
-        lasso.collaborationMode = (function (mode) {
+        lasso.collaborationMode = function (mode) {
             if (mode) {
                 data.mode = mode;
                 return lasso;
@@ -1066,7 +1094,7 @@ var VisConnectUtil = /** @class */ (function () {
             else {
                 return data.mode;
             }
-        });
+        };
         lasso.getItemPos = function (cb) {
             data.getItemPos = cb;
             return lasso;
@@ -1094,7 +1122,7 @@ var VisConnectUtil = /** @class */ (function () {
     };
     VisConnectUtil.random = function (leaderId) {
         // string to int hash from https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0.
-        var seed = Array.from(leaderId).reduce(function (s, c) { return Math.imul(31, s) + c.charCodeAt(0) | 0; }, 0);
+        var seed = Array.from(leaderId).reduce(function (s, c) { return (Math.imul(31, s) + c.charCodeAt(0)) | 0; }, 0);
         return function () {
             // Bad but seeded random function
             var x = Math.sin(seed++) * 10000;
@@ -1136,7 +1164,10 @@ function point(event) {
         return { x: point_1.x, y: point_1.y };
     }
     var rect = node.getBoundingClientRect();
-    return { x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop };
+    return {
+        x: position.clientX - rect.left - node.clientLeft,
+        y: position.clientY - rect.top - node.clientTop,
+    };
 }
 
 var VisConnectUi = /** @class */ (function () {

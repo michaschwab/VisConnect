@@ -1,44 +1,54 @@
 <!DOCTYPE html>
 <html lang="en-US">
-<head>
-  <title>VisConnect Demo</title>
-  <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
-  <script src="https://d3js.org/d3.v4.js"></script>
-</head>
-<body>
+    <head>
+        <title>VisConnect Demo</title>
+        <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+        <script src="https://d3js.org/d3.v4.js"></script>
+    </head>
+    <body>
+        <script src="visconnect-bundle.js"></script>
 
-<script src="visconnect-bundle.js"></script>
+        <svg width="960" height="600"></svg>
 
-<svg width="960" height="600"></svg>
+        <script>
+            var svg = d3.select('svg');
 
-<script>
-var svg = d3.select("svg");
+            var color = d3.scaleOrdinal(d3.schemeCategory20);
+            var nodes = [
+                {group: 'A', x: 100, y: 100},
+                {group: 'B', x: 140, y: 200},
+                {group: 'C', x: 300, y: 150},
+            ];
+            var drag = vc.drag().on('drag', function (d) {
+                d.x = d3.event.x;
+                d.y = d3.event.y;
+                const circle = d3.select(this);
+                circle.attr('cx', d.x);
+                circle.attr('cy', d.y);
+                d3.event.sourceEvent.preventDefault(); // Disable scrolling
+            });
 
-var color = d3.scaleOrdinal(d3.schemeCategory20);
-var nodes = [{group: 'A', x: 100, y: 100}, {group: 'B', x: 140, y: 200}, {group: 'C', x: 300, y: 150}];
-var drag = vc.drag()
-        .on('drag', function(d) {
-            d.x = d3.event.x;
-            d.y = d3.event.y;
-            const circle = d3.select(this);
-            circle.attr("cx", d.x);
-            circle.attr("cy", d.y);
-            d3.event.sourceEvent.preventDefault(); // Disable scrolling
-        });
-
-var node = svg.append("g")
-        .attr("class", "nodes")
-        .selectAll("circle")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("r", 30)
-        .attr("cx", (d) => d.x)
-        .attr("cy", (d) => d.y)
-        .attr('stroke-width', 3)
-        .attr("fill", function(d) { return color(d.group); })
-        .on('mouseenter', function() { d3.select(this).attr('stroke', d3.event.collaboratorColor)})
-        .on('mouseout', function() { d3.select(this).attr('stroke', '')})
-        .call(drag);
-</script>
-</body>
+            var node = svg
+                .append('g')
+                .attr('class', 'nodes')
+                .selectAll('circle')
+                .data(nodes)
+                .enter()
+                .append('circle')
+                .attr('r', 30)
+                .attr('cx', (d) => d.x)
+                .attr('cy', (d) => d.y)
+                .attr('stroke-width', 3)
+                .attr('fill', function (d) {
+                    return color(d.group);
+                })
+                .on('mouseenter', function () {
+                    d3.select(this).attr('stroke', d3.event.collaboratorColor);
+                })
+                .on('mouseout', function () {
+                    d3.select(this).attr('stroke', '');
+                })
+                .call(drag);
+        </script>
+    </body>
 </html>

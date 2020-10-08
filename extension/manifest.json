@@ -1,30 +1,25 @@
 {
-  "name": "VisConnect",
-  "version": "0.2.0",
-  "description": "Collaborate on your data visualizations! Synchronize your JavaScript event from connected client to client to explore data together.",
-  "manifest_version": 2,
-  "background": {
-    "scripts": ["background.js"],
-    "persistent": true
-  },
-  "browser_action": {
-    "default_title": "VisConnect: Collaborate on this page"
-  },
-  "permissions": [
-    "activeTab"
-  ],
-  "content_scripts": [
-    {
-      "matches": ["*://*/*visconnect*"],
-      "run_at": "document_start",
-      "js": ["inject.js"]
-    }
-  ],
-  "icons": {
-    "128": "icon128.png"
-  },
-  "web_accessible_resources": [
-    "peerjs.1.0.4.min.js",
-    "visconnect-bundle.js"
-  ]
+    "name": "VisConnect",
+    "version": "0.2.0",
+    "description": "Collaborate on your data visualizations! Synchronize your JavaScript event from connected client to client to explore data together.",
+    "manifest_version": 2,
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": true
+    },
+    "browser_action": {
+        "default_title": "VisConnect: Collaborate on this page"
+    },
+    "permissions": ["activeTab"],
+    "content_scripts": [
+        {
+            "matches": ["*://*/*visconnect*"],
+            "run_at": "document_start",
+            "js": ["inject.js"]
+        }
+    ],
+    "icons": {
+        "128": "icon128.png"
+    },
+    "web_accessible_resources": ["peerjs.1.0.4.min.js", "visconnect-bundle.js"]
 }

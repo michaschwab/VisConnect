@@ -1,23 +1,23 @@
-import classifyPoint from "robust-point-in-polygon";
+// @ts-ignore
+import classifyPoint from 'robust-point-in-polygon';
 
-type D3Element = HTMLElement & {'__data__': any};
-type VcPointerEvent = (MouseEvent|TouchEvent) & {collaboratorId: string, isLocalEvent: boolean};
+type D3Element = HTMLElement & {__data__: any};
+type VcPointerEvent = (MouseEvent | TouchEvent) & {collaboratorId: string; isLocalEvent: boolean};
 
 export class VisConnectUtil {
     static drag() {
         const data = {
-            elements: null as D3Element[]|null,
+            elements: null as D3Element[] | null,
             draggingElements: {} as {[collaborator: string]: D3Element},
             offset: {} as {[collaborator: string]: [number, number]},
             onStart: (data: any) => {},
             onEnd: (data: any) => {},
-            onDrag: (data: any) => {}
+            onDrag: (data: any) => {},
         };
 
         const dragStart = (element: D3Element) => {
             return (event: VcPointerEvent) => {
-
-                if(!VisConnectUtil.setCustomEvent(event)) {
+                if (!VisConnectUtil.setCustomEvent(event)) {
                     return;
                 }
 
@@ -31,13 +31,12 @@ export class VisConnectUtil {
         };
 
         const dragMove = (event: VcPointerEvent) => {
-
             let d3Event;
-            if(!(d3Event = VisConnectUtil.setCustomEvent(event))) {
+            if (!(d3Event = VisConnectUtil.setCustomEvent(event))) {
                 return;
             }
             const element = data.draggingElements[event.collaboratorId];
-            if(!element) {
+            if (!element) {
                 return;
             }
 
@@ -48,41 +47,45 @@ export class VisConnectUtil {
         };
 
         const dragEnd = (event: VcPointerEvent) => {
-            if(!VisConnectUtil.setCustomEvent(event)) {
+            if (!VisConnectUtil.setCustomEvent(event)) {
                 return;
             }
             const element = data.draggingElements[event.collaboratorId];
-            if(element) {
+            if (element) {
                 delete data.draggingElements[event.collaboratorId];
                 data.onEnd.call(element, element.__data__);
             }
         };
 
-        const drag = function(selection: {_groups: [[D3Element]]}) {
+        const drag = function (selection: {_groups: [[D3Element]]}) {
             const elements = selection._groups[0].filter((element: any) => element);
-            if(!elements.length) {
+            if (!elements.length) {
                 return;
             }
 
             data.elements = elements;
 
-            for(const element of data.elements) {
-                element.addEventListener('mousedown', e => dragStart(element)(e as VcPointerEvent));
-                element.addEventListener('touchstart', e => dragStart(element)(e as VcPointerEvent));
+            for (const element of data.elements) {
+                element.addEventListener('mousedown', (e) =>
+                    dragStart(element)(e as VcPointerEvent)
+                );
+                element.addEventListener('touchstart', (e) =>
+                    dragStart(element)(e as VcPointerEvent)
+                );
             }
 
-            window.addEventListener('mousemove', e => dragMove(e as VcPointerEvent));
-            window.addEventListener('touchmove', e => dragMove(e as VcPointerEvent));
-            window.addEventListener('mouseup', e => dragEnd(e as VcPointerEvent));
-            window.addEventListener('touchend', e => dragEnd(e as VcPointerEvent));
+            window.addEventListener('mousemove', (e) => dragMove(e as VcPointerEvent));
+            window.addEventListener('touchmove', (e) => dragMove(e as VcPointerEvent));
+            window.addEventListener('mouseup', (e) => dragEnd(e as VcPointerEvent));
+            window.addEventListener('touchend', (e) => dragEnd(e as VcPointerEvent));
         };
 
         drag.on = (type: string, callback: (data: any) => void) => {
-            if(type === 'start') {
+            if (type === 'start') {
                 data.onStart = callback;
-            } else if(type === 'drag') {
+            } else if (type === 'drag') {
                 data.onDrag = callback;
-            } else if(type === 'end') {
+            } else if (type === 'end') {
                 data.onEnd = callback;
             } else {
                 console.error('Drag type ', type, ' not defined.');
@@ -95,14 +98,14 @@ export class VisConnectUtil {
 
     static setCustomEvent(event: VcPointerEvent) {
         const pos = point(event);
-        if(!pos) {
+        if (!pos) {
             return null;
         }
         const newEvent = {sourceEvent: event, x: pos.x, y: pos.y};
         (window as any)['d3'].event = newEvent;
 
         return newEvent;
-    };
+    }
 
     static brush() {
         const data = {
@@ -114,12 +117,17 @@ export class VisConnectUtil {
         const collaboratorBrushes: {[collaboratorId: string]: any} = {};
 
         document.body.addEventListener('brush-message', (e) => {
-            const event = e as Event & {detail: {event: any}, collaboratorId: string, collaboratorColor: string,
-                type: string};
+            const event = e as Event & {
+                detail: {event: any};
+                collaboratorId: string;
+                collaboratorColor: string;
+                type: string;
+            };
 
-            if(event.type === 'brush') {
-                if(!collaboratorBrushes[event.collaboratorId]) {
-                    collaboratorBrushes[event.collaboratorId] = data.svg.append('rect')
+            if (event.type === 'brush') {
+                if (!collaboratorBrushes[event.collaboratorId]) {
+                    collaboratorBrushes[event.collaboratorId] = data.svg
+                        .append('rect')
                         .attr('fill', event.collaboratorColor)
                         .attr('opacity', '0.4')
                         .style('pointer-events', 'none');
@@ -127,15 +135,14 @@ export class VisConnectUtil {
                 const rect = collaboratorBrushes[event.collaboratorId];
                 const [[x0, y0], [x1, y1]] = event.detail.event;
 
-                rect
-                    .attr('x', x0)
+                rect.attr('x', x0)
                     .attr('y', y0)
                     .attr('width', `${x1 - x0}`)
                     .attr('height', `${y1 - y0}`);
             }
         });
 
-        const brush = function(svg: any) {
+        const brush = function (svg: any) {
             data.svg = svg;
             return d3b.call(d3b, svg);
         };
@@ -144,34 +151,49 @@ export class VisConnectUtil {
             d3b.extent.apply(d3b, arguments);
             return brush;
         };
-        brush.start = function(this: HTMLElement, p: any) {
-            const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'start'}};
+        brush.start = function (this: HTMLElement, p: any) {
+            const evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'start',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onStart.call(this, p);
         };
-        brush.move = function(this: HTMLElement, p: any, t?:any) {
-            if(this === null) {
+        brush.move = function (this: HTMLElement, p: any, t?: any) {
+            if (this === null) {
                 d3b.move.call(null, p);
             }
-            const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'brush'}};
+            const evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'brush',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onBrush.call(this, p);
         };
-        brush.end = function(this: HTMLElement, p: any) {
-            const evtData = {detail: {event: d3.event.selection, collaboratorId: d3.event.collaboratorId,
-                    type: 'end'}};
+        brush.end = function (this: HTMLElement, p: any) {
+            const evtData = {
+                detail: {
+                    event: d3.event.selection,
+                    collaboratorId: d3.event.collaboratorId,
+                    type: 'end',
+                },
+            };
             document.body.dispatchEvent(new CustomEvent('brush-message', evtData));
             data.onEnd.call(this, p);
         };
 
         brush.on = (type: string, callback: () => void) => {
-            if(type === 'start') {
+            if (type === 'start') {
                 data.onStart = callback;
-            } else if(type === 'brush') {
+            } else if (type === 'brush') {
                 data.onBrush = callback;
-            } else if(type === 'end') {
+            } else if (type === 'end') {
                 data.onEnd = callback;
             } else {
                 console.error('Drag type ', type, ' not defined.');
@@ -179,7 +201,8 @@ export class VisConnectUtil {
             return brush;
         };
 
-        const d3b = d3.brush()
+        const d3b = d3
+            .brush()
             .on('start', brush.start)
             .on('brush', brush.move)
             .on('end', brush.end);
@@ -194,15 +217,15 @@ export class VisConnectUtil {
             drawing: {} as {[collId: string]: boolean},
             start: {} as {[collId: string]: [number, number]},
             positions: {} as {[collId: string]: [number, number][]},
-            items: null as D3Selection|null,
-            mode: 'divide' as 'divide'|'join',
+            items: null as D3Selection | null,
+            mode: 'divide' as 'divide' | 'join',
             getItemPos: (() => [0, 0]) as (item: D3Selection) => [number, number],
             possibleItems: [] as any[],
             notPossibleItems: [] as any[],
             onStart: () => {},
             onDraw: () => {},
             onEnd: () => {},
-        }
+        };
 
         const lasso = (svg: D3Selection) => {
             data.svg = svg;
@@ -217,27 +240,29 @@ export class VisConnectUtil {
                 data.positions[collId] = [];
 
                 let lassoG = data.lassoGs[collId];
-                if(!lassoG) {
+                if (!lassoG) {
                     lassoG = svg.append('g');
                     data.lassoGs[collId] = lassoG;
                 }
 
                 lassoG.selectAll('path').remove();
-                lassoG.append('path')
+                lassoG
+                    .append('path')
                     .attr('stroke', 'grey')
                     .attr('opacity', '0.5')
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
 
                 lassoG.selectAll('circle').remove();
-                lassoG.append('circle')
+                lassoG
+                    .append('circle')
                     .attr('r', 4)
                     .attr('cx', data.start[collId][0])
                     .attr('cy', data.start[collId][1])
                     .style('pointer-events', 'none')
                     .attr('fill', d3.event.sourceEvent.collaboratorColor);
 
-                if(collId === vc.ownId || data.mode === 'join') {
+                if (collId === vc.ownId || data.mode === 'join') {
                     data.onStart();
                 }
             });
@@ -245,16 +270,23 @@ export class VisConnectUtil {
             drag.on('drag', () => {
                 const collId = d3.event.sourceEvent.collaboratorId;
 
-                if(data.drawing[collId]) {
+                if (data.drawing[collId]) {
                     data.positions[collId].push([d3.event.x, d3.event.y]);
 
                     const lassoG = data.lassoGs[collId];
-                    lassoG.select('path')
-                        .attr('d', () => 'M' + data.positions[collId]
-                            .map(pos => `${pos[0]},${pos[1]}`)
-                            .reduce((a, b) => `${a} L${b}`) + 'Z');
+                    lassoG
+                        .select('path')
+                        .attr(
+                            'd',
+                            () =>
+                                'M' +
+                                data.positions[collId]
+                                    .map((pos) => `${pos[0]},${pos[1]}`)
+                                    .reduce((a, b) => `${a} L${b}`) +
+                                'Z'
+                        );
 
-                    if(collId === vc.ownId || data.mode === 'join') {
+                    if (collId === vc.ownId || data.mode === 'join') {
                         data.onDraw();
                     }
                 }
@@ -270,7 +302,7 @@ export class VisConnectUtil {
                 //lassoG.selectAll('path').remove();
                 //lassoG.selectAll('circle').remove();
 
-                if(collId === vc.ownId || data.mode === 'join') {
+                if (collId === vc.ownId || data.mode === 'join') {
                     data.onEnd();
                 }
             });
@@ -279,7 +311,7 @@ export class VisConnectUtil {
         };
 
         lasso.items = (items?: D3Selection) => {
-            if(items) {
+            if (items) {
                 data.items = items;
                 return lasso;
             }
@@ -287,33 +319,35 @@ export class VisConnectUtil {
         };
 
         const getItemScore = (d: any) => {
-            if(!data.positions[vc.ownId]) {
+            if (!data.positions[vc.ownId]) {
                 return 1;
             }
             const pos = data.getItemPos(d);
             const collIds = Object.keys(data.positions);
 
-            if(data.mode === 'divide') {
+            if (data.mode === 'divide') {
                 return classifyPoint(data.positions[vc.ownId], pos);
             } else {
-                return Math.min(...collIds.map(collId => classifyPoint(data.positions[collId], pos)));
+                return Math.min(
+                    ...collIds.map((collId) => classifyPoint(data.positions[collId], pos))
+                );
             }
-        }
+        };
 
         const getInside = () => {
-            if(!data.items) {
+            if (!data.items) {
                 return null;
             }
-            return data.items.filter(function(d) {
+            return data.items.filter(function (d) {
                 return getItemScore(d) <= 0;
             });
         };
 
         const getOutside = () => {
-            if(!data.items) {
+            if (!data.items) {
                 return null;
             }
-            return data.items.filter(function(d) {
+            return data.items.filter(function (d) {
                 return getItemScore(d) > 0;
             });
         };
@@ -322,14 +356,14 @@ export class VisConnectUtil {
         lasso.notSelectedItems = getOutside;
         lasso.possibleItems = getInside;
         lasso.notPossibleItems = getOutside;
-        lasso.collaborationMode = ((mode?: 'divide'|'join') => {
-            if(mode) {
+        lasso.collaborationMode = (mode?: 'divide' | 'join') => {
+            if (mode) {
                 data.mode = mode;
                 return lasso;
             } else {
                 return data.mode;
             }
-        });
+        };
 
         lasso.getItemPos = (cb: (item: D3Selection) => [number, number]) => {
             data.getItemPos = cb;
@@ -337,11 +371,11 @@ export class VisConnectUtil {
         };
 
         lasso.on = (type: string, callback: () => void) => {
-            if(type === 'start') {
+            if (type === 'start') {
                 data.onStart = callback;
-            } else if(type === 'draw') {
+            } else if (type === 'draw') {
                 data.onDraw = callback;
-            } else if(type === 'end') {
+            } else if (type === 'end') {
                 data.onEnd = callback;
             } else {
                 console.error('Lasso type ', type, ' not defined.');
@@ -359,7 +393,10 @@ export class VisConnectUtil {
 
     static random(leaderId: string) {
         // string to int hash from https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0.
-        let seed = Array.from(leaderId).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0);
+        let seed = Array.from(leaderId).reduce(
+            (s, c) => (Math.imul(31, s) + c.charCodeAt(0)) | 0,
+            0
+        );
         return () => {
             // Bad but seeded random function
             const x = Math.sin(seed++) * 10000;
@@ -381,17 +418,16 @@ export class VisConnectUtil {
             color += ('00' + value.toString(16)).substr(-2);
         }
         return color;
-    };
-
+    }
 }
 
 // Adapted from D3.js
-function point(event: MouseEvent|TouchEvent) {
+function point(event: MouseEvent | TouchEvent) {
     const node = event.target as SVGElement;
     const svg = node.ownerSVGElement || node;
 
     const position = event instanceof MouseEvent ? event : event.touches[0];
-    if(!position) {
+    if (!position) {
         console.warn(event);
         return null;
     }
@@ -405,12 +441,15 @@ function point(event: MouseEvent|TouchEvent) {
     }
 
     const rect = node.getBoundingClientRect();
-    return {x: position.clientX - rect.left - node.clientLeft, y: position.clientY - rect.top - node.clientTop};
+    return {
+        x: position.clientX - rect.left - node.clientLeft,
+        y: position.clientY - rect.top - node.clientTop,
+    };
 }
 
 interface D3Selection {
     append: (elementType: string) => D3Selection;
-    attr: (name: string, value?: string|number|((d: any) => string|number)) => D3Selection;
+    attr: (name: string, value?: string | number | ((d: any) => string | number)) => D3Selection;
     call: (fct: () => void) => D3Selection;
     each: (fct: (d: any) => void) => D3Selection;
     filter: (fct: (d: any) => boolean) => D3Selection;

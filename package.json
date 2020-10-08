@@ -1,34 +1,35 @@
 {
-  "name": "visconnect",
-  "version": "1.1.2",
-  "description": "Collaborate on data visualizations! Demo at https://michaschwab.github.io/VisConnect/",
-  "main": "visconnect-bundle.js",
-  "dependencies": {
-    "robust-point-in-polygon": "^1.0.3",
-    "rxjs": "^6.5.4"
-  },
-  "devDependencies": {
-    "jest": "^25.2.1",
-    "jest-without-globals": "0.0.3",
-    "rollup": "^1.31.0",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-typescript": "^1.0.1",
-    "tslib": "^1.10.0",
-    "typescript": "^3.7.5"
-  },
-  "scripts": {
-    "compile": "rollup -c rollup.config.js && cp visconnect-bundle.js extension/",
-    "test": "rollup -c rollup.test.config.js && jest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/michaschwab/VisConnect.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/michaschwab/VisConnect/issues"
-  },
-  "homepage": "https://github.com/michaschwab/VisConnect#readme"
+    "name": "visconnect",
+    "version": "1.1.2",
+    "description": "Collaborate on data visualizations! Demo at https://michaschwab.github.io/VisConnect/",
+    "main": "visconnect-bundle.js",
+    "dependencies": {
+        "prettier": "^2.1.2",
+        "robust-point-in-polygon": "^1.0.3",
+        "rxjs": "^6.5.4"
+    },
+    "devDependencies": {
+        "jest": "^25.2.1",
+        "jest-without-globals": "0.0.3",
+        "rollup": "^1.31.0",
+        "rollup-plugin-commonjs": "^10.1.0",
+        "rollup-plugin-node-resolve": "^5.2.0",
+        "rollup-plugin-typescript": "^1.0.1",
+        "tslib": "^1.10.0",
+        "typescript": "^3.7.5"
+    },
+    "scripts": {
+        "compile": "rollup -c rollup.config.js && cp visconnect-bundle.js extension/",
+        "test": "rollup -c rollup.test.config.js && jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/michaschwab/VisConnect.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/michaschwab/VisConnect/issues"
+    },
+    "homepage": "https://github.com/michaschwab/VisConnect#readme"
 }
