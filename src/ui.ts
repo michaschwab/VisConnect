@@ -85,6 +85,7 @@ export class VisConnectUi {
         const communication = this.visconnect.protocol.communication;
         const leaderId = communication.leaderId;
         const logo = document.getElementById('visconnect-logo')!;
+        const collabNotice = document.getElementById('visconnect-collab-notice')!;
 
         if (!leaderId) {
             const errorElement = document.getElementById('visconnect-not-ready')!;
@@ -106,12 +107,15 @@ export class VisConnectUi {
 
         const inviteLinkCopied = document.getElementById('visconnect-link-copied')!;
 
+        const collabNoticeDisplay = collabNotice.style.display;
         logo.style.display = 'none';
+        collabNotice.style.display = 'none';
         inviteLinkCopied.style.display = 'inline';
 
         setTimeout(() => {
             logo.style.display = 'block';
             inviteLinkCopied.style.display = 'none';
+            collabNotice.style.display = collabNoticeDisplay;
         }, 2000);
     }
 

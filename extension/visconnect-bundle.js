@@ -1245,6 +1245,7 @@ var VisConnectUi = /** @class */ (function () {
         var communication = this.visconnect.protocol.communication;
         var leaderId = communication.leaderId;
         var logo = document.getElementById('visconnect-logo');
+        var collabNotice = document.getElementById('visconnect-collab-notice');
         if (!leaderId) {
             var errorElement_1 = document.getElementById('visconnect-not-ready');
             logo.style.display = 'none';
@@ -1260,11 +1261,14 @@ var VisConnectUi = /** @class */ (function () {
             : location.href;
         copyToClipboard(url);
         var inviteLinkCopied = document.getElementById('visconnect-link-copied');
+        var collabNoticeDisplay = collabNotice.style.display;
         logo.style.display = 'none';
+        collabNotice.style.display = 'none';
         inviteLinkCopied.style.display = 'inline';
         setTimeout(function () {
             logo.style.display = 'block';
             inviteLinkCopied.style.display = 'none';
+            collabNotice.style.display = collabNoticeDisplay;
         }, 2000);
     };
     VisConnectUi.prototype.showLoadingScreen = function (message) {
