@@ -72,4 +72,8 @@ export class Visconnect {
             }
         }
     }
+
+    stop() {
+        this.listener.stop();
+    }
 }

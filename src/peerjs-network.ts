@@ -49,6 +49,7 @@ export class PeerjsNetwork implements VcNetwork {
         }
 
         this.peer.on('connection', (connection: PeerjsConnectionI) => {
+            //console.log('new connection', connection);
             onConnection(new PeerjsConnection(connection));
         });
 

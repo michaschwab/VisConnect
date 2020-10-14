@@ -19,7 +19,6 @@ const leaderId = parts ? parts[1] : ownId;
     ownId: ownId,
 };
 
-console.log('init vislink');
 disableStopPropagation();
 delayAddEventListener().then(() => {
     let el: Element;
@@ -50,7 +49,7 @@ delayAddEventListener().then(() => {
         el = document.body;
     }
 
-    console.log('start visconnect');
+    console.log('Initializing VisConnect...');
     visconnect = new Visconnect(el, ownId, leaderId, safeMode, customEvents, ignoreEvents);
 
     visconnectUi = new VisConnectUi(visconnect, el);

@@ -9,6 +9,7 @@ export interface StrippedEvent {
 }
 
 export class VcListener {
+    private registeredElements: Element[] = [];
     constructor(
         private svg: Element,
         private hearEvent: (e: StrippedEvent, event: Event) => void,
@@ -16,6 +17,16 @@ export class VcListener {
         private ignoreEvents?: string[]
     ) {
         this.addListenersToElementAndChildren(this.svg);
+    }
+
+    stop() {
+        for (const element of this.registeredElements) {
+            const listener = (element as any)['visconnect-listener'];
+            const eventTypes = this.getRelevantEventTypes();
+            for (const type of eventTypes) {
+                element.removeEventListener(type, listener);
+            }
+        }
     }
 
     addListenersToElementAndChildren(element: Element) {
@@ -27,9 +38,33 @@ export class VcListener {
 
     addListenersToElement(element: Element) {
         const boundCapture = this.captureEvent(element).bind(this);
+        const eventTypes = this.getRelevantEventTypes();
 
+        this.registeredElements.push(element);
+        (element as any)['visconnect-listener'] = boundCapture;
+        for (const type of eventTypes) {
+            element.addEventListener(type, boundCapture);
+        }
+
+        // Add listeners to future child elements.
+        const appendBackup = element.appendChild;
+        const insertBeforeBackup = element.insertBefore;
+        const that = this;
+
+        element.appendChild = function <T extends Node>(newChild: T) {
+            that.addListenersToElement((newChild as unknown) as Element);
+            return appendBackup.call(this, newChild) as T;
+        };
+
+        element.insertBefore = function <T extends Node>(newChild: T, nextChild: Node | null) {
+            that.addListenersToElement((newChild as unknown) as Element);
+            return insertBeforeBackup.call(this, newChild, nextChild) as T;
+        };
+    }
+
+    getRelevantEventTypes() {
         const custom = this.customEvents ? this.customEvents : [];
-        const eventTypes = [
+        return [
             'mousemove',
             'mouseup',
             'mousedown',
@@ -52,25 +87,6 @@ export class VcListener {
             )
             .concat(custom)
             .concat(['brush-message']);
-
-        for (const type of eventTypes) {
-            element.addEventListener(type, boundCapture);
-        }
-
-        // Add listeners to future child elements.
-        const appendBackup = element.appendChild;
-        const insertBeforeBackup = element.insertBefore;
-        const that = this;
-
-        element.appendChild = function <T extends Node>(newChild: T) {
-            that.addListenersToElement((newChild as unknown) as Element);
-            return appendBackup.call(this, newChild) as T;
-        };
-
-        element.insertBefore = function <T extends Node>(newChild: T, nextChild: Node | null) {
-            that.addListenersToElement((newChild as unknown) as Element);
-            return insertBeforeBackup.call(this, newChild, nextChild) as T;
-        };
     }
 
     captureEvent(element: Element) {

@@ -14,6 +14,7 @@ export interface VcCommunicationI {
     onConnectionCallback: () => void;
     init: () => void;
     onLoading?: (message: string) => void;
+    onFailure?: (message: string) => void;
     onDoneLoading?: () => void;
 }
 
@@ -42,6 +43,7 @@ export class VcCommunication implements VcCommunicationI {
     private eventsMsg?: VcEventsMessage;
     private lastEventsMessageTime = -1;
     private throttleTimeout = -1;
+    private opened = false;
 
     public leaderId: string;
     private readonly onEventReceived: (e: VcEvent[], sender: string, catchup?: boolean) => void;
@@ -50,6 +52,7 @@ export class VcCommunication implements VcCommunicationI {
     private readonly onLockRequested: (selector: string, requester: string) => void;
     private readonly onOpenCallback: () => void;
     onLoading?: (message: string) => void;
+    onFailure?: (message: string) => void;
     onDoneLoading?: () => void;
 
     constructor(data: VcCommunicationConstructorData) {
@@ -65,6 +68,8 @@ export class VcCommunication implements VcCommunicationI {
     }
 
     init() {
+        setTimeout(() => this.onOpenFailed(), 3000);
+
         this.peer.init(
             this.id,
             this.onOpen.bind(this),
@@ -124,7 +129,9 @@ export class VcCommunication implements VcCommunicationI {
     }
 
     onOpen() {
+        this.opened = true;
         this.id = this.getId();
+        console.log('VisConnect connection established.');
 
         if (!this.leaderId) {
             this.leaderId = this.id;
@@ -137,6 +144,18 @@ export class VcCommunication implements VcCommunicationI {
         }
         this.onOpenCallback();
         this.onConnectionCallback();
+    }
+
+    onOpenFailed() {
+        if (!this.opened && this.onFailure) {
+            this.onFailure('Connection Failed');
+
+            setTimeout(() => {
+                if (this.onDoneLoading) {
+                    this.onDoneLoading();
+                }
+            }, 2000);
+        }
     }
 
     getNumberOfConnections() {

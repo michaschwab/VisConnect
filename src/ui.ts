@@ -15,6 +15,7 @@ export class VisConnectUi {
         protocol.onDoneLoading = this.hideLoadingScreen.bind(this);
         protocol.communication.onLoading = this.showLoadingScreen.bind(this);
         protocol.communication.onDoneLoading = this.hideLoadingScreen.bind(this);
+        protocol.communication.onFailure = this.onFailure.bind(this);
 
         this.showLoadingScreen('Setting up..');
         this.updateConnections();
@@ -116,7 +117,14 @@ export class VisConnectUi {
             logo.style.display = 'block';
             inviteLinkCopied.style.display = 'none';
             collabNotice.style.display = collabNoticeDisplay;
-        }, 2000);
+        }, 1400);
+    }
+
+    onFailure(message: string) {
+        console.log('Connection Failed.');
+        this.showLoadingScreen(message);
+        document.getElementById('visconnect-container')!.style.display = 'none';
+        this.visconnect.stop();
     }
 
     showLoadingScreen(message: string) {

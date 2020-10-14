@@ -1183,6 +1183,7 @@ var VisConnectUi = /** @class */ (function () {
         protocol.onDoneLoading = this.hideLoadingScreen.bind(this);
         protocol.communication.onLoading = this.showLoadingScreen.bind(this);
         protocol.communication.onDoneLoading = this.hideLoadingScreen.bind(this);
+        protocol.communication.onFailure = this.onFailure.bind(this);
         this.showLoadingScreen('Setting up..');
         this.updateConnections();
     }
@@ -1269,7 +1270,13 @@ var VisConnectUi = /** @class */ (function () {
             logo.style.display = 'block';
             inviteLinkCopied.style.display = 'none';
             collabNotice.style.display = collabNoticeDisplay;
-        }, 2000);
+        }, 1400);
+    };
+    VisConnectUi.prototype.onFailure = function (message) {
+        console.log('Connection Failed.');
+        this.showLoadingScreen(message);
+        document.getElementById('visconnect-container').style.display = 'none';
+        this.visconnect.stop();
     };
     VisConnectUi.prototype.showLoadingScreen = function (message) {
         this.hideLoadingScreen();
@@ -1320,8 +1327,20 @@ var VcListener = /** @class */ (function () {
         this.hearEvent = hearEvent;
         this.customEvents = customEvents;
         this.ignoreEvents = ignoreEvents;
+        this.registeredElements = [];
         this.addListenersToElementAndChildren(this.svg);
     }
+    VcListener.prototype.stop = function () {
+        for (var _i = 0, _a = this.registeredElements; _i < _a.length; _i++) {
+            var element = _a[_i];
+            var listener = element['visconnect-listener'];
+            var eventTypes = this.getRelevantEventTypes();
+            for (var _b = 0, eventTypes_1 = eventTypes; _b < eventTypes_1.length; _b++) {
+                var type = eventTypes_1[_b];
+                element.removeEventListener(type, listener);
+            }
+        }
+    };
     VcListener.prototype.addListenersToElementAndChildren = function (element) {
         this.addListenersToElement(element);
         for (var _i = 0, _a = element.children; _i < _a.length; _i++) {
@@ -1330,10 +1349,31 @@ var VcListener = /** @class */ (function () {
         }
     };
     VcListener.prototype.addListenersToElement = function (element) {
-        var _this = this;
         var boundCapture = this.captureEvent(element).bind(this);
+        var eventTypes = this.getRelevantEventTypes();
+        this.registeredElements.push(element);
+        element['visconnect-listener'] = boundCapture;
+        for (var _i = 0, eventTypes_2 = eventTypes; _i < eventTypes_2.length; _i++) {
+            var type = eventTypes_2[_i];
+            element.addEventListener(type, boundCapture);
+        }
+        // Add listeners to future child elements.
+        var appendBackup = element.appendChild;
+        var insertBeforeBackup = element.insertBefore;
+        var that = this;
+        element.appendChild = function (newChild) {
+            that.addListenersToElement(newChild);
+            return appendBackup.call(this, newChild);
+        };
+        element.insertBefore = function (newChild, nextChild) {
+            that.addListenersToElement(newChild);
+            return insertBeforeBackup.call(this, newChild, nextChild);
+        };
+    };
+    VcListener.prototype.getRelevantEventTypes = function () {
+        var _this = this;
         var custom = this.customEvents ? this.customEvents : [];
-        var eventTypes = [
+        return [
             'mousemove',
             'mouseup',
             'mousedown',
@@ -1355,22 +1395,6 @@ var VcListener = /** @class */ (function () {
         })
             .concat(custom)
             .concat(['brush-message']);
-        for (var _i = 0, eventTypes_1 = eventTypes; _i < eventTypes_1.length; _i++) {
-            var type = eventTypes_1[_i];
-            element.addEventListener(type, boundCapture);
-        }
-        // Add listeners to future child elements.
-        var appendBackup = element.appendChild;
-        var insertBeforeBackup = element.insertBefore;
-        var that = this;
-        element.appendChild = function (newChild) {
-            that.addListenersToElement(newChild);
-            return appendBackup.call(this, newChild);
-        };
-        element.insertBefore = function (newChild, nextChild) {
-            that.addListenersToElement(newChild);
-            return insertBeforeBackup.call(this, newChild, nextChild);
-        };
     };
     VcListener.prototype.captureEvent = function (element) {
         var _this = this;
@@ -2392,6 +2416,7 @@ var PeerjsNetwork = /** @class */ (function () {
             this.peer.on('open', this.onOpen);
         }
         this.peer.on('connection', function (connection) {
+            //console.log('new connection', connection);
             onConnection(new PeerjsConnection(connection));
         });
         this.peer.on('disconnected', function () {
@@ -2431,6 +2456,7 @@ var VcCommunication = /** @class */ (function () {
         this.id = '';
         this.lastEventsMessageTime = -1;
         this.throttleTimeout = -1;
+        this.opened = false;
         this.leaderId = data.leaderId;
         this.id = data.ownId;
         this.onEventReceived = data.onEventReceived;
@@ -2441,6 +2467,8 @@ var VcCommunication = /** @class */ (function () {
         this.peer = new PeerjsNetwork();
     }
     VcCommunication.prototype.init = function () {
+        var _this = this;
+        setTimeout(function () { return _this.onOpenFailed(); }, 3000);
         this.peer.init(this.id, this.onOpen.bind(this), this.onConnected.bind(this), this.onDisconnected.bind(this));
     };
     /**
@@ -2490,7 +2518,9 @@ var VcCommunication = /** @class */ (function () {
         return this.peer.getId();
     };
     VcCommunication.prototype.onOpen = function () {
+        this.opened = true;
         this.id = this.getId();
+        console.log('VisConnect connection established.');
         if (!this.leaderId) {
             this.leaderId = this.id;
         }
@@ -2500,6 +2530,17 @@ var VcCommunication = /** @class */ (function () {
         }
         this.onOpenCallback();
         this.onConnectionCallback();
+    };
+    VcCommunication.prototype.onOpenFailed = function () {
+        var _this = this;
+        if (!this.opened && this.onFailure) {
+            this.onFailure('Connection Failed');
+            setTimeout(function () {
+                if (_this.onDoneLoading) {
+                    _this.onDoneLoading();
+                }
+            }, 2000);
+        }
     };
     VcCommunication.prototype.getNumberOfConnections = function () {
         return this.connections.length;
@@ -3002,6 +3043,9 @@ var Visconnect = /** @class */ (function () {
             }
         }
     };
+    Visconnect.prototype.stop = function () {
+        this.listener.stop();
+    };
     return Visconnect;
 }());
 
@@ -3019,7 +3063,6 @@ window.vc = {
     leaderId: leaderId,
     ownId: ownId,
 };
-console.log('init vislink');
 disableStopPropagation();
 delayAddEventListener().then(function () {
     var el;
@@ -3049,7 +3092,7 @@ delayAddEventListener().then(function () {
     else {
         el = document.body;
     }
-    console.log('start visconnect');
+    console.log('Initializing VisConnect...');
     visconnect = new Visconnect(el, ownId, leaderId, safeMode, customEvents, ignoreEvents);
     visconnectUi = new VisConnectUi(visconnect, el);
     visconnect.onEventCancelled = visconnectUi.eventCancelled.bind(visconnectUi);
