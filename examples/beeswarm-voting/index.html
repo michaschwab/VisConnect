@@ -11,7 +11,8 @@ body {
     stroke-width: 1.5px;
 }
 #wrap {
-    width: 20000px;
+    /*width: 20000px;*/
+    width: 100%;
     height: 100%;
 }
 .question-container {
@@ -20,6 +21,9 @@ body {
     float: left;
     top: 0;
 }
+.answers {
+    pointer-events: none;
+}
 </style>
 <meta name="viewport" content="user-scalable=no" />
 </head>
@@ -27,13 +31,15 @@ body {
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://unpkg.com/d3-marcon/build/d3-marcon.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/ssvg@latest/ssvg.js"></script>
+<!--<script src="/node_modules/ssvg/ssvg.js"></script>-->
 <script src="../../visconnect-bundle.js"></script>
 <script src="gravity.js"></script>
 
 <div id="wrap" style="margin-left: 0">
     <div id="q1" class="question-container"></div>
-    <div id="q2" class="question-container"></div>
-    <div id="q3" class="question-container"></div>
+    <!--<div id="q2" class="question-container"></div>
+    <div id="q3" class="question-container"></div>-->
 </div>
 <script>
 
@@ -42,7 +48,7 @@ const questions = [{
     a: [/*{a: 'Art', icon: 'art.png'}, */{a: 'Health Care', icon: 'health-care.png'},
         {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'},
         {a: 'Otherwise Boring \n Conference Talks', icon: 'micha-transparent.png'}]
-}, {
+}/*, {
     q: 'Have you been interested in \n making any of your visualizations collaborative?',
     a: [{a: 'Yes, and we added collaboration.'}, {a: 'Yes, but we did not end up \n making it collaborative.'},
         {a: 'No, I haven\'t thought about \n collaboration in my visualizations.'},
@@ -51,18 +57,15 @@ const questions = [{
     q: 'What are challenges to \n making visualizations collaborative?',
     a: [{a: 'Communication', icon: 'speechbubble.png'}, {a: 'Strategies to \n divide the work', icon: 'direction.png'},
         {a: 'Interaction', icon: 'interaction.png'}, {a: 'Implementation', icon: 'gears.png'}]
-}];
+}*/];
 
-const votingBeeswarm = function(question, container) {
-    const beeSwarm = {};
-
+const votingBeeswarmBackground = function(question, container, gravity) {
     const m = d3.marcon().width(window.innerWidth).height(window.innerHeight).element(container);
     m.render();
     const width = m.innerWidth();
     const height = m.innerHeight();
     const ratio = width / height;
     const svg = m.svg();
-    const nodes = [];
 
     const linesG = svg.append('g')
         .attr('class', 'lines');
@@ -98,13 +101,8 @@ const votingBeeswarm = function(question, container) {
                 .attr('y', y - 75)
                 .attr('height', 150)
         }
-
-        nodes.push({x: width / 2 + 150, y, id: vc.random().toString(36).substr(2, 9)});
     }
 
-    const gravity = gravityForce(centerPoints, height).strength(60 * height);
-
-    // Potential Lines
     const lineGen = d3.line();
     function drawPotentialLines() {
         const lineStarts = [];
@@ -147,6 +145,67 @@ const votingBeeswarm = function(question, container) {
         }
     }
     drawPotentialLines();
+
+    svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', 40)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '40')
+        .selectAll('tspan').data(question.q.split('\n'))
+        .enter()
+        .append('tspan')
+        .attr('x', width / 2)
+        .attr('dy', function(d, i) { return `${i*30}pt`;})
+        .html(function(d, i) { return d});
+
+    svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', 75)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '25')
+        .text(function(d, i) { return 'Click Anywhere to Vote!'});
+
+    const actualSvg = svg.node().parentNode;
+    actualSvg.style.position = 'absolute';
+    actualSvg.style.left = '0';
+    actualSvg.style.top = '0';
+    actualSvg.style['z-index'] = '-10';
+    // Now, rasterize this svg to make compositing easy and fast for the browser.
+    /*setTimeout(async () => {
+        const actualSvg = svg.node().parentNode;
+        const img = await svgUrlToImage(actualSvg);
+        console.log(img);
+        actualSvg.parentNode.removeChild(actualSvg);
+        img.style.position = 'absolute';
+        img.style.left = '0';
+        img.style.top = '0';
+        img.style['z-index'] = '-10';
+    });*/
+}
+
+const votingBeeswarm = function(question, container) {
+    const beeSwarm = {};
+
+    const m = d3.marcon().width(window.innerWidth).height(window.innerHeight).element(container);
+    m.render();
+    const width = m.innerWidth();
+    const height = m.innerHeight();
+    const svg = m.svg();
+    const nodes = [];
+
+    const numberAnswers = question.a.length;
+    const gridSize = Math.round(height / (numberAnswers + 1));
+    let centerPoints = [];
+    for(let i = 0; i < numberAnswers; i++) {
+        const y = (i + 1) * gridSize;
+        centerPoints.push({x: width / 2 + 100, y});
+
+        nodes.push({x: width / 2 + 150, y, id: vc.random().toString(36).substr(2, 9)});
+    }
+
+    const gravity = gravityForce(centerPoints, height).strength(60 * height);
+
+    votingBeeswarmBackground(question, container, gravity);
 
     var simulation = d3.forceSimulation().alphaDecay(0)
         .force("gravity", gravity)
@@ -252,18 +311,6 @@ const votingBeeswarm = function(question, container) {
         }
     });
 
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', 50)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', '40')
-        .selectAll('tspan').data(question.q.split('\n'))
-        .enter()
-        .append('tspan')
-        .attr('x', width / 2)
-        .attr('dy', function(d, i) { return `${i*30}pt`;})
-        .html(function(d, i) { return d});
-
     beeSwarm.getVotes = () => {
         let votes = {};
         let i = 0;
@@ -274,6 +321,9 @@ const votingBeeswarm = function(question, container) {
         console.log(votes);
         return votes;
     };
+
+    const actualSvg = svg.node().parentNode;
+    new SSVG({svg: actualSvg});
 
     return beeSwarm;
 };
@@ -297,6 +347,43 @@ document.body.addEventListener('next-question', () => {
         .duration(2000)
         .style('margin-left', `${prevMargin-100}vw`);
 });
+/*
+function getSvgUrl(svg) {
+    const data = (new XMLSerializer()).serializeToString(svg);
+    const blob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+    return URL.createObjectURL(blob);
+}
+
+function svgUrlToImage(svg) {
+    return new Promise(async (resolve, reject) => {
+        const svgUrl = getSvgUrl(svg);
+        const svgImage = document.createElement('img');
+        svgImage.setAttribute('class', 'data-loader-img');
+
+        document.body.appendChild(svgImage);
+        svgImage.src = svgUrl;
+
+        await waitForLoad([svgImage]);
+
+        resolve(svgImage);
+    });
+}
+
+function waitForLoad(elements) {
+    return new Promise((resolve, reject) => {
+        let framesLoaded = 0;
+        const cb = () => {
+            framesLoaded++;
+            if(framesLoaded === elements.length) {
+                resolve();
+            }
+        };
+
+        for(const element of elements) {
+            element.onload = cb;
+        }
+    });
+}*/
 
 // to prevent horizontal drag on mobile
 document.addEventListener("touchmove",function(event){event.preventDefault();}, {passive: false});
