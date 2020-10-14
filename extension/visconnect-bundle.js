@@ -2793,35 +2793,64 @@ var VcProtocol = /** @class */ (function () {
         if (events.length > 100 && this.onLoading) {
             this.onLoading("Catching up to collaborators by re-playing " + events.length + " events..");
             // Wait one frame to give the browser time to display a loading screen.
-            setTimeout(function () {
-                _this.replayEvents(events, sender, catchup);
-                if (_this.onDoneLoading) {
-                    _this.onDoneLoading();
-                }
-            }, 10);
+            setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.replayEvents(events, sender, catchup)];
+                        case 1:
+                            _a.sent();
+                            if (this.onDoneLoading) {
+                                this.onDoneLoading();
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            }); }, 10);
         }
         else {
             this.replayEvents(events, sender, catchup);
         }
     };
     VcProtocol.prototype.replayEvents = function (events, sender, catchup) {
+        var _this = this;
         if (catchup === void 0) { catchup = false; }
-        for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
-            var event = events_1[_i];
-            var ledger = this.ledgers.get(event.event.target);
-            var lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
-            this.playHeldRemoteEvents(event.event.target, lastSeqNum);
-            lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
-            if (event.seqNum !== lastSeqNum + 1) {
-                this.holdRemoteEvent(event);
-            }
-            else {
-                var success = this.addEventToLedger(event, sender, catchup);
-                if (!success && !this.lockOwners.has(event.event.target)) {
-                    this.holdRemoteEvent(event);
+        return new Promise(function (resolve, reject) {
+            var EVENTS_PER_FRAME = 200;
+            var replayEvent = function (event) {
+                var ledger = _this.ledgers.get(event.event.target);
+                var lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+                _this.playHeldRemoteEvents(event.event.target, lastSeqNum, true);
+                lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+                if (event.seqNum !== lastSeqNum + 1) {
+                    _this.holdRemoteEvent(event);
                 }
-            }
-        }
+                else {
+                    var success = _this.addEventToLedger(event, sender, catchup);
+                    if (!success && !_this.lockOwners.has(event.event.target)) {
+                        _this.holdRemoteEvent(event);
+                    }
+                    else if (success) {
+                        _this.playHeldRemoteEvents(event.event.target, lastSeqNum + 1, true);
+                    }
+                }
+            };
+            var i = 0;
+            var raf = function () {
+                var currentMax = i + EVENTS_PER_FRAME;
+                for (; i < currentMax; i++) {
+                    if (events[i]) {
+                        replayEvent(events[i]);
+                    }
+                }
+                if (events[i]) {
+                    requestAnimationFrame(raf);
+                }
+                else {
+                    resolve();
+                }
+            };
+            raf();
+        });
     };
     VcProtocol.prototype.holdRemoteEvent = function (event) {
         if (!this.heldRemoteEvents.has(event.event.target)) {
@@ -2846,8 +2875,8 @@ var VcProtocol = /** @class */ (function () {
             // Finally, trigger these held up events.
             var events = this.heldEvents.get(selector);
             //console.log('Triggering some held up events', events);
-            for (var _i = 0, events_2 = events; _i < events_2.length; _i++) {
-                var stripped = events_2[_i];
+            for (var _i = 0, events_1 = events; _i < events_1.length; _i++) {
+                var stripped = events_1[_i];
                 if (this.canExecuteEvent(stripped, this.collaboratorId)) {
                     var vcEvent = this.makeVcEvent(stripped);
                     var success = this.addEventToLedger(vcEvent, this.collaboratorId);
@@ -2862,7 +2891,8 @@ var VcProtocol = /** @class */ (function () {
             this.playHeldRemoteEvents(selector, seqNum);
         }
     };
-    VcProtocol.prototype.playHeldRemoteEvents = function (selector, seqNum) {
+    VcProtocol.prototype.playHeldRemoteEvents = function (selector, seqNum, catchup) {
+        if (catchup === void 0) { catchup = false; }
         var held = this.heldRemoteEvents.get(selector);
         if (!held) {
             return;
@@ -2870,7 +2900,7 @@ var VcProtocol = /** @class */ (function () {
         var filtered = held.filter(function (e) { return e.seqNum >= seqNum; }).sort(function (a, b) { return a.seqNum - b.seqNum; });
         for (var _i = 0, filtered_1 = filtered; _i < filtered_1.length; _i++) {
             var event = filtered_1[_i];
-            this.addEventToLedger(event, event.sender, false);
+            this.addEventToLedger(event, event.sender, catchup);
         }
         //this.heldRemoteEvents.delete(selector);
     };
@@ -2958,6 +2988,7 @@ var LockService = /** @class */ (function () {
         }
         this.lockOwners.set(selector, client);
         this.communication.changeLockOwner(selector, client, seqNum);
+        this.extendLock(selector);
     };
     LockService.prototype.extendLock = function (selector) {
         // Delete any previous timeouts
@@ -2971,6 +3002,7 @@ var LockService = /** @class */ (function () {
     LockService.prototype.expireLock = function (selector) {
         var _this = this;
         return function () {
+            _this.lockTimeouts.delete(selector);
             _this.lockOwners.delete(selector);
             _this.communication.changeLockOwner(selector, '', -1);
         };

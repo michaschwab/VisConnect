@@ -79,8 +79,8 @@ export class VcProtocol {
             this.onLoading(`Catching up to collaborators by re-playing ${events.length} events..`);
 
             // Wait one frame to give the browser time to display a loading screen.
-            setTimeout(() => {
-                this.replayEvents(events, sender, catchup);
+            setTimeout(async () => {
+                await this.replayEvents(events, sender, catchup);
 
                 if (this.onDoneLoading) {
                     this.onDoneLoading();
@@ -92,21 +92,43 @@ export class VcProtocol {
     }
 
     private replayEvents(events: VcEvent[], sender: string, catchup = false) {
-        for (const event of events) {
-            const ledger = this.ledgers.get(event.event.target);
-            let lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
-            this.playHeldRemoteEvents(event.event.target, lastSeqNum);
-            lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+        return new Promise<void>((resolve, reject) => {
+            const EVENTS_PER_FRAME = 200;
 
-            if (event.seqNum !== lastSeqNum + 1) {
-                this.holdRemoteEvent(event);
-            } else {
-                const success = this.addEventToLedger(event, sender, catchup);
-                if (!success && !this.lockOwners.has(event.event.target)) {
+            const replayEvent = (event: VcEvent) => {
+                const ledger = this.ledgers.get(event.event.target);
+                let lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+                this.playHeldRemoteEvents(event.event.target, lastSeqNum, true);
+                lastSeqNum = ledger && ledger.length ? ledger[ledger.length - 1].seqNum : -1;
+
+                if (event.seqNum !== lastSeqNum + 1) {
                     this.holdRemoteEvent(event);
+                } else {
+                    const success = this.addEventToLedger(event, sender, catchup);
+                    if (!success && !this.lockOwners.has(event.event.target)) {
+                        this.holdRemoteEvent(event);
+                    } else if (success) {
+                        this.playHeldRemoteEvents(event.event.target, lastSeqNum + 1, true);
+                    }
                 }
-            }
-        }
+            };
+
+            let i = 0;
+            const raf = () => {
+                const currentMax = i + EVENTS_PER_FRAME;
+                for (; i < currentMax; i++) {
+                    if (events[i]) {
+                        replayEvent(events[i]);
+                    }
+                }
+                if (events[i]) {
+                    requestAnimationFrame(raf);
+                } else {
+                    resolve();
+                }
+            };
+            raf();
+        });
     }
 
     protected holdRemoteEvent(event: VcEvent) {
@@ -151,7 +173,7 @@ export class VcProtocol {
         }
     }
 
-    protected playHeldRemoteEvents(selector: string, seqNum: number) {
+    protected playHeldRemoteEvents(selector: string, seqNum: number, catchup = false) {
         const held = this.heldRemoteEvents.get(selector);
         if (!held) {
             return;
@@ -159,7 +181,7 @@ export class VcProtocol {
         const filtered = held.filter((e) => e.seqNum >= seqNum).sort((a, b) => a.seqNum - b.seqNum);
 
         for (const event of filtered) {
-            this.addEventToLedger(event, event.sender, false);
+            this.addEventToLedger(event, event.sender, catchup);
         }
         //this.heldRemoteEvents.delete(selector);
     }

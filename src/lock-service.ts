@@ -14,6 +14,7 @@ export class LockService {
 
         this.lockOwners.set(selector, client);
         this.communication.changeLockOwner(selector, client, seqNum);
+        this.extendLock(selector);
     }
 
     extendLock(selector: string) {
@@ -28,6 +29,7 @@ export class LockService {
 
     private expireLock(selector: string) {
         return () => {
+            this.lockTimeouts.delete(selector);
             this.lockOwners.delete(selector);
             this.communication.changeLockOwner(selector, '', -1);
         };
