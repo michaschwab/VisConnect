@@ -10740,7 +10740,6 @@ var VisConnectUtil = /** @class */ (function () {
     function VisConnectUtil() {
     }
     VisConnectUtil.drag = function () {
-        var _this = this;
         var data = {
             elements: null,
             draggingElements: {},
@@ -10754,14 +10753,14 @@ var VisConnectUtil = /** @class */ (function () {
                 if (!VisConnectUtil.setCustomEvent(event)) {
                     return;
                 }
-                var mousePos = _this.mouse(event.target);
+                var mousePos = window['d3'].mouse(event.target);
                 var dataX = element.__data__ && 'x' in element.__data__ ? element.__data__.x : 0;
                 var dataY = element.__data__ && 'y' in element.__data__ ? element.__data__.y : 0;
                 if (dataX || dataY) {
                     data.offset[event.collaboratorId] = [mousePos[0] - dataX, mousePos[1] - dataY];
                 }
                 else {
-                    data.offset[event.collaboratorId] = [0, 0];
+                    data.offset[event.collaboratorId] = [window.scrollX, window.scrollY];
                 }
                 data.draggingElements[event.collaboratorId] = element;
                 data.onStart.call(element, element.__data__);

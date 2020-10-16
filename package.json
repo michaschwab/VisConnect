@@ -1,6 +1,6 @@
 {
     "name": "visconnect",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Collaborate on data visualizations! Demo at https://michaschwab.github.io/VisConnect/",
     "main": "visconnect-bundle.js",
     "dependencies": {

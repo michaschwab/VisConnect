@@ -21,13 +21,13 @@ export class VisConnectUtil {
                     return;
                 }
 
-                const mousePos = this.mouse(event.target as D3Element);
+                const mousePos = (window as any)['d3'].mouse(event.target);
                 const dataX = element.__data__ && 'x' in element.__data__ ? element.__data__.x : 0;
                 const dataY = element.__data__ && 'y' in element.__data__ ? element.__data__.y : 0;
                 if (dataX || dataY) {
                     data.offset[event.collaboratorId] = [mousePos[0] - dataX, mousePos[1] - dataY];
                 } else {
-                    data.offset[event.collaboratorId] = [0, 0];
+                    data.offset[event.collaboratorId] = [window.scrollX, window.scrollY];
                 }
 
                 data.draggingElements[event.collaboratorId] = element;
