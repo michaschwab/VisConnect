@@ -1,7 +1,9 @@
+import 'peerjs/dist/peerjs';
 import {VisConnectUi} from './ui';
 import {Visconnect} from './visconnect';
 import {VisConnectUtil} from './util';
 import {delayAddEventListener, disableStopPropagation} from './dom';
+
 var visconnect;
 var visconnectUi;
 

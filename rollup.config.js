@@ -16,6 +16,6 @@ export default [''].map((name, index) => ({
     output: {
         sourcemap: true,
         file: `visconnect-bundle${name}.js`,
-        format: 'cjs',
+        format: 'esm',
     },
 }));
