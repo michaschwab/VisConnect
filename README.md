@@ -16,8 +16,9 @@ To use VisConnect, simply include the the script tags for PeerJS and VisConnect.
 ## Basic Usage
 
 After including the script tags in your HTML, VisConnect will automatically inject the collaboration interface. To start collaborating click the VisConnect logo on the bottom right and a custom link will be copied to your clipboard. Send this link to anyone you want and wait for them to join. Once connected all your interaction events one SVG elements should be synchronized! 
-
-<div style="text-align:center"><img src="https://i.imgur.com/LfjnzeO.gif"/></div>
+<p align="center">
+<img src="https://i.imgur.com/LfjnzeO.gif"/>
+</p>
 
 
 
