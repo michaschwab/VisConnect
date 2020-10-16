@@ -22,9 +22,14 @@ export class VisConnectUtil {
                 }
 
                 const mousePos = this.mouse(event.target as D3Element);
-                const dataX = element.__data__.x || 0;
-                const dataY = element.__data__.y || 0;
-                data.offset[event.collaboratorId] = [mousePos[0] - dataX, mousePos[1] - dataY];
+                const dataX = element.__data__ && 'x' in element.__data__ ? element.__data__.x : 0;
+                const dataY = element.__data__ && 'y' in element.__data__ ? element.__data__.y : 0;
+                if (dataX || dataY) {
+                    data.offset[event.collaboratorId] = [mousePos[0] - dataX, mousePos[1] - dataY];
+                } else {
+                    data.offset[event.collaboratorId] = [0, 0];
+                }
+
                 data.draggingElements[event.collaboratorId] = element;
                 data.onStart.call(element, element.__data__);
             };

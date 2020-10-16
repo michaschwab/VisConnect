@@ -7,9 +7,7 @@
 
 ## Installation
 
-To use VisConnect, simply include the the script tags for PeerJS and VisConnect. 
-
-```<script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>```
+To use VisConnect, simply include the the script tag for VisConnect. 
 
 ```<script src="https://unpkg.com/visconnect@latest/visconnect-bundle.js"></script>```
 
@@ -19,7 +17,6 @@ After including the script tags in your HTML, VisConnect will automatically inje
 <p align="center">
 <img src="https://i.imgur.com/LfjnzeO.gif"/>
 </p>
-
 
 
 ## Advanced Usage
