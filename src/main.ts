@@ -7,8 +7,10 @@ import {delayAddEventListener, disableStopPropagation} from './dom';
 var visconnect;
 var visconnectUi;
 
-let parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
-const ownId = [...Array(10)].map((i) => (~~(Math.random() * 36)).toString(36)).join('');
+const parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
+const ownParts = window.location.href.match(/\?visconnectownid=([a-z0-9\-]+)/);
+const randomId = [...Array(10)].map((i) => (~~(Math.random() * 36)).toString(36)).join('');
+const ownId = ownParts ? ownParts[1] : randomId;
 const leaderId = parts ? parts[1] : ownId;
 
 (window as any).vc = {

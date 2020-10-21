@@ -11221,9 +11221,10 @@ var VisConnectUi = /** @class */ (function () {
             }, 1000);
             return;
         }
-        var url = leaderId === communication.id
-            ? location.href + '?visconnectid=' + leaderId
-            : location.href;
+        var url = location.href.replace(/visconnectownid=[a-z0-9]+/gi, '');
+        if (leaderId === communication.id) {
+            url += '?visconnectid=' + leaderId;
+        }
         copyToClipboard(url);
         var inviteLinkCopied = document.getElementById('visconnect-link-copied');
         var collabNoticeDisplay = collabNotice.style.display;
@@ -13048,7 +13049,9 @@ var Visconnect = /** @class */ (function () {
 var visconnect;
 var visconnectUi;
 var parts = window.location.href.match(/\?visconnectid=([a-z0-9\-]+)/);
-var ownId = __spreadArrays(Array(10)).map(function (i) { return (~~(Math.random() * 36)).toString(36); }).join('');
+var ownParts = window.location.href.match(/\?visconnectownid=([a-z0-9\-]+)/);
+var randomId = __spreadArrays(Array(10)).map(function (i) { return (~~(Math.random() * 36)).toString(36); }).join('');
+var ownId = ownParts ? ownParts[1] : randomId;
 var leaderId = parts ? parts[1] : ownId;
 window.vc = {
     drag: VisConnectUtil.drag,

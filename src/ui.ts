@@ -100,10 +100,11 @@ export class VisConnectUi {
             return;
         }
 
-        const url =
-            leaderId === communication.id
-                ? location.href + '?visconnectid=' + leaderId
-                : location.href;
+        let url = location.href.replace(/visconnectownid=[a-z0-9]+/gi, '');
+        if (leaderId === communication.id) {
+            url += '?visconnectid=' + leaderId;
+        }
+
         copyToClipboard(url);
 
         const inviteLinkCopied = document.getElementById('visconnect-link-copied')!;
