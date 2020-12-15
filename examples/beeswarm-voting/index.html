@@ -43,12 +43,20 @@ body {
 </div>
 <script>
 
-const questions = [{
+const questions = [
+    {
+        q: 'Should I pass my PhD defense?',
+        a: [{a: 'Yes, well deserved', icon: 'checkmark.png'},
+            {a: 'Toss a coin', icon: 'coin.png'},
+            {a: 'No, start over', icon: 'no.png'}]}
+
+    /*{
     q: 'In what areas would collaborative visualization be useful?',
-    a: [/*{a: 'Art', icon: 'art.png'}, */{a: 'Health Care', icon: 'health-care.png'},
+    a: [/!*{a: 'Art', icon: 'art.png'}, *!/{a: 'Health Care', icon: 'health-care.png'},
         {a: 'Science', icon: 'science.png'}, {a: 'Education', icon: 'education.png'},
         {a: 'Otherwise Boring \n Conference Talks', icon: 'micha-transparent.png'}]
-}/*, {
+}*/
+/*, {
     q: 'Have you been interested in \n making any of your visualizations collaborative?',
     a: [{a: 'Yes, and we added collaboration.'}, {a: 'Yes, but we did not end up \n making it collaborative.'},
         {a: 'No, I haven\'t thought about \n collaboration in my visualizations.'},
