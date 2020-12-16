@@ -15,6 +15,8 @@ const gravityForce = (function(centerPoints, height) {
             x: node.gravitySpeed.x * dragCoefficient,
             y: node.gravitySpeed.y * dragCoefficient
         };
+        const before = {x: node.x, y: node.y};
+
         node.x += drag.x;
         node.y += drag.y;
         node.gravitySpeed = {x: drag.x, y: drag.y};
@@ -48,6 +50,9 @@ const gravityForce = (function(centerPoints, height) {
             node.gravitySpeed.x += speed.x;
             node.gravitySpeed.y += speed.y;
         }
+
+        // Return the delta
+        return {x: node.x - before.x, y: node.y - before.y};
     }
 
     force.savedNodes = [];

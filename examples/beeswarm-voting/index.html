@@ -46,8 +46,8 @@ body {
 const questions = [
     {
         q: 'Should I pass my PhD defense?',
-        a: [{a: 'Yes, well deserved', icon: 'checkmark.png'},
-            {a: 'Toss a coin', icon: 'coin.png'},
+        a: [{a: 'Yes, well deserved', icon: 'graduation.png'},
+            {a: 'Toss a coin', icon: 'questionmark.png'},
             {a: 'No, start over', icon: 'no.png'}]}
 
     /*{
@@ -142,9 +142,12 @@ const votingBeeswarmBackground = function(question, container, gravity) {
 
         for(const lineStart of lineStarts) {
             const positions = [[lineStart.x, lineStart.y]];
+            let lastDelta = 1000;
             for(let step = 0; step < 3000; step++) {
-                gravity.applyGravityToNode(1, lineStart);
+                const alpha = lastDelta > 3 ? 1 : 3; // Move faster if last move was slow.
+                const delta = gravity.applyGravityToNode(alpha, lineStart);
                 positions.push([lineStart.x, lineStart.y]);
+                lastDelta = Math.sqrt(Math.pow(delta.x, 2) + Math.pow(delta.y, 2));
             }
             linesG.append('path')
                 .attr('d', lineGen(positions))
